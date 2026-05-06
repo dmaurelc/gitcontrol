@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   Select,
   SelectContent,
@@ -56,15 +56,9 @@ export function RepoFilters() {
 
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center">
-      <Input
-        defaultValue={params.get("q") ?? ""}
-        placeholder="Filter by name…"
-        className="md:max-w-xs"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            update("q", (e.target as HTMLInputElement).value.trim());
-          }
-        }}
+      <DebouncedSearch
+        initial={params.get("q") ?? ""}
+        onChange={(v) => update("q", v.trim())}
       />
       <Select
         value={params.get("language") ?? "__any__"}
@@ -115,5 +109,34 @@ export function RepoFilters() {
         </SelectContent>
       </Select>
     </div>
+  );
+}
+
+function DebouncedSearch({
+  initial,
+  onChange,
+}: {
+  initial: string;
+  onChange: (value: string) => void;
+}) {
+  const [value, setValue] = useState(initial);
+  const lastSent = useRef(initial);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (value === lastSent.current) return;
+      lastSent.current = value;
+      onChange(value);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [value, onChange]);
+
+  return (
+    <Input
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      placeholder="Filter by name…"
+      className="md:max-w-xs"
+    />
   );
 }
