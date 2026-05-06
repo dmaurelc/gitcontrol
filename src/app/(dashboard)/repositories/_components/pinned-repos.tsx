@@ -1,7 +1,8 @@
-import Link from "next/link";
-import { Pin, ExternalLink } from "lucide-react";
+import { Pin } from "lucide-react";
 import { githubService } from "@/lib/github/service";
 import { Card, CardContent } from "@/components/ui/card";
+import { RepoCard } from "./repo-card";
+import { PinButton } from "./pin-button";
 
 export async function PinnedRepos({
   pinned,
@@ -17,20 +18,6 @@ export async function PinnedRepos({
       return githubService.getRepo(userId, owner, name);
     }),
   );
-  const items = settled
-    .map((r, i) => {
-      if (r.status !== "fulfilled") {
-        return { fullName: pinned[i], unavailable: true } as const;
-      }
-      const d = r.value.data;
-      return {
-        fullName: d.full_name,
-        description: d.description,
-        language: d.language,
-        stars: d.stargazers_count,
-        unavailable: false,
-      } as const;
-    });
 
   return (
     <section className="flex flex-col gap-2">
@@ -39,37 +26,39 @@ export async function PinnedRepos({
         <h2 className="text-sm font-semibold">Pinned</h2>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {items.map((it) => (
-          <Card key={it.fullName} className="border-foreground/30">
-            <CardContent className="flex h-full flex-col gap-2 p-4">
-              {it.unavailable ? (
-                <>
-                  <p className="truncate text-sm font-semibold">{it.fullName}</p>
+        {settled.map((r, i) => {
+          const fullName = pinned[i];
+          if (r.status !== "fulfilled") {
+            return (
+              <Card key={fullName} className="border-foreground/30">
+                <CardContent className="flex h-full flex-col gap-2 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-sm font-semibold">{fullName}</p>
+                    <PinButton fullName={fullName} pinned />
+                  </div>
                   <p className="text-xs text-destructive">
                     Repository unavailable (deleted or access lost).
                   </p>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href={`/repositories/${it.fullName}`}
-                    className="flex items-center justify-between gap-2 text-sm font-semibold hover:underline"
-                  >
-                    <span className="truncate">{it.fullName}</span>
-                    <ExternalLink className="size-3" />
-                  </Link>
-                  <p className="line-clamp-2 min-h-10 text-xs text-muted-foreground">
-                    {it.description ?? ""}
-                  </p>
-                  <div className="mt-auto flex items-center gap-3 text-xs text-muted-foreground">
-                    {it.language ? <span>{it.language}</span> : null}
-                    <span>★ {it.stars}</span>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            );
+          }
+          const d = r.value.data;
+          return (
+            <RepoCard
+              key={d.id}
+              fullName={d.full_name}
+              description={d.description}
+              language={d.language}
+              stars={d.stargazers_count}
+              forks={d.forks_count}
+              openIssues={d.open_issues_count}
+              isPrivate={d.private}
+              pushedAt={d.pushed_at}
+              pinned
+            />
+          );
+        })}
       </div>
     </section>
   );
