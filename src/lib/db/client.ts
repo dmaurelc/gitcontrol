@@ -29,7 +29,8 @@ export const db = new Proxy({} as NodePgDatabase<Schema>, {
   get(_target, prop, receiver) {
     const inner = getDb() as unknown as Record<PropertyKey, unknown>;
     const value = inner[prop as string];
-    if (typeof value === "function") return (value as Function).bind(inner);
+    if (typeof value === "function")
+      return (value as (...args: unknown[]) => unknown).bind(inner);
     return Reflect.get(inner as object, prop, receiver);
   },
 }) as NodePgDatabase<Schema>;
