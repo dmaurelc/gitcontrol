@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+plans
+docs
+README.md
+.DS_Store
+.vscode
+.idea
+npm-debug.log
+yarn-error.log
