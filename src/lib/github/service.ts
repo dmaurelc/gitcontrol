@@ -381,6 +381,93 @@ export const githubService = {
     });
   },
 
+  /**
+   * Aggregate overview metrics for the active context (user or org). Uses one
+   * GraphQL round-trip so the dashboard can render quickly. Counts include
+   * private repos for the authenticated user.
+   */
+  async getOverviewMetrics(
+    userId: string,
+    ctx: { kind: "user" | "org"; login: string },
+  ) {
+    const { gql } = await getGithubClients(userId);
+    type ViewerOverview = {
+      viewer: {
+        login: string;
+        repositories: { totalCount: number };
+        starredRepositories: { totalCount: number };
+        pullRequests: { totalCount: number };
+        issues: { totalCount: number };
+      };
+    };
+    type OrgOverview = {
+      organization: {
+        login: string;
+        repositories: { totalCount: number };
+      } | null;
+    };
+    type Overview = {
+      kind: "user" | "org";
+      login: string;
+      repos: number;
+      stars: number;
+      openPRs: number;
+      openIssues: number;
+    };
+    return cachedFetch<Overview>({
+      userId,
+      resource: "overview",
+      params: ctx,
+      ttlSeconds: TTL.viewer,
+      fetcher: async () => {
+        try {
+          if (ctx.kind === "user") {
+            const data = await gql<ViewerOverview>(`
+              query {
+                viewer {
+                  login
+                  repositories(ownerAffiliations: [OWNER], privacy: null) { totalCount }
+                  starredRepositories { totalCount }
+                  pullRequests(states: OPEN) { totalCount }
+                  issues(states: OPEN) { totalCount }
+                }
+              }
+            `);
+            const body: Overview = {
+              kind: "user",
+              login: data.viewer.login,
+              repos: data.viewer.repositories.totalCount,
+              stars: data.viewer.starredRepositories.totalCount,
+              openPRs: data.viewer.pullRequests.totalCount,
+              openIssues: data.viewer.issues.totalCount,
+            };
+            return { notModified: false as const, body };
+          }
+          const data = await gql<OrgOverview>(
+            `query($login:String!){
+              organization(login:$login){
+                login
+                repositories(privacy: null){ totalCount }
+              }
+            }`,
+            { login: ctx.login },
+          );
+          const body: Overview = {
+            kind: "org",
+            login: data.organization?.login ?? ctx.login,
+            repos: data.organization?.repositories.totalCount ?? 0,
+            stars: 0,
+            openPRs: 0,
+            openIssues: 0,
+          };
+          return { notModified: false as const, body };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
+  },
+
   async createRepo(userId: string, input: CreateRepoInput) {
     const { rest } = await getGithubClients(userId);
     try {

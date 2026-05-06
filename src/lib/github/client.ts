@@ -20,7 +20,19 @@ export type GithubClients = {
 export async function getGithubClients(userId: string): Promise<GithubClients> {
   const token = await getGithubToken(userId);
   if (!token) throw new UnauthorizedError("No GitHub token for user");
-  const rest = new Octokit({ auth: token, userAgent });
+  // Octokit logs 304 responses via console.error which surfaces as a red
+  // overlay in Next dev. We treat 304 as a cache hit, so silence info/warn
+  // and only forward true errors to console.error.
+  const noopLog = {
+    debug: () => {},
+    info: () => {},
+    warn: () => {},
+    error: (msg: string, ...rest: unknown[]) => {
+      if (typeof msg === "string" && /\b304\b/.test(msg)) return;
+      console.error(msg, ...rest);
+    },
+  };
+  const rest = new Octokit({ auth: token, userAgent, log: noopLog });
   const gql = graphql.defaults({
     headers: { authorization: `token ${token}`, "user-agent": userAgent },
   });
