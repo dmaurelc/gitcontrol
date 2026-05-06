@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Star, GitFork, Lock, Globe, CircleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PinButton } from "./pin-button";
 
 type RepoCardProps = {
   fullName: string;
@@ -12,6 +13,7 @@ type RepoCardProps = {
   openIssues: number;
   isPrivate: boolean;
   pushedAt: string;
+  pinned?: boolean;
 };
 
 export function RepoCard({
@@ -23,6 +25,7 @@ export function RepoCard({
   openIssues,
   isPrivate,
   pushedAt,
+  pinned = false,
 }: RepoCardProps) {
   return (
     <Link href={`/repositories/${fullName}`} className="group">
@@ -30,10 +33,13 @@ export function RepoCard({
         <CardContent className="flex h-full flex-col gap-3 p-4">
           <div className="flex items-start justify-between gap-2">
             <p className="truncate text-sm font-semibold">{fullName}</p>
-            <Badge variant="outline" className="gap-1 text-xs">
-              {isPrivate ? <Lock className="size-3" /> : <Globe className="size-3" />}
-              {isPrivate ? "Private" : "Public"}
-            </Badge>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="gap-1 text-xs">
+                {isPrivate ? <Lock className="size-3" /> : <Globe className="size-3" />}
+                {isPrivate ? "Private" : "Public"}
+              </Badge>
+              <PinButton fullName={fullName} pinned={pinned} />
+            </div>
           </div>
           <p className="line-clamp-2 min-h-[2.5rem] text-xs text-muted-foreground">
             {description ?? ""}

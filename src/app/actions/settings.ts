@@ -10,7 +10,6 @@ import { userPreferences, account, user } from "@/lib/db/schema";
 import { invalidate } from "@/lib/github/cache";
 
 const themeSchema = z.enum(["light", "dark", "system"]);
-const defaultViewSchema = z.enum(["dashboard", "repositories", "stars"]);
 
 async function requireUserId() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -26,16 +25,6 @@ export async function updateThemeAction(theme: string) {
     .set({ theme: parsed, updatedAt: new Date() })
     .where(eq(userPreferences.userId, userId));
   revalidatePath("/", "layout");
-}
-
-export async function updateDefaultViewAction(view: string) {
-  const userId = await requireUserId();
-  const parsed = defaultViewSchema.parse(view);
-  await db
-    .update(userPreferences)
-    .set({ defaultView: parsed, updatedAt: new Date() })
-    .where(eq(userPreferences.userId, userId));
-  revalidatePath("/settings");
 }
 
 export async function pinRepoAction(fullName: string) {

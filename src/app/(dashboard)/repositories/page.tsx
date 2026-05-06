@@ -72,6 +72,8 @@ async function List({
   } catch {
     // ignore — show empty state
   }
+  const prefs = await getUserPreferences(userId);
+  const pinnedSet = new Set(prefs.pinnedRepos);
 
   // Local filtering for fields GitHub list endpoint doesn't natively filter on
   const q = sp.q?.toLowerCase().trim();
@@ -104,6 +106,7 @@ async function List({
             openIssues={r.open_issues_count}
             isPrivate={r.private}
             pushedAt={r.pushed_at}
+            pinned={pinnedSet.has(r.full_name)}
           />
         ))}
       </div>
