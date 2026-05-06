@@ -12,10 +12,10 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
-# Build a self-contained, npm-style node_modules with the migrator deps so we
-# don't fight pnpm's symlinks at runtime.
+# Self-contained npm tree with the migrator deps and the migrate script in
+# the same folder so Node's standard ESM resolution finds them.
 FROM base AS migrator
-WORKDIR /app
+WORKDIR /app/migrator
 RUN npm init -y >/dev/null \
   && npm install --silent --no-audit --no-fund --no-package-lock \
        drizzle-orm@0.45.2 pg@8.20.0
@@ -26,20 +26,17 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-# Next standalone server (its own minimal node_modules included)
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# Merge migrator deps into the standalone node_modules. The standalone bundle
-# already has its own node_modules dir; we only add packages it doesn't ship
-# (drizzle-orm and pg are not bundled when not directly imported from a route).
-COPY --from=migrator --chown=nextjs:nodejs /app/node_modules /app/migrator_modules
-RUN cp -R /app/migrator_modules/. /app/node_modules/ \
-  && rm -rf /app/migrator_modules \
-  && chown -R nextjs:nodejs /app/node_modules
+# Migrator lives in its own folder with its own node_modules. The entrypoint
+# runs node from inside /app/migrator so ESM resolution picks up drizzle-orm
+# and pg from the sibling node_modules.
+COPY --from=migrator --chown=nextjs:nodejs /app/migrator /app/migrator
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.mjs /app/migrator/migrate.mjs
 
 USER nextjs
 EXPOSE 3000
