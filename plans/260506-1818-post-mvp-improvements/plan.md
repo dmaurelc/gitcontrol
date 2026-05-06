@@ -1,0 +1,28 @@
+---
+status: pending
+created: 2026-05-06
+project: maureldev-post-mvp
+---
+
+# Post-MVP Improvements — Plan
+
+Iteraciones tras shipping MVP a `https://dev.webkode.cl`. Cubre: filtros visibilidad de repos/orgs, UI redesign, mejoras Stars, hardening prod (cleanup debug + monitoring), y features nuevos.
+
+## Phases
+
+| # | Phase | Status | File |
+|---|-------|--------|------|
+| 1 | Visibility filters (orgs + repos) | pending | [phase-01-visibility-filters.md](phase-01-visibility-filters.md) |
+| 2 | Stars filters & sort | pending | [phase-02-stars-filters.md](phase-02-stars-filters.md) |
+| 3 | Cleanup prod (remove debug routes) | pending | [phase-03-cleanup-prod.md](phase-03-cleanup-prod.md) |
+| 4 | UI/UX redesign (sidebar, cards, tipografía) | pending | [phase-04-ui-redesign.md](phase-04-ui-redesign.md) |
+| 5 | Issue/PR comments + create issue | pending | [phase-05-issue-comments.md](phase-05-issue-comments.md) |
+| 6 | GitHub Actions runs viewer | pending | [phase-06-actions-runs.md](phase-06-actions-runs.md) |
+
+## Out of scope (futuras fases)
+- GitHub App migration (rate limit 15k/h + repo selection nativa)
+- Notifications inbox
+- Search global (cmd+k)
+
+## Build order
+Phases 1-3 quick wins. Phase 4 redesign agrupado (más alcance, mejor con `/ui-ux-pro-max` skill). Phases 5-6 features nuevas, paralelizables tras phase 4.
