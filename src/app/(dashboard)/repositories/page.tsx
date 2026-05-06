@@ -4,11 +4,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
+import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
+import { PinnedRepos } from "./_components/pinned-repos";
 
 type SearchParams = {
   q?: string;
@@ -26,6 +28,7 @@ export default async function RepositoriesPage({
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
   const sp = await searchParams;
+  const prefs = await getUserPreferences(session.user.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,6 +41,9 @@ export default async function RepositoriesPage({
         </div>
         <NewRepoDialog />
       </div>
+      {prefs.pinnedRepos.length > 0 ? (
+        <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
+      ) : null}
       <RepoFilters />
       <Suspense fallback={<ListSkeleton />}>
         <List userId={session.user.id} sp={sp} />
