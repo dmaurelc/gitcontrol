@@ -11,6 +11,7 @@ if (!url) {
 const pool = new pg.Pool({ connectionString: url, max: 1 });
 const db = drizzle(pool);
 console.log("[migrate] running migrations...");
-await migrate(db, { migrationsFolder: "./drizzle" });
+const migrationsFolder = process.env.MIGRATIONS_FOLDER ?? "./drizzle";
+await migrate(db, { migrationsFolder });
 console.log("[migrate] done");
 await pool.end();
