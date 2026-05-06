@@ -1,5 +1,5 @@
 "use client";
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ const OPTIONS = [
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [pending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   function pick(value: (typeof OPTIONS)[number]["value"]) {
     setTheme(value);
@@ -28,9 +30,9 @@ export function ThemeToggle() {
         <Button
           key={value}
           size="sm"
-          variant={theme === value ? "default" : "outline"}
+          variant={mounted && theme === value ? "default" : "outline"}
           onClick={() => pick(value)}
-          disabled={pending}
+          disabled={pending || !mounted}
         >
           <Icon className="size-4" />
           {label}
