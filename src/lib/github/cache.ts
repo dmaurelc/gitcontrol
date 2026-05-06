@@ -92,11 +92,12 @@ export async function cachedFetch<T>(opts: {
 
 /**
  * Invalidate every cache entry for a user matching a resource prefix, e.g.
- * `gh:{userId}:repos:*`.
+ * `gh:{userId}:repos:*`. Pass `"*"` to wipe all resources for the user.
  */
 export async function invalidate(userId: string, resource: string) {
   const redis = getRedis();
-  const pattern = `gh:${userId}:${resource}:*`;
+  const pattern =
+    resource === "*" ? `gh:${userId}:*` : `gh:${userId}:${resource}:*`;
   const stream = redis.scanStream({ match: pattern, count: 100 });
   const pipeline = redis.pipeline();
   let deleted = 0;

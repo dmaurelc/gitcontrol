@@ -4,6 +4,7 @@ import {
   timestamp,
   boolean,
   integer,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 // Better Auth core tables. Field names follow Better Auth's drizzle adapter
@@ -88,5 +89,18 @@ export const verification = pgTable("verification", {
     .defaultNow(),
 });
 
-export const _tableCount = 4 satisfies number;
+export const userPreferences = pgTable("user_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  theme: text("theme").notNull().default("system"),
+  defaultView: text("default_view").notNull().default("dashboard"),
+  pinnedRepos: jsonb("pinned_repos").$type<string[]>().notNull().default([]),
+  filters: jsonb("filters").$type<Record<string, unknown>>().notNull().default({}),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const _tableCount = 5 satisfies number;
 export type _Integer = ReturnType<typeof integer>;
