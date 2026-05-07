@@ -5,7 +5,7 @@
 
 ## Overview
 - **Priority**: P1 (security/hygiene)
-- **Status**: pending
+- **Status**: done
 - Después de verificar prod live, eliminar rutas debug expuestas. Fix Next 16 middleware deprecation warning. Add basic logging.
 
 ## Key Insights
@@ -38,11 +38,11 @@
 5. PR feat/phase-03-cleanup-prod
 
 ## Todo List
-- [ ] Read Next 16 proxy docs (context7)
-- [ ] Migrate middleware → proxy
-- [ ] Remove debug routes
-- [ ] Build OK
-- [ ] PR + merge → autodeploy verifica prod
+- [x] Verified Next 16 proxy.ts docs (same matcher; rename file + function)
+- [x] Migrated middleware.ts → proxy.ts (function name `proxy`)
+- [x] Removed /api/debug/{tables,viewer}
+- [x] Build OK (Proxy registered, no deprecation warning)
+- [ ] PR + merge → autodeploy
 
 ## Success Criteria
 - Build sin warnings de middleware deprecation
