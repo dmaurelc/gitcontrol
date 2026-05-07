@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { githubService } from "@/lib/github/service";
 import type { ViewerEvent } from "@/lib/github/service";
@@ -72,14 +73,46 @@ function describeEvent(event: ViewerEvent): EventMeta {
   }
 }
 
+/** Derives the best internal route for an event, or null when none applies. */
+function eventHref(event: ViewerEvent): string | null {
+  const repo = event.repo?.name;
+  if (!repo) return null;
+  const payload = event.payload ?? {};
+  switch (event.type) {
+    case "PullRequestEvent":
+    case "PullRequestReviewEvent":
+    case "PullRequestReviewCommentEvent": {
+      const num = payload.pull_request?.number;
+      return num ? `/repositories/${repo}/pulls/${num}` : `/repositories/${repo}`;
+    }
+    case "IssuesEvent": {
+      const num = payload.issue?.number;
+      return num ? `/repositories/${repo}/issues/${num}` : `/repositories/${repo}`;
+    }
+    case "IssueCommentEvent": {
+      const num = payload.issue?.number;
+      // GitHub treats PR comments as issue comments; route to issues by default.
+      return num ? `/repositories/${repo}/issues/${num}` : `/repositories/${repo}`;
+    }
+    default:
+      return `/repositories/${repo}`;
+  }
+}
+
 type ActivityFeedProps = {
   userId: string;
+  limit?: number;
+  page?: number;
 };
 
-export async function ActivityFeed({ userId }: ActivityFeedProps) {
+export async function ActivityFeed({
+  userId,
+  limit = 10,
+  page = 1,
+}: ActivityFeedProps) {
   let events: ViewerEvent[] = [];
   try {
-    const res = await githubService.listViewerEvents(userId, 10);
+    const res = await githubService.listViewerEvents(userId, limit, page);
     events = res.data;
   } catch {
     // empty state on error
@@ -99,11 +132,9 @@ export async function ActivityFeed({ userId }: ActivityFeedProps) {
       {events.map((event) => {
         const { Icon, label } = describeEvent(event);
         const initials = (event.actor?.login ?? "?").slice(0, 2).toUpperCase();
-        return (
-          <li
-            key={event.id}
-            className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0 border-b last:border-none border-border/50"
-          >
+        const href = eventHref(event);
+        const content = (
+          <>
             <Avatar className="mt-0.5 size-6 shrink-0">
               {event.actor?.avatar_url ? (
                 <AvatarImage src={event.actor.avatar_url} alt={event.actor.login} />
@@ -119,6 +150,23 @@ export async function ActivityFeed({ userId }: ActivityFeedProps) {
                 {relativeTime(event.created_at)}
               </span>
             </div>
+          </>
+        );
+        return (
+          <li
+            key={event.id}
+            className="border-b border-border/50 first:border-t-0 last:border-none"
+          >
+            {href ? (
+              <Link
+                href={href}
+                className="flex items-start gap-2.5 py-2.5 transition-colors hover:bg-muted/40 -mx-2 px-2 rounded-md"
+              >
+                {content}
+              </Link>
+            ) : (
+              <div className="flex items-start gap-2.5 py-2.5">{content}</div>
+            )}
           </li>
         );
       })}
