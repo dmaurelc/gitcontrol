@@ -37,7 +37,15 @@ export default async function DashboardLayout({
   return (
     <div className="grid min-h-svh grid-cols-1 md:grid-cols-[256px_1fr]">
       <div className="hidden md:block md:sticky md:top-0 md:h-svh">
-        <AppSidebar className="h-full" />
+        <AppSidebar
+          className="h-full"
+          user={{
+            name: session.user.name,
+            email: session.user.email,
+            image: session.user.image ?? avatarUrl,
+            login: viewerLogin,
+          }}
+        />
       </div>
       <div className="flex min-w-0 flex-col">
         <Topbar

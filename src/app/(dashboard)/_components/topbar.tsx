@@ -1,4 +1,4 @@
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -8,10 +8,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/actions/auth";
 import { OrgSwitcher } from "./org-switcher";
 import { MobileSidebar } from "./mobile-sidebar";
+import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
 import type { ActiveContext } from "@/lib/context/active-context";
 
 type TopbarProps = {
@@ -29,7 +29,7 @@ export function Topbar({ user, orgs, activeContext }: TopbarProps) {
   const initials = (user.name || user.login).slice(0, 2).toUpperCase();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
-      <MobileSidebar />
+      <MobileSidebar user={user} />
       <div className="hidden md:block">
         <OrgSwitcher
           userLogin={user.login}
@@ -63,15 +63,9 @@ export function Topbar({ user, orgs, activeContext }: TopbarProps) {
             />
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden size-10 md:inline-flex"
-            aria-label="Notifications (coming soon)"
-            disabled
-          >
-            <Bell className="size-4" />
-          </Button>
+          <div className="hidden md:block">
+            <ThemeToggleIcon />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger
