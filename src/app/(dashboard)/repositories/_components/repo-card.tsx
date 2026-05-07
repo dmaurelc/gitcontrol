@@ -3,6 +3,7 @@ import { Star, GitFork, Lock, Globe, CircleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MagicCard } from "@/components/ui/magic-card";
 import { PinButton } from "./pin-button";
 import { getLanguageColor } from "@/lib/github/language-colors";
 
@@ -39,7 +40,14 @@ export function RepoCard({
       href={`/repositories/${fullName}`}
       className="group block focus-visible:outline-none"
     >
-      <Card className="h-full overflow-hidden p-0 shadow-card transition-all group-hover:-translate-y-0.5 group-hover:border-foreground/20 group-hover:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-ring">
+      <Card className="h-full overflow-hidden border-none bg-transparent p-0 shadow-card transition-all group-hover:-translate-y-0.5 group-hover:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-ring">
+      <MagicCard
+        gradientFrom="var(--color-chart-1)"
+        gradientTo="var(--color-chart-2)"
+        gradientColor="color-mix(in oklch, var(--color-chart-1) 18%, transparent)"
+        gradientSize={260}
+        className="h-full rounded-xl p-0"
+      >
         <CardContent className="flex h-full flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -109,6 +117,7 @@ export function RepoCard({
             </span>
           </div>
         </CardContent>
+      </MagicCard>
       </Card>
     </Link>
   );

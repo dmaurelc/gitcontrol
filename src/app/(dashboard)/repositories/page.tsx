@@ -1,22 +1,20 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { Suspense } from "react";
 import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
 import { filterVisible } from "@/lib/preferences/visibility-filter";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { PaginationNav } from "@/components/pagination-nav";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
 import { PinnedRepos } from "./_components/pinned-repos";
-import { PerPageSelect } from "@/components/per-page-select";
 import { clampPerPage } from "@/lib/pagination/per-page";
 
 type SearchParams = {
@@ -49,9 +47,6 @@ export default async function RepositoriesPage({
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
       <RepoFilters />
-      <div className="flex items-center justify-end">
-        <PerPageSelect basePath="/repositories" />
-      </div>
       <Suspense fallback={<ListSkeleton />}>
         <List userId={session.user.id} sp={sp} />
       </Suspense>
@@ -150,38 +145,8 @@ async function List({
           />
         ))}
       </div>
-      <Pagination page={page} hasNext={hasNext} sp={sp} />
+      <PaginationNav basePath="/repositories" page={page} hasNext={hasNext} />
     </>
-  );
-}
-
-function Pagination({
-  page,
-  hasNext,
-  sp,
-}: {
-  page: number;
-  hasNext: boolean;
-  sp: SearchParams;
-}) {
-  function pageHref(p: number) {
-    const next = new URLSearchParams();
-    Object.entries(sp).forEach(([k, v]) => {
-      if (v && k !== "page") next.set(k, String(v));
-    });
-    next.set("page", String(p));
-    return `/repositories?${next.toString()}`;
-  }
-  return (
-    <div className="flex items-center justify-end gap-2">
-      <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-        <Link href={pageHref(Math.max(1, page - 1))}>Previous</Link>
-      </Button>
-      <span className="text-sm text-muted-foreground">Page {page}</span>
-      <Button asChild variant="outline" size="sm" disabled={!hasNext}>
-        <Link href={pageHref(page + 1)}>Next</Link>
-      </Button>
-    </div>
   );
 }
 

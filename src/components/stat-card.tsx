@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { MagicCard } from "@/components/ui/magic-card";
 
 type StatCardProps = {
   title: string;
@@ -43,9 +44,16 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "relative gap-2 overflow-hidden p-5 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5",
+        "relative gap-0 overflow-hidden border-none bg-transparent p-0 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5",
         className,
       )}
+    >
+    <MagicCard
+      gradientFrom="var(--color-chart-1)"
+      gradientTo="var(--color-chart-2)"
+      gradientColor="color-mix(in oklch, var(--color-chart-1) 18%, transparent)"
+      gradientSize={220}
+      className="flex flex-col gap-2 rounded-xl p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -85,6 +93,7 @@ export function StatCard({
           className="mt-1 h-6 w-full rounded-sm bg-linear-to-r from-transparent via-muted to-transparent opacity-40"
         />
       )}
+    </MagicCard>
     </Card>
   );
 }

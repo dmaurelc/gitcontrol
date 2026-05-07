@@ -1,16 +1,15 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { Star } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { PaginationNav } from "@/components/pagination-nav";
+import { MagicCard } from "@/components/ui/magic-card";
 import { getLanguageColor } from "@/lib/github/language-colors";
 import { StarsFilters } from "./_components/stars-filters";
-import { PerPageSelect } from "@/components/per-page-select";
 import { clampPerPage } from "@/lib/pagination/per-page";
 
 type StarRow = {
@@ -143,22 +142,10 @@ export default async function StarsPage({
     ? filtered.length > page * perPage || !exhausted
     : all.length >= perPage;
 
-  function pageHref(p: number) {
-    const next = new URLSearchParams();
-    Object.entries(sp).forEach(([k, v]) => {
-      if (v && k !== "page") next.set(k, String(v));
-    });
-    next.set("page", String(p));
-    return `/stars?${next.toString()}`;
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Stars" description="Repositories you have starred." />
       <StarsFilters />
-      <div className="flex items-center justify-end">
-        <PerPageSelect basePath="/stars" />
-      </div>
       {slice.length === 0 ? (
         <EmptyState
           icon={Star}
@@ -170,7 +157,14 @@ export default async function StarsPage({
           {slice.map((s) => (
             <Card
               key={s.repo.id}
-              className="p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+              className="overflow-hidden border-none bg-transparent p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+            >
+            <MagicCard
+              gradientFrom="var(--color-chart-1)"
+              gradientTo="var(--color-chart-2)"
+              gradientColor="color-mix(in oklch, var(--color-chart-1) 18%, transparent)"
+              gradientSize={260}
+              className="rounded-xl p-0"
             >
               <CardContent className="flex h-full flex-col gap-3 p-5">
                 <a
@@ -207,24 +201,12 @@ export default async function StarsPage({
                   </span>
                 </div>
               </CardContent>
+            </MagicCard>
             </Card>
           ))}
         </div>
       )}
-      <div className="flex items-center justify-end gap-2">
-        <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-          <Link href={pageHref(Math.max(1, page - 1))}>Previous</Link>
-        </Button>
-        <span className="text-xs text-muted-foreground">Page {page}</span>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          disabled={!hasNext}
-        >
-          <Link href={pageHref(page + 1)}>Next</Link>
-        </Button>
-      </div>
+      <PaginationNav basePath="/stars" page={page} hasNext={hasNext} />
     </div>
   );
 }

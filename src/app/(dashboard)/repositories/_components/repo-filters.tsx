@@ -10,6 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  PER_PAGE_OPTIONS,
+  DEFAULT_PER_PAGE,
+  clampPerPage,
+} from "@/lib/pagination/per-page";
 
 const SORTS = [
   { value: "updated", label: "Recently updated" },
@@ -51,12 +56,27 @@ export function RepoFilters() {
     else next.delete(name);
     next.delete("page");
     startTransition(() => {
-      router.push(`/repositories?${next.toString()}`);
+      router.push(`/repositories?${next.toString()}`, { scroll: false });
     });
   }
 
+  function updatePerPage(value: string) {
+    const next = new URLSearchParams(params);
+    if (value === String(DEFAULT_PER_PAGE)) next.delete("perPage");
+    else next.set("perPage", value);
+    next.delete("page");
+    startTransition(() => {
+      router.push(`/repositories?${next.toString()}`, { scroll: false });
+    });
+  }
+
+  const currentPerPage = String(clampPerPage(params.get("perPage")));
+
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card/50 p-3 shadow-soft md:flex-row md:items-center">
+    <div
+      data-pending={pending ? "" : undefined}
+      className="flex flex-col gap-2 rounded-xl border bg-card/50 p-3 shadow-soft transition-opacity data-[pending]:opacity-60 md:flex-row md:items-center md:flex-wrap"
+    >
       <DebouncedSearch
         initial={params.get("q") ?? ""}
         onChange={(v) => update("q", v.trim())}
@@ -105,6 +125,22 @@ export function RepoFilters() {
           {SORTS.map((s) => (
             <SelectItem key={s.value} value={s.value}>
               {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={currentPerPage}
+        onValueChange={updatePerPage}
+        disabled={pending}
+      >
+        <SelectTrigger className="md:ml-auto md:w-[120px]">
+          <SelectValue placeholder="Per page" />
+        </SelectTrigger>
+        <SelectContent>
+          {PER_PAGE_OPTIONS.map((n) => (
+            <SelectItem key={n} value={String(n)}>
+              {n} / page
             </SelectItem>
           ))}
         </SelectContent>
