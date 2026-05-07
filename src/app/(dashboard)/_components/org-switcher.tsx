@@ -45,7 +45,7 @@ export function OrgSwitcher({ userLogin, orgs, activeLogin }: OrgSwitcherProps) 
           size="sm"
           aria-expanded={open}
           disabled={pending}
-          className="w-[220px] justify-between"
+          className="w-[180px] justify-between sm:w-[220px]"
         >
           <span className="flex items-center gap-2 truncate">
             {isUserActive ? (
