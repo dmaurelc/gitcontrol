@@ -270,6 +270,85 @@ export type GitHubNotification = {
   updated_at: string;
 };
 
+// ─── Tags / Releases / Contributors ───────────────────────────────────────────
+
+export type RepoTag = {
+  name: string;
+  commit: { sha: string; url: string };
+  zipball_url: string;
+  tarball_url: string;
+};
+
+export type RepoRelease = {
+  id: number;
+  name: string | null;
+  tag_name: string;
+  draft: boolean;
+  prerelease: boolean;
+  published_at: string | null;
+  created_at: string;
+  html_url: string;
+  body: string | null;
+};
+
+export type RepoContributor = {
+  id: number;
+  login: string;
+  avatar_url: string;
+  html_url: string;
+  contributions: number;
+};
+
+// ─── Repo contents ────────────────────────────────────────────────────────────
+
+export type RepoDirEntry = {
+  type: "file" | "dir" | "submodule" | "symlink";
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  html_url: string | null;
+  download_url: string | null;
+};
+
+export type RepoFileContent = {
+  type: "file";
+  name: string;
+  path: string;
+  size: number;
+  encoding: string;
+  content: string;
+  sha: string;
+  html_url: string | null;
+  download_url: string | null;
+};
+
+export type RepoContentResult =
+  | { kind: "dir"; entries: RepoDirEntry[] }
+  | { kind: "file"; file: RepoFileContent };
+
+// ─── Insights stats ───────────────────────────────────────────────────────────
+
+export type CommitActivityWeek = {
+  week: number; // unix epoch (seconds)
+  total: number;
+  days: number[]; // 7 entries Sun-Sat
+};
+
+export type CodeFrequencyWeek = [number, number, number]; // [week, additions, deletions]
+
+export type RepoTrafficViews = {
+  count: number;
+  uniques: number;
+  views: Array<{ timestamp: string; count: number; uniques: number }>;
+};
+
+export type RepoTraffic = {
+  views: RepoTrafficViews | null;
+  clones: RepoTrafficViews | null;
+  restricted: boolean;
+};
+
 // ─── Search (cross-repo issues/PRs) ───────────────────────────────────────────
 
 export type SearchIssueItem = {
@@ -416,6 +495,219 @@ export const githubService = {
               etag?: string;
             }
         >,
+    });
+  },
+
+  async listTags(userId: string, owner: string, repo: string, perPage = 6) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, per_page: perPage };
+    return cachedFetch<RepoTag[]>({
+      userId,
+      resource: "tags",
+      params,
+      ttlSeconds: TTL.tags,
+      fetcher: (etag) =>
+        etagFetch(rest.repos.listTags as unknown as AnyEndpoint, params, etag) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: RepoTag[]; etag?: string }
+        >,
+    });
+  },
+
+  async listReleases(userId: string, owner: string, repo: string, perPage = 6) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, per_page: perPage };
+    return cachedFetch<RepoRelease[]>({
+      userId,
+      resource: "releases",
+      params,
+      ttlSeconds: TTL.releases,
+      fetcher: (etag) =>
+        etagFetch(rest.repos.listReleases as unknown as AnyEndpoint, params, etag) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: RepoRelease[]; etag?: string }
+        >,
+    });
+  },
+
+  async listContributors(userId: string, owner: string, repo: string, perPage = 8) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, per_page: perPage };
+    return cachedFetch<RepoContributor[]>({
+      userId,
+      resource: "contributors",
+      params,
+      ttlSeconds: TTL.contributors,
+      fetcher: async (etag) => {
+        try {
+          const reqParams: Record<string, unknown> = { ...params };
+          if (etag) reqParams.headers = { "If-None-Match": etag };
+          const res = await rest.repos.listContributors(
+            reqParams as Parameters<typeof rest.repos.listContributors>[0],
+          );
+          return {
+            notModified: false as const,
+            body: res.data as unknown as RepoContributor[],
+            etag: res.headers.etag,
+          };
+        } catch (err) {
+          const e = err as { status?: number };
+          if (e.status === 304) return { notModified: true as const };
+          // 204 No Content (empty repo) → empty array
+          if (e.status === 204) {
+            return { notModified: false as const, body: [] };
+          }
+          throw mapGithubError(err);
+        }
+      },
+    });
+  },
+
+  /**
+   * Fetches a path inside a repo. If path is a directory, returns a dir listing.
+   * If path is a file, returns its decoded metadata + content (base64).
+   */
+  async getContent(
+    userId: string,
+    owner: string,
+    repo: string,
+    path = "",
+    ref?: string,
+  ): Promise<{ data: RepoContentResult }> {
+    const { rest } = await getGithubClients(userId);
+    const params: Record<string, unknown> = { owner, repo, path };
+    if (ref) params.ref = ref;
+    return cachedFetch<RepoContentResult>({
+      userId,
+      resource: "contents",
+      params,
+      ttlSeconds: TTL.contents,
+      fetcher: async (etag) => {
+        try {
+          const reqParams: Record<string, unknown> = { ...params };
+          if (etag) reqParams.headers = { "If-None-Match": etag };
+          const res = await rest.repos.getContent(
+            reqParams as Parameters<typeof rest.repos.getContent>[0],
+          );
+          if (Array.isArray(res.data)) {
+            return {
+              notModified: false as const,
+              body: { kind: "dir" as const, entries: res.data as unknown as RepoDirEntry[] },
+              etag: res.headers.etag,
+            };
+          }
+          return {
+            notModified: false as const,
+            body: { kind: "file" as const, file: res.data as unknown as RepoFileContent },
+            etag: res.headers.etag,
+          };
+        } catch (err) {
+          const e = err as { status?: number };
+          if (e.status === 304) return { notModified: true as const };
+          throw mapGithubError(err);
+        }
+      },
+    });
+  },
+
+  /**
+   * Returns weekly commit counts for the last 52 weeks. May return empty when
+   * GitHub is still computing (HTTP 202).
+   */
+  async getCommitActivity(
+    userId: string,
+    owner: string,
+    repo: string,
+  ): Promise<{ data: CommitActivityWeek[] | null }> {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo };
+    return cachedFetch<CommitActivityWeek[] | null>({
+      userId,
+      resource: "commit-activity",
+      params,
+      ttlSeconds: TTL.commitActivity,
+      fetcher: async () => {
+        try {
+          const res = await rest.repos.getCommitActivityStats(params);
+          // 202: GitHub is computing — return null sentinel
+          if (res.status === 202 || !res.data) {
+            return { notModified: false as const, body: null };
+          }
+          return {
+            notModified: false as const,
+            body: res.data as unknown as CommitActivityWeek[],
+          };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
+  },
+
+  async getCodeFrequency(
+    userId: string,
+    owner: string,
+    repo: string,
+  ): Promise<{ data: CodeFrequencyWeek[] | null }> {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo };
+    return cachedFetch<CodeFrequencyWeek[] | null>({
+      userId,
+      resource: "code-frequency",
+      params,
+      ttlSeconds: TTL.codeFrequency,
+      fetcher: async () => {
+        try {
+          const res = await rest.repos.getCodeFrequencyStats(params);
+          if (res.status === 202 || !res.data) {
+            return { notModified: false as const, body: null };
+          }
+          return {
+            notModified: false as const,
+            body: res.data as unknown as CodeFrequencyWeek[],
+          };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
+  },
+
+  /**
+   * Combines views + clones (14d). Requires push permission. On 403 returns
+   * `restricted: true` and null payloads, no throw.
+   */
+  async getRepoTraffic(
+    userId: string,
+    owner: string,
+    repo: string,
+  ): Promise<{ data: RepoTraffic }> {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo };
+    return cachedFetch<RepoTraffic>({
+      userId,
+      resource: "traffic",
+      params,
+      ttlSeconds: TTL.traffic,
+      fetcher: async () => {
+        const [viewsR, clonesR] = await Promise.allSettled([
+          rest.repos.getViews({ ...params, per: "day" }),
+          rest.repos.getClones({ ...params, per: "day" }),
+        ]);
+        const views =
+          viewsR.status === "fulfilled"
+            ? (viewsR.value.data as unknown as RepoTrafficViews)
+            : null;
+        const clones =
+          clonesR.status === "fulfilled"
+            ? (clonesR.value.data as unknown as RepoTrafficViews)
+            : null;
+        const restricted = views === null && clones === null;
+        return {
+          notModified: false as const,
+          body: { views, clones, restricted },
+        };
+      },
     });
   },
 
