@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { MagicCard } from "@/components/ui/magic-card";
@@ -13,6 +14,7 @@ type StatCardProps = {
   };
   accent?: "default" | "chart-1" | "chart-2" | "chart-3" | "chart-4" | "chart-5";
   className?: string;
+  href?: string;
 };
 
 const ACCENT_BG: Record<NonNullable<StatCardProps["accent"]>, string> = {
@@ -38,13 +40,15 @@ export function StatCard({
   trend,
   accent = "default",
   className,
+  href,
 }: StatCardProps) {
   const formatted =
     typeof value === "number" ? value.toLocaleString() : value;
-  return (
+  const card = (
     <Card
       className={cn(
         "relative gap-0 overflow-hidden border-none bg-transparent p-0 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5",
+        href && "cursor-pointer",
         className,
       )}
     >
@@ -96,4 +100,12 @@ export function StatCard({
     </MagicCard>
     </Card>
   );
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {card}
+      </Link>
+    );
+  }
+  return card;
 }
