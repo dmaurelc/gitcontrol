@@ -6,6 +6,9 @@ import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { getLanguageColor } from "@/lib/github/language-colors";
 import { StarsFilters } from "./_components/stars-filters";
 import { PerPageSelect } from "@/components/per-page-select";
 import { clampPerPage } from "@/lib/pagination/per-page";
@@ -150,26 +153,26 @@ export default async function StarsPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Stars</h1>
-        <p className="text-sm text-muted-foreground">
-          Repositories you have starred.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Stars" description="Repositories you have starred." />
       <StarsFilters />
       <div className="flex items-center justify-end">
         <PerPageSelect basePath="/stars" />
       </div>
       {slice.length === 0 ? (
-        <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
-          No stars match the current filters.
-        </div>
+        <EmptyState
+          icon={Star}
+          title="No stars match"
+          description="Adjust filters or star repos on GitHub to see them here."
+        />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {slice.map((s) => (
-            <Card key={s.repo.id}>
-              <CardContent className="flex h-full flex-col gap-2 p-4">
+            <Card
+              key={s.repo.id}
+              className="p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+            >
+              <CardContent className="flex h-full flex-col gap-3 p-5">
                 <a
                   href={s.repo.html_url}
                   target="_blank"
@@ -178,16 +181,28 @@ export default async function StarsPage({
                 >
                   {s.repo.full_name}
                 </a>
-                <p className="line-clamp-2 min-h-[2.5rem] text-xs text-muted-foreground">
+                <p className="line-clamp-2 min-h-10 text-xs text-muted-foreground">
                   {s.repo.description ?? ""}
                 </p>
-                <div className="mt-auto flex items-center gap-3 text-xs text-muted-foreground">
-                  {s.repo.language ? <span>{s.repo.language}</span> : null}
+                <div className="mt-auto flex items-center gap-3 border-t pt-3 text-xs text-muted-foreground tabular-nums">
+                  {s.repo.language ? (
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="size-2.5 rounded-full ring-1 ring-border"
+                        style={{
+                          backgroundColor: getLanguageColor(s.repo.language),
+                        }}
+                      />
+                      <span className="text-foreground/80">
+                        {s.repo.language}
+                      </span>
+                    </span>
+                  ) : null}
                   <span className="flex items-center gap-1">
                     <Star className="size-3" />
                     {s.repo.stargazers_count}
                   </span>
-                  <span className="ml-auto">
+                  <span className="ml-auto text-[11px]">
                     Starred {new Date(s.starred_at).toLocaleDateString()}
                   </span>
                 </div>

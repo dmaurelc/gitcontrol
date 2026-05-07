@@ -2,12 +2,16 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
+import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
 import { filterVisible } from "@/lib/preferences/visibility-filter";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
@@ -36,15 +40,11 @@ export default async function RepositoriesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Repositories</h1>
-          <p className="text-sm text-muted-foreground">
-            Filter, sort and open repositories you own or collaborate on.
-          </p>
-        </div>
-        <NewRepoDialog />
-      </div>
+      <PageHeader
+        title="Repositories"
+        description="Filter, sort and open repositories you own or collaborate on."
+        action={<NewRepoDialog />}
+      />
       {prefs.pinnedRepos.length > 0 ? (
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
@@ -124,9 +124,11 @@ async function List({
 
   if (slice.length === 0) {
     return (
-      <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
-        No repositories match the current filters.
-      </div>
+      <EmptyState
+        icon={GitBranch}
+        title="No repositories match"
+        description="Try adjusting search, language or visibility filters."
+      />
     );
   }
 
@@ -187,7 +189,27 @@ function ListSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} className="h-36 rounded-xl" />
+        <Card key={i} className="p-0">
+          <CardContent className="flex flex-col gap-3 p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-7 rounded-md" />
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton className="h-3 w-20 rounded" />
+                  <Skeleton className="h-3.5 w-32 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+            <Skeleton className="h-3 w-full rounded" />
+            <Skeleton className="h-3 w-3/4 rounded" />
+            <div className="mt-auto flex items-center gap-3 border-t pt-3">
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-3 w-10 rounded" />
+              <Skeleton className="h-3 w-10 rounded" />
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

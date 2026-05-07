@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PageHeader } from "@/components/page-header";
 import { AccountTab } from "./_components/account-tab";
 import { VisibilityTab } from "./_components/visibility-tab";
 
@@ -20,12 +21,10 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Personal preferences for this dashboard.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Personal preferences for this dashboard."
+      />
       <Tabs defaultValue="appearance">
         <TabsList>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
