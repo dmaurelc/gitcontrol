@@ -20,18 +20,26 @@ export async function PinnedRepos({
   );
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <Pin className="size-4 text-muted-foreground" />
+        <div className="grid size-6 place-items-center rounded-md bg-chart-4/15 text-chart-4">
+          <Pin className="size-3" />
+        </div>
         <h2 className="text-sm font-semibold">Pinned</h2>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {pinned.length}
+        </span>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {settled.map((r, i) => {
           const fullName = pinned[i];
           if (r.status !== "fulfilled") {
             return (
-              <Card key={fullName} className="border-foreground/30">
-                <CardContent className="flex h-full flex-col gap-2 p-4">
+              <Card
+                key={fullName}
+                className="border-destructive/30 bg-destructive/5 p-0"
+              >
+                <CardContent className="flex h-full flex-col gap-2 p-5">
                   <div className="flex items-start justify-between gap-2">
                     <p className="truncate text-sm font-semibold">{fullName}</p>
                     <PinButton fullName={fullName} pinned />
