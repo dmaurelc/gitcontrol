@@ -12,6 +12,8 @@ import {
   GitPullRequest,
   CircleAlert,
   Activity,
+  UserCircle2,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SidebarUserCard } from "@/components/sidebar-user-card";
@@ -20,6 +22,7 @@ type NavItem = {
   href: string;
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
+  external?: boolean;
 };
 
 type NavSection = {
@@ -27,30 +30,42 @@ type NavSection = {
   items: NavItem[];
 };
 
-const SECTIONS: NavSection[] = [
-  {
-    label: "Workspace",
-    items: [
-      { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-      { href: "/repositories", label: "Repositories", Icon: GitBranch },
-      { href: "/pulls", label: "Pull requests", Icon: GitPullRequest },
-      { href: "/issues", label: "Issues", Icon: CircleAlert },
-      { href: "/activity", label: "Activity", Icon: Activity },
-      { href: "/stars", label: "Stars", Icon: Star },
-    ],
-  },
-  {
-    label: "GitHub",
-    items: [
-      { href: "/projects", label: "Projects", Icon: KanbanSquare },
-      { href: "/packages", label: "Packages", Icon: Package },
-    ],
-  },
-  {
-    label: "System",
-    items: [{ href: "/settings", label: "Settings", Icon: Settings }],
-  },
-];
+function buildSections(login: string | undefined): NavSection[] {
+  return [
+    {
+      label: "Workspace",
+      items: [
+        { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+        { href: "/repositories", label: "Repositories", Icon: GitBranch },
+        { href: "/pulls", label: "Pull requests", Icon: GitPullRequest },
+        { href: "/issues", label: "Issues", Icon: CircleAlert },
+        { href: "/activity", label: "Activity", Icon: Activity },
+        { href: "/stars", label: "Stars", Icon: Star },
+      ],
+    },
+    {
+      label: "GitHub",
+      items: [
+        { href: "/projects", label: "Projects", Icon: KanbanSquare },
+        { href: "/packages", label: "Packages", Icon: Package },
+        ...(login
+          ? [
+              {
+                href: `https://github.com/${encodeURIComponent(login)}`,
+                label: "My GitHub",
+                Icon: UserCircle2,
+                external: true,
+              } as NavItem,
+            ]
+          : []),
+      ],
+    },
+    {
+      label: "System",
+      items: [{ href: "/settings", label: "Settings", Icon: Settings }],
+    },
+  ];
+}
 
 type AppSidebarUser = {
   name: string;
@@ -67,6 +82,7 @@ type AppSidebarProps = {
 
 export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
   const pathname = usePathname();
+  const SECTIONS = buildSections(user?.login);
   return (
     <aside
       className={cn(
@@ -87,21 +103,45 @@ export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
               {section.label}
             </p>
             <div className="flex flex-col gap-0.5">
-              {section.items.map(({ href, label, Icon }) => {
+              {section.items.map(({ href, label, Icon, external }) => {
                 const active =
-                  pathname === href || pathname.startsWith(`${href}/`);
+                  !external &&
+                  (pathname === href || pathname.startsWith(`${href}/`));
+                const className = cn(
+                  "group relative flex min-h-11 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-all",
+                  active
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-soft"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                );
+                const iconCls = cn(
+                  "size-4 shrink-0 transition-colors",
+                  active
+                    ? "text-foreground"
+                    : "text-muted-foreground group-hover:text-foreground",
+                );
+                if (external) {
+                  return (
+                    <a
+                      key={href}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={onNavigate}
+                      className={className}
+                    >
+                      <Icon className={iconCls} />
+                      <span className="truncate flex-1">{label}</span>
+                      <ExternalLink className="size-3 shrink-0 text-muted-foreground/70" />
+                    </a>
+                  );
+                }
                 return (
                   <Link
                     key={href}
                     href={href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "group relative flex min-h-11 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-all",
-                      active
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-soft"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                    )}
+                    className={className}
                   >
                     {active ? (
                       <span
@@ -109,14 +149,7 @@ export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
                         className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary"
                       />
                     ) : null}
-                    <Icon
-                      className={cn(
-                        "size-4 shrink-0 transition-colors",
-                        active
-                          ? "text-foreground"
-                          : "text-muted-foreground group-hover:text-foreground",
-                      )}
-                    />
+                    <Icon className={iconCls} />
                     <span className="truncate">{label}</span>
                   </Link>
                 );

@@ -1,11 +1,16 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RepoAsideTags } from "./_components/repo-aside-tags";
+import { RepoAsideReleases } from "./_components/repo-aside-releases";
+import { RepoAsideContributors } from "./_components/repo-aside-contributors";
 
 export default async function RepoOverviewPage({
   params,
@@ -63,36 +68,64 @@ export default async function RepoOverviewPage({
           )}
         </CardContent>
       </Card>
-      <Card className="h-fit">
-        <CardHeader>
-          <CardTitle className="text-base">Languages</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {langTotal === 0 ? (
-            <p className="text-sm text-muted-foreground">No data.</p>
-          ) : (
-            langEntries.map(([name, bytes]) => {
-              const pct = (bytes / langTotal) * 100;
-              return (
-                <div key={name} className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span>{name}</span>
-                    <span className="text-muted-foreground">
-                      {pct.toFixed(1)}%
-                    </span>
+
+      <div className="flex flex-col gap-4">
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="text-base">Languages</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {langTotal === 0 ? (
+              <p className="text-sm text-muted-foreground">No data.</p>
+            ) : (
+              langEntries.map(([name, bytes]) => {
+                const pct = (bytes / langTotal) * 100;
+                return (
+                  <div key={name} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span>{name}</span>
+                      <span className="text-muted-foreground">
+                        {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full bg-foreground/70"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-foreground/70"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+
+        <Suspense fallback={<AsideSkeleton />}>
+          <RepoAsideReleases userId={session.user.id} owner={owner} repo={repo} />
+        </Suspense>
+        <Suspense fallback={<AsideSkeleton />}>
+          <RepoAsideTags userId={session.user.id} owner={owner} repo={repo} />
+        </Suspense>
+        <Suspense fallback={<AsideSkeleton />}>
+          <RepoAsideContributors userId={session.user.id} owner={owner} repo={repo} />
+        </Suspense>
+      </div>
     </div>
+  );
+}
+
+function AsideSkeleton() {
+  return (
+    <Card className="h-fit">
+      <CardHeader className="pb-3">
+        <Skeleton className="h-4 w-24 rounded" />
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-4 w-full rounded" />
+        ))}
+      </CardContent>
+    </Card>
   );
 }

@@ -191,17 +191,13 @@ async function RecentRepos({ userId }: { userId: string }) {
   }
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
-  repos = filterVisible(repos, prefs, pinnedSet)
-    .filter((r) => !pinnedSet.has(r.full_name))
-    .slice(0, 6);
+  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 6);
   return (
     <Card className="h-full shadow-card">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <div className="space-y-0.5">
           <CardTitle className="text-base">Recently updated</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Last pushed (excluding pinned)
-          </p>
+          <p className="text-xs text-muted-foreground">Last pushed</p>
         </div>
         <Link
           href="/repositories"

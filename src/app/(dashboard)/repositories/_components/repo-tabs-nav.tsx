@@ -14,9 +14,11 @@ export function RepoTabsNav({
   const base = `/repositories/${owner}/${repo}`;
   const tabs = [
     { href: base, label: "Overview" },
+    { href: `${base}/files`, label: "Files" },
     { href: `${base}/issues`, label: "Issues" },
     { href: `${base}/pulls`, label: "Pull requests" },
     { href: `${base}/actions`, label: "Actions" },
+    { href: `${base}/insights`, label: "Insights" },
   ];
   return (
     <div className="border-b">
