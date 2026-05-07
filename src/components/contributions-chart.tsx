@@ -1,5 +1,5 @@
 "use client";
-import { Bar, BarChart, XAxis, Tooltip } from "recharts";
+import { Area, AreaChart, XAxis, Tooltip } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
 import type { ContributionDay } from "@/lib/github/service";
@@ -7,7 +7,7 @@ import type { ContributionDay } from "@/lib/github/service";
 const chartConfig: ChartConfig = {
   count: {
     label: "Contributions",
-    color: "hsl(var(--chart-1))",
+    color: "var(--color-chart-1)",
   },
 };
 
@@ -38,10 +38,16 @@ export function ContributionsChart({ data }: ContributionsChartProps) {
   return (
     <ChartContainer
       config={chartConfig}
-      className="h-32 w-full"
-      initialDimension={{ width: 600, height: 128 }}
+      className="h-40 w-full"
+      initialDimension={{ width: 600, height: 160 }}
     >
-      <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="contrib-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-count)" stopOpacity={0.45} />
+            <stop offset="100%" stopColor="var(--color-count)" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
         <XAxis
           dataKey="date"
           tickLine={false}
@@ -57,15 +63,18 @@ export function ContributionsChart({ data }: ContributionsChartProps) {
               }
             />
           }
-          cursor={{ fill: "hsl(var(--muted)/0.4)" }}
+          cursor={{ stroke: "var(--color-muted-foreground)", strokeOpacity: 0.3 }}
         />
-        <Bar
+        <Area
+          type="monotone"
           dataKey="count"
-          fill="var(--color-count)"
-          radius={[2, 2, 0, 0]}
-          maxBarSize={14}
+          stroke="var(--color-count)"
+          strokeWidth={2}
+          fill="url(#contrib-fill)"
+          dot={false}
+          activeDot={{ r: 3 }}
         />
-      </BarChart>
+      </AreaChart>
     </ChartContainer>
   );
 }

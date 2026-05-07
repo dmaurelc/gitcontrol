@@ -79,7 +79,7 @@ type ActivityFeedProps = {
 export async function ActivityFeed({ userId }: ActivityFeedProps) {
   let events: ViewerEvent[] = [];
   try {
-    const res = await githubService.listViewerEvents(userId, 15);
+    const res = await githubService.listViewerEvents(userId, 10);
     events = res.data;
   } catch {
     // empty state on error

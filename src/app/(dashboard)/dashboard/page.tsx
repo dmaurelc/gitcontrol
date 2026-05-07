@@ -180,7 +180,7 @@ async function RecentRepos({ userId }: { userId: string }) {
   }
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
-  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 8);
+  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 10);
   return (
     <Card className="h-full shadow-card">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
