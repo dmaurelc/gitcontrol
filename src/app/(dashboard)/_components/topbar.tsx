@@ -40,7 +40,8 @@ export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps)
   }
   const initials = (user.name || user.login).slice(0, 2).toUpperCase();
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
+    <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 w-full max-w-9xl items-center gap-3 px-4 md:px-6">
       <MobileSidebar user={user} />
       <div className="hidden md:block">
         <OrgSwitcher
@@ -113,6 +114,7 @@ export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps)
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
       </div>
     </header>
   );

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
@@ -48,7 +49,10 @@ export default async function RepoOverviewPage({
         <CardContent>
           {readme ? (
             <article className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+              >
                 {readme}
               </ReactMarkdown>
             </article>
