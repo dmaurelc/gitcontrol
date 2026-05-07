@@ -1,0 +1,2 @@
+ALTER TABLE "user_preferences" ADD COLUMN "hidden_orgs" jsonb DEFAULT '[]'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_preferences" ADD COLUMN "hidden_repos" jsonb DEFAULT '[]'::jsonb NOT NULL;

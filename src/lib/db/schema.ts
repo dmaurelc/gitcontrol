@@ -96,6 +96,8 @@ export const userPreferences = pgTable("user_preferences", {
   theme: text("theme").notNull().default("system"),
   defaultView: text("default_view").notNull().default("dashboard"),
   pinnedRepos: jsonb("pinned_repos").$type<string[]>().notNull().default([]),
+  hiddenOrgs: jsonb("hidden_orgs").$type<string[]>().notNull().default([]),
+  hiddenRepos: jsonb("hidden_repos").$type<string[]>().notNull().default([]),
   filters: jsonb("filters").$type<Record<string, unknown>>().notNull().default({}),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

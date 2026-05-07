@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { auth } from "@/lib/auth/auth";
 import {
   Tabs,
@@ -8,8 +9,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountTab } from "./_components/account-tab";
+import { VisibilityTab } from "./_components/visibility-tab";
 
 export default async function SettingsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -26,6 +29,7 @@ export default async function SettingsPage() {
       <Tabs defaultValue="appearance">
         <TabsList>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="visibility">Visibility</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -38,6 +42,12 @@ export default async function SettingsPage() {
               <ThemeToggle />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="visibility" className="pt-4">
+          <Suspense fallback={<Skeleton className="h-64 rounded-xl" />}>
+            <VisibilityTab userId={session.user.id} />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="account" className="pt-4">

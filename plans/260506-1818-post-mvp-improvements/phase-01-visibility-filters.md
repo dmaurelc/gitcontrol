@@ -5,7 +5,7 @@
 
 ## Overview
 - **Priority**: P1
-- **Status**: pending
+- **Status**: done
 - User pidió poder ocultar orgs masivamente + ocultar repos puntuales. OAuth App da acceso a todo, este filtro es UX-only (no seguridad).
 
 ## Key Insights
@@ -66,14 +66,14 @@ Filter logic (lib/preferences/visibility-filter.ts):
 8. PR feat/phase-01-visibility -> develop
 
 ## Todo List
-- [ ] Migration generate + migrate (local + prod)
-- [ ] Schema + getUserPreferences updated
-- [ ] visibility-filter.ts + tests
-- [ ] Server actions
-- [ ] Settings tab UI
-- [ ] Filter cableado en /repositories + /dashboard
-- [ ] Pinned override verified
-- [ ] Build OK + PR
+- [x] Migration generate (drizzle/0002_mean_blockbuster.sql); prod auto-migrates on deploy
+- [x] Schema + getUserPreferences updated
+- [x] visibility-filter.ts (pure function)
+- [x] Server actions (hide/unhide org + repo) with Zod
+- [x] Settings tab UI (Visibility tab + Org list + Hidden repos manager)
+- [x] Filter wired in /repositories + /dashboard RecentRepos
+- [x] Pinned override implemented in isVisible()
+- [x] Build OK
 
 ## Success Criteria
 - Settings → Visibility tab funcional
