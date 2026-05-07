@@ -1,9 +1,10 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Lock } from "lucide-react";
+import { Lock, AlertTriangle } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
+import { GithubError } from "@/lib/github/errors";
 import {
   Card,
   CardContent,
@@ -15,6 +16,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CommitActivityChart } from "./_components/commit-activity-chart";
 import { CodeFrequencyChart } from "./_components/code-frequency-chart";
 import { TrafficChart } from "./_components/traffic-chart";
+
+type SectionError = "forbidden" | "not_found" | "error" | null;
+
+function classifyError(err: unknown): SectionError {
+  if (err instanceof GithubError) {
+    if (err.status === 403) return "forbidden";
+    if (err.status === 404) return "not_found";
+    return "error";
+  }
+  return "error";
+}
 
 export default async function RepoInsightsPage({
   params,
@@ -53,10 +65,13 @@ async function CommitActivitySection({
   repo: string;
 }) {
   let data: Awaited<ReturnType<typeof githubService.getCommitActivity>>["data"] = null;
+  let err: SectionError = null;
   try {
     const res = await githubService.getCommitActivity(userId, owner, repo);
     data = res.data;
-  } catch {}
+  } catch (e) {
+    err = classifyError(e);
+  }
 
   return (
     <Card className="shadow-card">
@@ -65,7 +80,9 @@ async function CommitActivitySection({
         <CardDescription>Weekly commits — last 52 weeks</CardDescription>
       </CardHeader>
       <CardContent>
-        {data === null ? (
+        {err ? (
+          <SectionErrorPlaceholder kind={err} />
+        ) : data === null ? (
           <ComputingPlaceholder />
         ) : (
           <CommitActivityChart data={data} />
@@ -85,10 +102,13 @@ async function CodeFrequencySection({
   repo: string;
 }) {
   let data: Awaited<ReturnType<typeof githubService.getCodeFrequency>>["data"] = null;
+  let err: SectionError = null;
   try {
     const res = await githubService.getCodeFrequency(userId, owner, repo);
     data = res.data;
-  } catch {}
+  } catch (e) {
+    err = classifyError(e);
+  }
 
   return (
     <Card className="shadow-card">
@@ -97,7 +117,9 @@ async function CodeFrequencySection({
         <CardDescription>Additions vs deletions per week</CardDescription>
       </CardHeader>
       <CardContent>
-        {data === null ? (
+        {err ? (
+          <SectionErrorPlaceholder kind={err} />
+        ) : data === null ? (
           <ComputingPlaceholder />
         ) : (
           <CodeFrequencyChart data={data} />
@@ -120,7 +142,10 @@ async function TrafficSection({
   try {
     const res = await githubService.getRepoTraffic(userId, owner, repo);
     traffic = res.data;
-  } catch {}
+  } catch {
+    // getRepoTraffic ya degrada a restricted via Promise.allSettled; otros
+    // errores los tratamos como restricted también para mantener UI estable.
+  }
 
   const totalViews = traffic?.views?.count ?? 0;
   const uniqueViewers = traffic?.views?.uniques ?? 0;
@@ -163,7 +188,7 @@ async function TrafficSection({
 function ComputingPlaceholder() {
   return (
     <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-      GitHub is computing stats — refresh in a moment.
+      GitHub está calculando las estadísticas. Recarga en unos segundos.
     </div>
   );
 }
@@ -172,9 +197,47 @@ function RestrictedPlaceholder() {
   return (
     <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
       <Lock className="size-5 text-muted-foreground" />
-      <p className="text-sm font-medium">Traffic stats are restricted</p>
+      <p className="text-sm font-medium">Estadísticas de tráfico restringidas</p>
       <p className="text-xs text-muted-foreground">
-        Requires push permission on this repository.
+        Requiere permiso de escritura (push) en este repositorio.
+      </p>
+    </div>
+  );
+}
+
+function SectionErrorPlaceholder({
+  kind,
+}: {
+  kind: "forbidden" | "not_found" | "error";
+}) {
+  if (kind === "forbidden") {
+    return (
+      <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
+        <Lock className="size-5 text-muted-foreground" />
+        <p className="text-sm font-medium">Sin permisos</p>
+        <p className="text-xs text-muted-foreground">
+          No tienes acceso a estas estadísticas en este repositorio.
+        </p>
+      </div>
+    );
+  }
+  if (kind === "not_found") {
+    return (
+      <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
+        <AlertTriangle className="size-5 text-muted-foreground" />
+        <p className="text-sm font-medium">Datos no disponibles</p>
+        <p className="text-xs text-muted-foreground">
+          GitHub no expone estas estadísticas para este repositorio.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
+      <AlertTriangle className="size-5 text-muted-foreground" />
+      <p className="text-sm font-medium">No se pudieron cargar los datos</p>
+      <p className="text-xs text-muted-foreground">
+        Intenta nuevamente en unos segundos.
       </p>
     </div>
   );

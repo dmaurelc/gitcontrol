@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
+import { runAction, type ActionResult } from "@/lib/actions/result";
 
 async function requireUserId() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -18,38 +19,49 @@ const bodySchema = z.string().min(1).max(65535);
 
 // ─── Comment ─────────────────────────────────────────────────────────────────
 
-export async function commentPullRequestAction(formData: FormData) {
-  const userId = await requireUserId();
-  const owner = ownerSchema.parse(formData.get("owner"));
-  const repo = repoSchema.parse(formData.get("repo"));
-  const number = numberSchema.parse(formData.get("number"));
-  const body = bodySchema.parse(formData.get("body"));
+export async function commentPullRequestAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const owner = ownerSchema.parse(formData.get("owner"));
+    const repo = repoSchema.parse(formData.get("repo"));
+    const number = numberSchema.parse(formData.get("number"));
+    const body = bodySchema.parse(formData.get("body"));
 
-  // PRs share the issues.createComment endpoint (issue-style comments).
-  await githubService.createIssueComment(userId, owner, repo, number, body);
-  revalidatePath(`/repositories/${owner}/${repo}/pulls/${number}`);
+    await githubService.createIssueComment(userId, owner, repo, number, body);
+    revalidatePath(`/repositories/${owner}/${repo}/pulls/${number}`);
+  });
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
-export async function closePullRequestAction(formData: FormData) {
-  const userId = await requireUserId();
-  const owner = ownerSchema.parse(formData.get("owner"));
-  const repo = repoSchema.parse(formData.get("repo"));
-  const number = numberSchema.parse(formData.get("number"));
+export async function closePullRequestAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const owner = ownerSchema.parse(formData.get("owner"));
+    const repo = repoSchema.parse(formData.get("repo"));
+    const number = numberSchema.parse(formData.get("number"));
 
-  await githubService.updatePullRequestState(userId, owner, repo, number, "closed");
-  revalidatePath(`/repositories/${owner}/${repo}/pulls/${number}`);
-  revalidatePath(`/repositories/${owner}/${repo}/pulls`);
+    await githubService.updatePullRequestState(userId, owner, repo, number, "closed");
+    revalidatePath(`/repositories/${owner}/${repo}/pulls/${number}`);
+    revalidatePath(`/repositories/${owner}/${repo}/pulls`);
+  });
 }
 
-export async function reopenPullRequestAction(formData: FormData) {
-  const userId = await requireUserId();
-  const owner = ownerSchema.parse(formData.get("owner"));
-  const repo = repoSchema.parse(formData.get("repo"));
-  const number = numberSchema.parse(formData.get("number"));
+export async function reopenPullRequestAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const owner = ownerSchema.parse(formData.get("owner"));
+    const repo = repoSchema.parse(formData.get("repo"));
+    const number = numberSchema.parse(formData.get("number"));
 
-  await githubService.updatePullRequestState(userId, owner, repo, number, "open");
-  revalidatePath(`/repositories/${owner}/${repo}/pulls/${number}`);
-  revalidatePath(`/repositories/${owner}/${repo}/pulls`);
+    await githubService.updatePullRequestState(userId, owner, repo, number, "open");
+    revalidatePath(`/repositories/${owner}/${repo}/pulls/${number}`);
+    revalidatePath(`/repositories/${owner}/${repo}/pulls`);
+  });
 }

@@ -2,6 +2,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,9 +93,9 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
     );
     const fd = new FormData();
     fd.set("threadId", n.id);
-    try {
-      await markNotificationReadAction(fd);
-    } catch {
+    const res = await markNotificationReadAction(fd);
+    if (!res.ok) {
+      toast.error(res.error);
       setNotifications((prev) =>
         prev.map((m) => (m.id === n.id ? { ...m, unread: true } : m)),
       );
@@ -112,9 +113,11 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
     e.stopPropagation();
     const previous = notifications;
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-    try {
-      await markAllNotificationsReadAction();
-    } catch {
+    const res = await markAllNotificationsReadAction();
+    if (res.ok) {
+      toast.success("Todas marcadas como leídas");
+    } else {
+      toast.error(res.error);
       setNotifications(previous);
     }
   }

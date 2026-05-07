@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MarkdownBody } from "@/components/markdown-body";
 import { CommentForm } from "@/components/comment-form";
+import { StateToggleButton } from "@/components/state-toggle-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -203,18 +204,15 @@ export default async function IssueDetailPage({
 
       {/* Close / Reopen */}
       <div className="flex justify-end">
-        <form action={isOpen ? closeIssueAction : reopenIssueAction}>
-          <input type="hidden" name="owner" value={owner} />
-          <input type="hidden" name="repo" value={repo} />
-          <input type="hidden" name="number" value={issueNumber} />
-          <Button
-            type="submit"
-            variant={isOpen ? "destructive" : "outline"}
-            size="sm"
-          >
-            {isOpen ? "Close issue" : "Reopen issue"}
-          </Button>
-        </form>
+        <StateToggleButton
+          action={isOpen ? closeIssueAction : reopenIssueAction}
+          owner={owner}
+          repo={repo}
+          number={issueNumber}
+          label={isOpen ? "Close issue" : "Reopen issue"}
+          successMessage={isOpen ? "Issue cerrado" : "Issue reabierto"}
+          variant={isOpen ? "destructive" : "outline"}
+        />
       </div>
     </div>
   );

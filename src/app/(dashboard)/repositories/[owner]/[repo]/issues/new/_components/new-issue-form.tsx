@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,8 +15,9 @@ type NewIssueFormProps = {
 };
 
 /**
- * Client form for creating a new issue with markdown preview.
- * Calls the server action directly via form submission.
+ * Client form for creating a new issue with markdown preview. The server
+ * action either redirects on success (NEXT_REDIRECT) or throws — we surface
+ * thrown errors as a toast.
  */
 export function NewIssueForm({ action, owner, repo }: NewIssueFormProps) {
   const [body, setBody] = useState("");
@@ -25,7 +27,18 @@ export function NewIssueForm({ action, owner, repo }: NewIssueFormProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
-      await action(formData);
+      try {
+        await action(formData);
+      } catch (err) {
+        const e = err as { digest?: string; message?: string };
+        // Re-throw NEXT_REDIRECT so navigation still happens.
+        if (typeof e?.digest === "string" && e.digest.startsWith("NEXT_")) {
+          throw err;
+        }
+        toast.error(
+          e?.message ?? "No se pudo crear el issue. Intenta nuevamente.",
+        );
+      }
     });
   }
 

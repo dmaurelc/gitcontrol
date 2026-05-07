@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Loader2, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -82,8 +83,23 @@ export function HiddenReposManager({
     setBusy(newBusy);
     startTransition(async () => {
       try {
-        if (isHidden) await unhideRepoAction(fullName);
-        else await hideRepoAction(fullName);
+        const res = isHidden
+          ? await unhideRepoAction(fullName)
+          : await hideRepoAction(fullName);
+        if (res.ok) {
+          toast.success(
+            isHidden ? "Repositorio visible" : "Repositorio oculto",
+          );
+        } else {
+          toast.error(res.error);
+          // revertir UI
+          setHidden((prev) => {
+            const n = new Set(prev);
+            if (isHidden) n.add(fullName);
+            else n.delete(fullName);
+            return n;
+          });
+        }
       } finally {
         setBusy((prev) => {
           const n = new Set(prev);
@@ -110,11 +126,23 @@ export function HiddenReposManager({
     setBusy(newBusy);
     startTransition(async () => {
       try {
-        await Promise.all(
+        const results = await Promise.all(
           targets.map((r) =>
             hide ? hideRepoAction(r.full_name) : unhideRepoAction(r.full_name),
           ),
         );
+        const failed = results.filter((r) => !r.ok);
+        if (failed.length === 0) {
+          toast.success(
+            hide
+              ? `Ocultados ${targets.length} repos`
+              : `Mostrando ${targets.length} repos`,
+          );
+        } else {
+          toast.error(
+            `${failed.length} de ${targets.length} fallaron al actualizar`,
+          );
+        }
       } finally {
         setBusy((prev) => {
           const n = new Set(prev);

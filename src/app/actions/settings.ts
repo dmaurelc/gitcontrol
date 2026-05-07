@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db/client";
 import { userPreferences, account, user } from "@/lib/db/schema";
 import { invalidate } from "@/lib/github/cache";
+import { runAction, type ActionResult } from "@/lib/actions/result";
 
 const themeSchema = z.enum(["light", "dark", "system"]);
 
@@ -17,44 +18,56 @@ async function requireUserId() {
   return session.user.id;
 }
 
-export async function updateThemeAction(theme: string) {
-  const userId = await requireUserId();
-  const parsed = themeSchema.parse(theme);
-  await db
-    .update(userPreferences)
-    .set({ theme: parsed, updatedAt: new Date() })
-    .where(eq(userPreferences.userId, userId));
-  revalidatePath("/", "layout");
+export async function updateThemeAction(
+  theme: string,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const parsed = themeSchema.parse(theme);
+    await db
+      .update(userPreferences)
+      .set({ theme: parsed, updatedAt: new Date() })
+      .where(eq(userPreferences.userId, userId));
+    revalidatePath("/", "layout");
+  });
 }
 
-export async function pinRepoAction(fullName: string) {
-  const userId = await requireUserId();
-  await db
-    .update(userPreferences)
-    .set({
-      pinnedRepos: sql`COALESCE(${userPreferences.pinnedRepos}, '[]'::jsonb) || ${JSON.stringify([fullName])}::jsonb`,
-      updatedAt: new Date(),
-    })
-    .where(eq(userPreferences.userId, userId));
-  revalidatePath("/settings");
-  revalidatePath("/repositories");
+export async function pinRepoAction(
+  fullName: string,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    await db
+      .update(userPreferences)
+      .set({
+        pinnedRepos: sql`COALESCE(${userPreferences.pinnedRepos}, '[]'::jsonb) || ${JSON.stringify([fullName])}::jsonb`,
+        updatedAt: new Date(),
+      })
+      .where(eq(userPreferences.userId, userId));
+    revalidatePath("/settings");
+    revalidatePath("/repositories");
+  });
 }
 
-export async function unpinRepoAction(fullName: string) {
-  const userId = await requireUserId();
-  await db
-    .update(userPreferences)
-    .set({
-      pinnedRepos: sql`(
-        SELECT COALESCE(jsonb_agg(value), '[]'::jsonb)
-        FROM jsonb_array_elements_text(COALESCE(${userPreferences.pinnedRepos}, '[]'::jsonb)) value
-        WHERE value <> ${fullName}
-      )`,
-      updatedAt: new Date(),
-    })
-    .where(eq(userPreferences.userId, userId));
-  revalidatePath("/settings");
-  revalidatePath("/repositories");
+export async function unpinRepoAction(
+  fullName: string,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    await db
+      .update(userPreferences)
+      .set({
+        pinnedRepos: sql`(
+          SELECT COALESCE(jsonb_agg(value), '[]'::jsonb)
+          FROM jsonb_array_elements_text(COALESCE(${userPreferences.pinnedRepos}, '[]'::jsonb)) value
+          WHERE value <> ${fullName}
+        )`,
+        updatedAt: new Date(),
+      })
+      .where(eq(userPreferences.userId, userId));
+    revalidatePath("/settings");
+    revalidatePath("/repositories");
+  });
 }
 
 export async function revokeAccessAction() {

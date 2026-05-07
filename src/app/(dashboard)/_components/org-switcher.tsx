@@ -42,10 +42,9 @@ export function OrgSwitcher({ userLogin, orgs, activeLogin }: OrgSwitcherProps) 
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
           aria-expanded={open}
           disabled={pending}
-          className="w-[180px] justify-between sm:w-[220px]"
+          className="h-9 w-[180px] justify-between sm:w-[220px]"
         >
           <span className="flex items-center gap-2 truncate">
             {isUserActive ? (

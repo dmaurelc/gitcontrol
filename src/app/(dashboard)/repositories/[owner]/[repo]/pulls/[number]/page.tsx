@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { MarkdownBody } from "@/components/markdown-body";
 import { CommentForm } from "@/components/comment-form";
+import { StateToggleButton } from "@/components/state-toggle-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -247,18 +248,17 @@ export default async function PullRequestDetailPage({
       {/* Close / Reopen (only for non-merged PRs) */}
       {canChangeState && (
         <div className="flex justify-end">
-          <form action={isOpen ? closePullRequestAction : reopenPullRequestAction}>
-            <input type="hidden" name="owner" value={owner} />
-            <input type="hidden" name="repo" value={repo} />
-            <input type="hidden" name="number" value={pullNumber} />
-            <Button
-              type="submit"
-              variant={isOpen ? "destructive" : "outline"}
-              size="sm"
-            >
-              {isOpen ? "Close pull request" : "Reopen pull request"}
-            </Button>
-          </form>
+          <StateToggleButton
+            action={isOpen ? closePullRequestAction : reopenPullRequestAction}
+            owner={owner}
+            repo={repo}
+            number={pullNumber}
+            label={isOpen ? "Close pull request" : "Reopen pull request"}
+            successMessage={
+              isOpen ? "Pull request cerrado" : "Pull request reabierto"
+            }
+            variant={isOpen ? "destructive" : "outline"}
+          />
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useTransition, useState } from "react";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,8 +35,23 @@ export function OrgVisibilityList({ orgs, initialHidden }: Props) {
     setHidden(next);
     startTransition(async () => {
       try {
-        if (currentlyHidden) await unhideOrgAction(login);
-        else await hideOrgAction(login);
+        const res = currentlyHidden
+          ? await unhideOrgAction(login)
+          : await hideOrgAction(login);
+        if (res.ok) {
+          toast.success(
+            currentlyHidden ? "Organización visible" : "Organización oculta",
+          );
+        } else {
+          toast.error(res.error);
+          // revertir UI
+          setHidden((prev) => {
+            const n = new Set(prev);
+            if (currentlyHidden) n.add(login);
+            else n.delete(login);
+            return n;
+          });
+        }
       } finally {
         setBusy(null);
       }
