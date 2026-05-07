@@ -35,9 +35,11 @@ export default async function DashboardLayout({
   const ctx = await getActiveContext(session.user.id, viewerLogin);
 
   return (
-    <div className="grid min-h-svh grid-cols-1 md:grid-cols-[240px_1fr]">
-      <AppSidebar />
-      <div className="flex flex-col">
+    <div className="grid min-h-svh grid-cols-1 md:grid-cols-[256px_1fr]">
+      <div className="hidden md:block md:sticky md:top-0 md:h-svh">
+        <AppSidebar className="h-full" />
+      </div>
+      <div className="flex min-w-0 flex-col">
         <Topbar
           user={{
             name: session.user.name,
@@ -48,7 +50,7 @@ export default async function DashboardLayout({
           orgs={orgs}
           activeContext={ctx}
         />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

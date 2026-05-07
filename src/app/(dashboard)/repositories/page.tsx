@@ -1,16 +1,21 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { Suspense } from "react";
+import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
-import { Button } from "@/components/ui/button";
+import { filterVisible } from "@/lib/preferences/visibility-filter";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { PaginationNav } from "@/components/pagination-nav";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
 import { PinnedRepos } from "./_components/pinned-repos";
+import { clampPerPage } from "@/lib/pagination/per-page";
 
 type SearchParams = {
   q?: string;
@@ -18,6 +23,7 @@ type SearchParams = {
   visibility?: "all" | "public" | "private";
   sort?: "created" | "updated" | "pushed" | "full_name";
   page?: string;
+  perPage?: string;
 };
 
 export default async function RepositoriesPage({
@@ -32,15 +38,11 @@ export default async function RepositoriesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Repositories</h1>
-          <p className="text-sm text-muted-foreground">
-            Filter, sort and open repositories you own or collaborate on.
-          </p>
-        </div>
-        <NewRepoDialog />
-      </div>
+      <PageHeader
+        title="Repositories"
+        description="Filter, sort and open repositories you own or collaborate on."
+        action={<NewRepoDialog />}
+      />
       {prefs.pinnedRepos.length > 0 ? (
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
@@ -52,6 +54,10 @@ export default async function RepositoriesPage({
   );
 }
 
+// Max raw pages to scan (each page = 100 GitHub items). Caps API cost.
+const MAX_FETCH_PAGES = 5;
+const FETCH_PAGE_SIZE = 100;
+
 async function List({
   userId,
   sp,
@@ -60,42 +66,71 @@ async function List({
   sp: SearchParams;
 }) {
   const page = Math.max(1, Number(sp.page ?? "1"));
-  let repos: Awaited<ReturnType<typeof githubService.listRepos>>["data"] = [];
-  try {
-    const res = await githubService.listRepos(userId, {
-      sort: sp.sort ?? "updated",
-      visibility: sp.visibility ?? "all",
-      perPage: 30,
-      page,
-    });
-    repos = res.data;
-  } catch {
-    // ignore — show empty state
-  }
+  const perPage = clampPerPage(sp.perPage);
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
 
-  // Local filtering for fields GitHub list endpoint doesn't natively filter on
   const q = sp.q?.toLowerCase().trim();
   const lang = sp.language?.trim();
-  const filtered = repos.filter((r) => {
+  const sort = sp.sort ?? "updated";
+  const visibility = sp.visibility ?? "all";
+
+  // Fetch GitHub pages until we have enough post-filter items for current page,
+  // or we exhaust raw pages.
+  const needed = page * perPage + 1;
+  const all: Awaited<ReturnType<typeof githubService.listRepos>>["data"] = [];
+  let exhausted = false;
+  for (let p = 1; p <= MAX_FETCH_PAGES; p++) {
+    let batch: typeof all = [];
+    try {
+      const res = await githubService.listRepos(userId, {
+        sort,
+        visibility,
+        perPage: FETCH_PAGE_SIZE,
+        page: p,
+      });
+      batch = res.data;
+    } catch {
+      exhausted = true;
+      break;
+    }
+    all.push(...batch);
+    if (batch.length < FETCH_PAGE_SIZE) {
+      exhausted = true;
+      break;
+    }
+    const visibleSoFar = filterVisible(all, prefs, pinnedSet).filter((r) => {
+      if (q && !r.full_name.toLowerCase().includes(q)) return false;
+      if (lang && r.language !== lang) return false;
+      return true;
+    });
+    if (visibleSoFar.length >= needed) break;
+  }
+
+  const filteredAll = filterVisible(all, prefs, pinnedSet).filter((r) => {
     if (q && !r.full_name.toLowerCase().includes(q)) return false;
     if (lang && r.language !== lang) return false;
     return true;
   });
 
-  if (filtered.length === 0) {
+  const start = (page - 1) * perPage;
+  const slice = filteredAll.slice(start, start + perPage);
+  const hasNext = filteredAll.length > start + perPage || !exhausted;
+
+  if (slice.length === 0) {
     return (
-      <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
-        No repositories match the current filters.
-      </div>
+      <EmptyState
+        icon={GitBranch}
+        title="No repositories match"
+        description="Try adjusting search, language or visibility filters."
+      />
     );
   }
 
   return (
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((r) => (
+        {slice.map((r) => (
           <RepoCard
             key={r.id}
             fullName={r.full_name}
@@ -110,38 +145,8 @@ async function List({
           />
         ))}
       </div>
-      <Pagination page={page} hasNext={repos.length === 30} sp={sp} />
+      <PaginationNav basePath="/repositories" page={page} hasNext={hasNext} />
     </>
-  );
-}
-
-function Pagination({
-  page,
-  hasNext,
-  sp,
-}: {
-  page: number;
-  hasNext: boolean;
-  sp: SearchParams;
-}) {
-  function pageHref(p: number) {
-    const next = new URLSearchParams();
-    Object.entries(sp).forEach(([k, v]) => {
-      if (v && k !== "page") next.set(k, String(v));
-    });
-    next.set("page", String(p));
-    return `/repositories?${next.toString()}`;
-  }
-  return (
-    <div className="flex items-center justify-end gap-2">
-      <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-        <Link href={pageHref(Math.max(1, page - 1))}>Previous</Link>
-      </Button>
-      <span className="text-sm text-muted-foreground">Page {page}</span>
-      <Button asChild variant="outline" size="sm" disabled={!hasNext}>
-        <Link href={pageHref(page + 1)}>Next</Link>
-      </Button>
-    </div>
   );
 }
 
@@ -149,7 +154,27 @@ function ListSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} className="h-36 rounded-xl" />
+        <Card key={i} className="p-0">
+          <CardContent className="flex flex-col gap-3 p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-7 rounded-md" />
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton className="h-3 w-20 rounded" />
+                  <Skeleton className="h-3.5 w-32 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+            <Skeleton className="h-3 w-full rounded" />
+            <Skeleton className="h-3 w-3/4 rounded" />
+            <div className="mt-auto flex items-center gap-3 border-t pt-3">
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-3 w-10 rounded" />
+              <Skeleton className="h-3 w-10 rounded" />
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

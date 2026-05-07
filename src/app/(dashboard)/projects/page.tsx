@@ -1,10 +1,12 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, KanbanSquare } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 export default async function ProjectsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -26,33 +28,46 @@ export default async function ProjectsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
-        <p className="text-sm text-muted-foreground">
-          GitHub Projects v2 from your account.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Projects"
+        description="GitHub Projects v2 from your account."
+      />
       {nodes.length === 0 ? (
-        <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
-          No projects to show. Make sure your token has the
-          <code className="mx-1 rounded bg-muted px-1 py-0.5">read:project</code>
-          scope.
-        </div>
+        <EmptyState
+          icon={KanbanSquare}
+          title="No projects to show"
+          description={
+            <>
+              Make sure your token has the{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                read:project
+              </code>{" "}
+              scope.
+            </>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {nodes.map((p) => (
-            <Card key={p.id}>
-              <CardContent className="flex h-full flex-col gap-2 p-4">
+            <Card
+              key={p.id}
+              className="p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+            >
+              <CardContent className="flex h-full flex-col gap-3 p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">#{p.number}</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      #{p.number}
+                    </p>
                   </div>
                   {p.closed ? (
                     <Badge variant="secondary">Closed</Badge>
                   ) : (
-                    <Badge variant="outline">Open</Badge>
+                    <Badge variant="outline" className="border-emerald-500/40 text-emerald-500">
+                      Open
+                    </Badge>
                   )}
                 </div>
                 <p className="line-clamp-3 min-h-12 text-xs text-muted-foreground">
@@ -62,7 +77,7 @@ export default async function ProjectsPage() {
                   href={p.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-auto flex items-center gap-1 text-xs text-foreground hover:underline"
+                  className="mt-auto inline-flex w-fit items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Open on GitHub <ExternalLink className="size-3" />
                 </a>

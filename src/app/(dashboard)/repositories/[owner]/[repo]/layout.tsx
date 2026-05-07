@@ -9,9 +9,12 @@ import {
   Globe,
   ExternalLink,
 } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmptyState } from "@/components/empty-state";
 import { RepoTabsNav } from "../../_components/repo-tabs-nav";
 
 export default async function RepoLayout({
@@ -47,29 +50,48 @@ export default async function RepoLayout({
     };
   } catch {
     return (
-      <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
-        Repository not found or access denied.
-      </div>
+      <EmptyState
+        icon={GitBranch}
+        title="Repository not found"
+        description="The repo doesn't exist or your token can't see it."
+      />
     );
   }
 
+  const avatarUrl = `https://github.com/${encodeURIComponent(owner)}.png?size=80`;
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link
             href="/repositories"
-            className="hover:text-foreground"
+            className="transition-colors hover:text-foreground"
           >
             Repositories
           </Link>
           <span>/</span>
-          <span className="text-foreground">{header.fullName}</span>
+          <span className="text-foreground">{owner}</span>
+          <span>/</span>
+          <span className="font-medium text-foreground">{repo}</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {header.fullName}
-          </h1>
+          <Avatar className="size-10 rounded-lg">
+            <AvatarImage src={avatarUrl} alt={owner} className="rounded-lg" />
+            <AvatarFallback className="rounded-lg text-xs">
+              {owner.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-semibold tracking-tight">
+              {header.fullName}
+            </h1>
+            {header.description ? (
+              <p className="line-clamp-2 text-sm text-muted-foreground">
+                {header.description}
+              </p>
+            ) : null}
+          </div>
           <Badge variant="outline" className="gap-1">
             {header.isPrivate ? (
               <Lock className="size-3" />
@@ -82,15 +104,12 @@ export default async function RepoLayout({
             href={header.htmlUrl}
             target="_blank"
             rel="noreferrer"
-            className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             View on GitHub <ExternalLink className="size-3" />
           </a>
         </div>
-        {header.description ? (
-          <p className="text-sm text-muted-foreground">{header.description}</p>
-        ) : null}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground tabular-nums">
           <span className="flex items-center gap-1">
             <Star className="size-3" />
             {header.stars}

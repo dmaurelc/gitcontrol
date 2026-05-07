@@ -8,6 +8,8 @@ export type UserPreferences = {
   theme: "light" | "dark" | "system";
   defaultView: "dashboard" | "repositories" | "stars";
   pinnedRepos: string[];
+  hiddenOrgs: string[];
+  hiddenRepos: string[];
   filters: Record<string, unknown>;
 };
 
@@ -15,6 +17,8 @@ const DEFAULTS: Omit<UserPreferences, "userId"> = {
   theme: "system",
   defaultView: "dashboard",
   pinnedRepos: [],
+  hiddenOrgs: [],
+  hiddenRepos: [],
   filters: {},
 };
 
@@ -38,6 +42,8 @@ export async function getUserPreferences(
         (rows[0].defaultView as UserPreferences["defaultView"]) ??
         DEFAULTS.defaultView,
       pinnedRepos: rows[0].pinnedRepos ?? [],
+      hiddenOrgs: rows[0].hiddenOrgs ?? [],
+      hiddenRepos: rows[0].hiddenRepos ?? [],
       filters: rows[0].filters ?? {},
     };
   }

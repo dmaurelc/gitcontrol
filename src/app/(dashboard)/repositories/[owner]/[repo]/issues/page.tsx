@@ -39,8 +39,15 @@ export default async function IssuesPage({
 
   return (
     <div className="flex flex-col gap-3">
-      <StateTabs owner={owner} repo={repo} active={state} />
-      <IssueList items={items} kind="issue" />
+      <div className="flex items-center justify-between gap-2">
+        <StateTabs owner={owner} repo={repo} active={state} />
+        <Button asChild size="sm">
+          <Link href={`/repositories/${owner}/${repo}/issues/new`}>
+            New issue
+          </Link>
+        </Button>
+      </div>
+      <IssueList items={items} kind="issue" owner={owner} repo={repo} />
       <Pagination
         owner={owner}
         repo={repo}
