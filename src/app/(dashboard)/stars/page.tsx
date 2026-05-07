@@ -6,6 +6,9 @@ import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { StarsFilters } from "./_components/stars-filters";
+import { PerPageSelect } from "@/components/per-page-select";
+import { clampPerPage } from "@/lib/pagination/per-page";
 
 type StarRow = {
   starred_at: string;
@@ -16,25 +19,134 @@ type StarRow = {
     language: string | null;
     stargazers_count: number;
     html_url: string;
+    pushed_at?: string;
   };
 };
+
+type SortKey =
+  | "created-desc"
+  | "created-asc"
+  | "updated-desc"
+  | "stars-desc";
+
+type SearchParams = {
+  page?: string;
+  perPage?: string;
+  q?: string;
+  language?: string;
+  sort?: SortKey;
+};
+
+function parseSort(s?: string): {
+  apiSort: "created" | "updated";
+  apiDirection: "asc" | "desc";
+  localSort: SortKey;
+} {
+  const v = (s as SortKey) ?? "created-desc";
+  switch (v) {
+    case "created-asc":
+      return { apiSort: "created", apiDirection: "asc", localSort: v };
+    case "updated-desc":
+      return { apiSort: "updated", apiDirection: "desc", localSort: v };
+    case "stars-desc":
+      return { apiSort: "created", apiDirection: "desc", localSort: v };
+    case "created-desc":
+    default:
+      return { apiSort: "created", apiDirection: "desc", localSort: v };
+  }
+}
+
+const MAX_FETCH_PAGES_STARS = 5;
+const FETCH_PAGE_SIZE_STARS = 100;
 
 export default async function StarsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page ?? "1"));
+  const perPage = clampPerPage(sp.perPage);
+  const { apiSort, apiDirection, localSort } = parseSort(sp.sort);
 
-  let items: StarRow[] = [];
-  try {
-    const res = await githubService.listStars(session.user.id, page);
-    items = res.data as unknown as StarRow[];
-  } catch {
-    items = [];
+  const q = sp.q?.toLowerCase().trim();
+  const lang = sp.language?.trim();
+  const hasLocalFilter = Boolean(q || lang);
+
+  const all: StarRow[] = [];
+  let exhausted = false;
+
+  if (hasLocalFilter) {
+    const needed = page * perPage + 1;
+    for (let p = 1; p <= MAX_FETCH_PAGES_STARS; p++) {
+      let batch: StarRow[] = [];
+      try {
+        const res = await githubService.listStars(session.user.id, {
+          page: p,
+          perPage: FETCH_PAGE_SIZE_STARS,
+          sort: apiSort,
+          direction: apiDirection,
+        });
+        batch = res.data as unknown as StarRow[];
+      } catch {
+        exhausted = true;
+        break;
+      }
+      all.push(...batch);
+      if (batch.length < FETCH_PAGE_SIZE_STARS) {
+        exhausted = true;
+        break;
+      }
+      const visibleSoFar = all.filter((s) => {
+        if (q && !s.repo.full_name.toLowerCase().includes(q)) return false;
+        if (lang && s.repo.language !== lang) return false;
+        return true;
+      });
+      if (visibleSoFar.length >= needed) break;
+    }
+  } else {
+    try {
+      const res = await githubService.listStars(session.user.id, {
+        page,
+        perPage,
+        sort: apiSort,
+        direction: apiDirection,
+      });
+      all.push(...(res.data as unknown as StarRow[]));
+    } catch {
+      // ignore
+    }
+  }
+
+  let filtered = all.filter((s) => {
+    if (q && !s.repo.full_name.toLowerCase().includes(q)) return false;
+    if (lang && s.repo.language !== lang) return false;
+    return true;
+  });
+  if (localSort === "stars-desc") {
+    filtered = [...filtered].sort(
+      (a, b) => b.repo.stargazers_count - a.repo.stargazers_count,
+    );
+  }
+
+  // When local-filtering, we accumulated multiple raw pages into `all` and
+  // need to slice locally. Otherwise we already fetched the right page.
+  const slice = hasLocalFilter
+    ? filtered.slice((page - 1) * perPage, (page - 1) * perPage + perPage)
+    : filtered;
+  const hasNext = hasLocalFilter
+    ? filtered.length > page * perPage || !exhausted
+    : all.length >= perPage;
+
+  function pageHref(p: number) {
+    const next = new URLSearchParams();
+    Object.entries(sp).forEach(([k, v]) => {
+      if (v && k !== "page") next.set(k, String(v));
+    });
+    next.set("page", String(p));
+    return `/stars?${next.toString()}`;
   }
 
   return (
@@ -45,13 +157,17 @@ export default async function StarsPage({
           Repositories you have starred.
         </p>
       </div>
-      {items.length === 0 ? (
+      <StarsFilters />
+      <div className="flex items-center justify-end">
+        <PerPageSelect basePath="/stars" />
+      </div>
+      {slice.length === 0 ? (
         <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
-          You have not starred any repositories yet.
+          No stars match the current filters.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((s) => (
+          {slice.map((s) => (
             <Card key={s.repo.id}>
               <CardContent className="flex h-full flex-col gap-2 p-4">
                 <a
@@ -82,16 +198,16 @@ export default async function StarsPage({
       )}
       <div className="flex items-center justify-end gap-2">
         <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-          <Link href={`/stars?page=${Math.max(1, page - 1)}`}>Previous</Link>
+          <Link href={pageHref(Math.max(1, page - 1))}>Previous</Link>
         </Button>
         <span className="text-xs text-muted-foreground">Page {page}</span>
         <Button
           asChild
           variant="outline"
           size="sm"
-          disabled={items.length < 30}
+          disabled={!hasNext}
         >
-          <Link href={`/stars?page=${page + 1}`}>Next</Link>
+          <Link href={pageHref(page + 1)}>Next</Link>
         </Button>
       </div>
     </div>
