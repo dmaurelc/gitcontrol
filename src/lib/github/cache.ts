@@ -14,6 +14,13 @@ export const TTL = {
   projects: 300,
   readme: 1800,
   languages: 3600,
+  tags: 600,
+  releases: 600,
+  contributors: 600,
+  contents: 300,
+  commitActivity: 3600,
+  codeFrequency: 3600,
+  traffic: 600,
 } as const;
 
 export type CacheKind = keyof typeof TTL;
