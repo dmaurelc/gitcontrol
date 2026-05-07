@@ -95,6 +95,66 @@ export type Repo = {
   default_branch: string;
 };
 
+export type IssueLabel = {
+  id: number;
+  name: string;
+  color: string;
+};
+
+export type Issue = {
+  id: number;
+  number: number;
+  title: string;
+  body: string | null;
+  state: "open" | "closed";
+  user: { login: string; avatar_url: string } | null;
+  labels: IssueLabel[];
+  comments: number;
+  created_at: string;
+  updated_at: string;
+  closed_at: string | null;
+  html_url: string;
+  pull_request?: unknown;
+};
+
+export type IssueComment = {
+  id: number;
+  body: string | null;
+  user: { login: string; avatar_url: string } | null;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+};
+
+export type CreateIssueInput = {
+  title: string;
+  body?: string;
+  labels?: string[];
+};
+
+export type PullRequest = {
+  id: number;
+  number: number;
+  title: string;
+  body: string | null;
+  state: "open" | "closed";
+  merged: boolean;
+  merged_at: string | null;
+  draft: boolean;
+  user: { login: string; avatar_url: string } | null;
+  labels: IssueLabel[];
+  comments: number;
+  created_at: string;
+  updated_at: string;
+  closed_at: string | null;
+  html_url: string;
+  head: { ref: string; sha: string };
+  base: { ref: string };
+  additions: number;
+  deletions: number;
+  changed_files: number;
+};
+
 export const githubService = {
   async getViewer(userId: string) {
     const { rest } = await getGithubClients(userId);
@@ -493,6 +553,205 @@ export const githubService = {
         license_template: input.licenseTemplate,
       });
       await invalidate(userId, "repos");
+      return res.data;
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  // ─── Issues ────────────────────────────────────────────────────────────────
+
+  async getIssue(
+    userId: string,
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, issue_number: issueNumber };
+    return cachedFetch<Issue>({
+      userId,
+      resource: "issue",
+      params,
+      ttlSeconds: TTL.issues,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.issues.get as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: Issue; etag?: string }
+        >,
+    });
+  },
+
+  async listIssueComments(
+    userId: string,
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    page = 1,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, issue_number: issueNumber, per_page: 50, page };
+    return cachedFetch<IssueComment[]>({
+      userId,
+      resource: "issue-comments",
+      params,
+      ttlSeconds: TTL.issues,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.issues.listComments as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: IssueComment[]; etag?: string }
+        >,
+    });
+  },
+
+  async createIssueComment(
+    userId: string,
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    body: string,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.issues.createComment({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        body,
+      });
+      await invalidate(userId, "issue-comments");
+      await invalidate(userId, "issue");
+      return res.data;
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  async updateIssueState(
+    userId: string,
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    state: "open" | "closed",
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.issues.update({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        state,
+      });
+      await invalidate(userId, "issue");
+      await invalidate(userId, "issues");
+      return res.data;
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  async createIssue(
+    userId: string,
+    owner: string,
+    repo: string,
+    input: CreateIssueInput,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.issues.create({
+        owner,
+        repo,
+        title: input.title,
+        body: input.body,
+        labels: input.labels,
+      });
+      await invalidate(userId, "issues");
+      return res.data as Issue;
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  // ─── Pull Requests ──────────────────────────────────────────────────────────
+
+  async getPullRequest(
+    userId: string,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, pull_number: pullNumber };
+    return cachedFetch<PullRequest>({
+      userId,
+      resource: "pr",
+      params,
+      ttlSeconds: TTL.prs,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.pulls.get as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: PullRequest; etag?: string }
+        >,
+    });
+  },
+
+  async listPullRequestComments(
+    userId: string,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    page = 1,
+  ) {
+    // Uses issues.listComments against the PR number (issue-style comments only;
+    // review comments are out of scope for this phase).
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, issue_number: pullNumber, per_page: 50, page };
+    return cachedFetch<IssueComment[]>({
+      userId,
+      resource: "pr-comments",
+      params,
+      ttlSeconds: TTL.prs,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.issues.listComments as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: IssueComment[]; etag?: string }
+        >,
+    });
+  },
+
+  async updatePullRequestState(
+    userId: string,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    state: "open" | "closed",
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.pulls.update({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        state,
+      });
+      await invalidate(userId, "pr");
+      await invalidate(userId, "prs");
       return res.data;
     } catch (err) {
       throw mapGithubError(err);

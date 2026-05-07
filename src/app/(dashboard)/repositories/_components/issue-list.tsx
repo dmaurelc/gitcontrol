@@ -1,4 +1,5 @@
-import { CircleDot, CircleCheck, GitPullRequest, GitMerge, Inbox, MessageSquare } from "lucide-react";
+import Link from "next/link";
+import { CircleDot, CircleCheck, GitPullRequest, GitMerge, Inbox, MessageSquare, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 
@@ -20,9 +21,14 @@ export type IssueLike = {
 export function IssueList({
   items,
   kind,
+  owner,
+  repo,
 }: {
   items: IssueLike[];
   kind: "issue" | "pr";
+  /** When provided, titles link to internal detail pages. */
+  owner?: string;
+  repo?: string;
 }) {
   if (items.length === 0) {
     return (
@@ -38,18 +44,25 @@ export function IssueList({
       {items.map((it) => {
         const open = it.state === "open";
         const merged = kind === "pr" && Boolean(it.merged_at);
-        const Icon = kind === "pr"
-          ? merged
-            ? GitMerge
-            : GitPullRequest
-          : open
-            ? CircleDot
-            : CircleCheck;
+        const Icon =
+          kind === "pr"
+            ? merged
+              ? GitMerge
+              : GitPullRequest
+            : open
+              ? CircleDot
+              : CircleCheck;
         const iconColor = merged
           ? "text-purple-500"
           : open
             ? "text-emerald-500"
             : "text-zinc-400";
+
+        const internalHref =
+          owner && repo
+            ? `/repositories/${owner}/${repo}/${kind === "pr" ? "pulls" : "issues"}/${it.number}`
+            : null;
+
         return (
           <li
             key={it.id}
@@ -57,14 +70,23 @@ export function IssueList({
           >
             <Icon className={`size-4 shrink-0 ${iconColor}`} />
             <div className="min-w-0 flex-1">
-              <a
-                href={it.html_url}
-                target="_blank"
-                rel="noreferrer"
-                className="truncate text-sm font-medium hover:underline"
-              >
-                {it.title}
-              </a>
+              {internalHref ? (
+                <Link
+                  href={internalHref}
+                  className="truncate text-sm font-medium hover:underline"
+                >
+                  {it.title}
+                </Link>
+              ) : (
+                <a
+                  href={it.html_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate text-sm font-medium hover:underline"
+                >
+                  {it.title}
+                </a>
+              )}
               <p className="text-xs text-muted-foreground">
                 #{it.number} opened on{" "}
                 {new Date(it.created_at).toLocaleDateString()}
@@ -80,6 +102,19 @@ export function IssueList({
               <MessageSquare className="size-3" />
               {it.comments}
             </span>
+            {/* External GitHub link alongside internal link */}
+            {internalHref && (
+              <a
+                href={it.html_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-foreground"
+                title="Open on GitHub"
+              >
+                <ExternalLink className="size-3.5" />
+                <span className="sr-only">Open on GitHub</span>
+              </a>
+            )}
           </li>
         );
       })}

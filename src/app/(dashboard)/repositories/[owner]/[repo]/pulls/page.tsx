@@ -39,7 +39,7 @@ export default async function PullsPage({
   return (
     <div className="flex flex-col gap-3">
       <StateTabs owner={owner} repo={repo} active={state} />
-      <IssueList items={items} kind="pr" />
+      <IssueList items={items} kind="pr" owner={owner} repo={repo} />
       <Pagination
         owner={owner}
         repo={repo}
