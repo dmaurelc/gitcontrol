@@ -7,7 +7,6 @@ import {
   GitPullRequest,
   CircleAlert,
   ArrowUpRight,
-  Activity,
 } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
@@ -25,6 +24,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
+import { ActivityFeed } from "@/components/activity-feed";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -48,7 +48,21 @@ export default async function DashboardPage() {
             <RecentRepos userId={session.user.id} />
           </Suspense>
         </div>
-        <ActivityCard />
+        <Card className="h-full shadow-card">
+          <CardHeader>
+            <div className="space-y-0.5">
+              <CardTitle className="text-base">Activity</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Recent GitHub events
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<ActivitySkeleton />}>
+              <ActivityFeed userId={session.user.id} />
+            </Suspense>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -225,26 +239,19 @@ async function RecentRepos({ userId }: { userId: string }) {
   );
 }
 
-function ActivityCard() {
+function ActivitySkeleton() {
   return (
-    <Card className="h-full shadow-card">
-      <CardHeader>
-        <div className="space-y-0.5">
-          <CardTitle className="text-base">Activity</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Coming soon — commits, releases, mentions
-          </p>
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-start gap-2.5">
+          <Skeleton className="mt-0.5 size-6 shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Skeleton className="h-3 w-3/4 rounded" />
+            <Skeleton className="h-3 w-1/2 rounded" />
+          </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <EmptyState
-          icon={Activity}
-          title="Activity feed in development"
-          description="Soon you'll see commits, releases and mentions here."
-          className="border-none bg-transparent py-4"
-        />
-      </CardContent>
-    </Card>
+      ))}
+    </div>
   );
 }
 
