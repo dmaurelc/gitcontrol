@@ -8,28 +8,18 @@ type Props = {
   text: string;
   duration?: number;
   className?: string;
-  /** Trigger animation only on first mount (default true). */
-  animateOnce?: boolean;
 };
 
 /**
  * HyperText: per-character scramble that resolves to the final string.
  * Pure JS + setInterval, no animation libs. Respects prefers-reduced-motion.
+ * Re-runs whenever `text` changes (so SPA navigations re-trigger).
  */
-export function HyperText({
-  text,
-  duration = 700,
-  className,
-  animateOnce = true,
-}: Props) {
+export function HyperText({ text, duration = 700, className }: Props) {
   // Render the real text on first paint to avoid SSR/client hydration drift.
-  // The scramble starts on mount via useEffect.
   const [display, setDisplay] = React.useState(text);
-  const ranRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (animateOnce && ranRef.current) return;
-    ranRef.current = true;
     const reduced = window.matchMedia?.(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -56,7 +46,7 @@ export function HyperText({
       }
     }, settleStep);
     return () => clearInterval(id);
-  }, [text, duration, animateOnce]);
+  }, [text, duration]);
 
   return (
     <span className={cn("inline-block tabular-nums", className)} aria-label={text}>
