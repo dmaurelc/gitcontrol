@@ -5,12 +5,15 @@ import { Suspense } from "react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
+import { filterVisible } from "@/lib/preferences/visibility-filter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
 import { PinnedRepos } from "./_components/pinned-repos";
+import { PerPageSelect } from "@/components/per-page-select";
+import { clampPerPage } from "@/lib/pagination/per-page";
 
 type SearchParams = {
   q?: string;
@@ -18,6 +21,7 @@ type SearchParams = {
   visibility?: "all" | "public" | "private";
   sort?: "created" | "updated" | "pushed" | "full_name";
   page?: string;
+  perPage?: string;
 };
 
 export default async function RepositoriesPage({
@@ -45,12 +49,19 @@ export default async function RepositoriesPage({
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
       <RepoFilters />
+      <div className="flex items-center justify-end">
+        <PerPageSelect basePath="/repositories" />
+      </div>
       <Suspense fallback={<ListSkeleton />}>
         <List userId={session.user.id} sp={sp} />
       </Suspense>
     </div>
   );
 }
+
+// Max raw pages to scan (each page = 100 GitHub items). Caps API cost.
+const MAX_FETCH_PAGES = 5;
+const FETCH_PAGE_SIZE = 100;
 
 async function List({
   userId,
@@ -60,31 +71,58 @@ async function List({
   sp: SearchParams;
 }) {
   const page = Math.max(1, Number(sp.page ?? "1"));
-  let repos: Awaited<ReturnType<typeof githubService.listRepos>>["data"] = [];
-  try {
-    const res = await githubService.listRepos(userId, {
-      sort: sp.sort ?? "updated",
-      visibility: sp.visibility ?? "all",
-      perPage: 30,
-      page,
-    });
-    repos = res.data;
-  } catch {
-    // ignore — show empty state
-  }
+  const perPage = clampPerPage(sp.perPage);
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
 
-  // Local filtering for fields GitHub list endpoint doesn't natively filter on
   const q = sp.q?.toLowerCase().trim();
   const lang = sp.language?.trim();
-  const filtered = repos.filter((r) => {
+  const sort = sp.sort ?? "updated";
+  const visibility = sp.visibility ?? "all";
+
+  // Fetch GitHub pages until we have enough post-filter items for current page,
+  // or we exhaust raw pages.
+  const needed = page * perPage + 1;
+  const all: Awaited<ReturnType<typeof githubService.listRepos>>["data"] = [];
+  let exhausted = false;
+  for (let p = 1; p <= MAX_FETCH_PAGES; p++) {
+    let batch: typeof all = [];
+    try {
+      const res = await githubService.listRepos(userId, {
+        sort,
+        visibility,
+        perPage: FETCH_PAGE_SIZE,
+        page: p,
+      });
+      batch = res.data;
+    } catch {
+      exhausted = true;
+      break;
+    }
+    all.push(...batch);
+    if (batch.length < FETCH_PAGE_SIZE) {
+      exhausted = true;
+      break;
+    }
+    const visibleSoFar = filterVisible(all, prefs, pinnedSet).filter((r) => {
+      if (q && !r.full_name.toLowerCase().includes(q)) return false;
+      if (lang && r.language !== lang) return false;
+      return true;
+    });
+    if (visibleSoFar.length >= needed) break;
+  }
+
+  const filteredAll = filterVisible(all, prefs, pinnedSet).filter((r) => {
     if (q && !r.full_name.toLowerCase().includes(q)) return false;
     if (lang && r.language !== lang) return false;
     return true;
   });
 
-  if (filtered.length === 0) {
+  const start = (page - 1) * perPage;
+  const slice = filteredAll.slice(start, start + perPage);
+  const hasNext = filteredAll.length > start + perPage || !exhausted;
+
+  if (slice.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-10 text-center text-sm text-muted-foreground">
         No repositories match the current filters.
@@ -95,7 +133,7 @@ async function List({
   return (
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((r) => (
+        {slice.map((r) => (
           <RepoCard
             key={r.id}
             fullName={r.full_name}
@@ -110,7 +148,7 @@ async function List({
           />
         ))}
       </div>
-      <Pagination page={page} hasNext={repos.length === 30} sp={sp} />
+      <Pagination page={page} hasNext={hasNext} sp={sp} />
     </>
   );
 }

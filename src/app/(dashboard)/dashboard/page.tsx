@@ -4,6 +4,8 @@ import { GitBranch, Star, GitPullRequest, CircleAlert } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { getActiveContext } from "@/lib/context/active-context";
+import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
+import { filterVisible } from "@/lib/preferences/visibility-filter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Suspense } from "react";
@@ -128,16 +130,20 @@ async function RecentRepos({ userId }: { userId: string }) {
     language: string | null;
     pushed_at: string;
     stargazers_count: number;
+    owner: { login: string };
   }> = [];
   try {
     const res = await githubService.listRepos(userId, {
       sort: "updated",
-      perPage: 8,
+      perPage: 30,
     });
     repos = res.data;
   } catch {
     // ignore
   }
+  const prefs = await getUserPreferences(userId);
+  const pinnedSet = new Set(prefs.pinnedRepos);
+  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 8);
   return (
     <Card>
       <CardHeader>
