@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
+import { runAction, type ActionResult } from "@/lib/actions/result";
 
 async function requireUserId() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -25,39 +26,51 @@ const createIssueSchema = z.object({
 
 // ─── Comment ─────────────────────────────────────────────────────────────────
 
-export async function commentIssueAction(formData: FormData) {
-  const userId = await requireUserId();
-  const owner = ownerSchema.parse(formData.get("owner"));
-  const repo = repoSchema.parse(formData.get("repo"));
-  const number = numberSchema.parse(formData.get("number"));
-  const body = bodySchema.parse(formData.get("body"));
+export async function commentIssueAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const owner = ownerSchema.parse(formData.get("owner"));
+    const repo = repoSchema.parse(formData.get("repo"));
+    const number = numberSchema.parse(formData.get("number"));
+    const body = bodySchema.parse(formData.get("body"));
 
-  await githubService.createIssueComment(userId, owner, repo, number, body);
-  revalidatePath(`/repositories/${owner}/${repo}/issues/${number}`);
+    await githubService.createIssueComment(userId, owner, repo, number, body);
+    revalidatePath(`/repositories/${owner}/${repo}/issues/${number}`);
+  });
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
-export async function closeIssueAction(formData: FormData) {
-  const userId = await requireUserId();
-  const owner = ownerSchema.parse(formData.get("owner"));
-  const repo = repoSchema.parse(formData.get("repo"));
-  const number = numberSchema.parse(formData.get("number"));
+export async function closeIssueAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const owner = ownerSchema.parse(formData.get("owner"));
+    const repo = repoSchema.parse(formData.get("repo"));
+    const number = numberSchema.parse(formData.get("number"));
 
-  await githubService.updateIssueState(userId, owner, repo, number, "closed");
-  revalidatePath(`/repositories/${owner}/${repo}/issues/${number}`);
-  revalidatePath(`/repositories/${owner}/${repo}/issues`);
+    await githubService.updateIssueState(userId, owner, repo, number, "closed");
+    revalidatePath(`/repositories/${owner}/${repo}/issues/${number}`);
+    revalidatePath(`/repositories/${owner}/${repo}/issues`);
+  });
 }
 
-export async function reopenIssueAction(formData: FormData) {
-  const userId = await requireUserId();
-  const owner = ownerSchema.parse(formData.get("owner"));
-  const repo = repoSchema.parse(formData.get("repo"));
-  const number = numberSchema.parse(formData.get("number"));
+export async function reopenIssueAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const userId = await requireUserId();
+    const owner = ownerSchema.parse(formData.get("owner"));
+    const repo = repoSchema.parse(formData.get("repo"));
+    const number = numberSchema.parse(formData.get("number"));
 
-  await githubService.updateIssueState(userId, owner, repo, number, "open");
-  revalidatePath(`/repositories/${owner}/${repo}/issues/${number}`);
-  revalidatePath(`/repositories/${owner}/${repo}/issues`);
+    await githubService.updateIssueState(userId, owner, repo, number, "open");
+    revalidatePath(`/repositories/${owner}/${repo}/issues/${number}`);
+    revalidatePath(`/repositories/${owner}/${repo}/issues`);
+  });
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -80,6 +93,9 @@ export async function createIssueAction(formData: FormData) {
         .filter(Boolean)
     : undefined;
 
+  // create-issue uses redirect on success which throws NEXT_REDIRECT;
+  // wrapping with runAction would still work but the form intentionally
+  // navigates away, so we keep the original throw-then-redirect contract.
   const issue = await githubService.createIssue(userId, owner, repo, {
     title: parsed.title,
     body: parsed.body,

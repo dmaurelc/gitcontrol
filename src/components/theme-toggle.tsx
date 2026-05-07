@@ -1,6 +1,7 @@
 "use client";
 import { useSyncExternalStore, useTransition } from "react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateThemeAction } from "@/app/actions/settings";
@@ -26,8 +27,9 @@ export function ThemeToggle() {
 
   function pick(value: (typeof OPTIONS)[number]["value"]) {
     setTheme(value);
-    startTransition(() => {
-      void updateThemeAction(value);
+    startTransition(async () => {
+      const res = await updateThemeAction(value);
+      if (!res.ok) toast.error(res.error);
     });
   }
 

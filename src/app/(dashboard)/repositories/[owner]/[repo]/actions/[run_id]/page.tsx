@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, GitBranch, GitCommit, RefreshCw } from "lucide-react";
+import { ExternalLink, GitBranch, GitCommit } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { PageHeader } from "@/components/page-header";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RunStatusIcon } from "../_components/run-status-icon";
 import { JobTree } from "./_components/job-tree";
-import { reRunWorkflowAction } from "@/app/actions/workflow-runs";
+import { RerunButton } from "../_components/rerun-button";
 import type { WorkflowJob, WorkflowRun } from "@/lib/github/service";
 
 function formatDuration(startIso: string, endIso: string): string {
@@ -120,22 +120,12 @@ export default async function RunDetailPage({
             className="min-w-0 flex-1"
           />
           <div className="flex shrink-0 items-center gap-2 mt-1">
-            {/* Re-run form */}
-            <form action={reRunWorkflowAction}>
-              <input type="hidden" name="owner" value={owner} />
-              <input type="hidden" name="repo" value={repo} />
-              <input type="hidden" name="run_id" value={run.id} />
-              <Button
-                type="submit"
-                variant="outline"
-                size="sm"
-                disabled={!canReRun}
-                className="gap-1.5"
-              >
-                <RefreshCw className="size-3.5" />
-                Re-run
-              </Button>
-            </form>
+            <RerunButton
+              owner={owner}
+              repo={repo}
+              runId={run.id}
+              disabled={!canReRun}
+            />
             <Button asChild variant="ghost" size="icon">
               <a href={run.html_url} target="_blank" rel="noreferrer">
                 <ExternalLink className="size-4" />

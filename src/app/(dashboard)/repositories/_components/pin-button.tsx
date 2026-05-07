@@ -1,5 +1,6 @@
 "use client";
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { pinRepoAction, unpinRepoAction } from "@/app/actions/settings";
@@ -15,8 +16,15 @@ export function PinButton({
   function toggle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    startTransition(() => {
-      void (pinned ? unpinRepoAction(fullName) : pinRepoAction(fullName));
+    startTransition(async () => {
+      const res = pinned
+        ? await unpinRepoAction(fullName)
+        : await pinRepoAction(fullName);
+      if (res.ok) {
+        toast.success(pinned ? "Repositorio desfijado" : "Repositorio fijado");
+      } else {
+        toast.error(res.error);
+      }
     });
   }
   return (

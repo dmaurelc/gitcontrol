@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Chakra_Petch, IBM_Plex_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster position="bottom-right" richColors closeButton theme="system" />
         </ThemeProvider>
       </body>
     </html>

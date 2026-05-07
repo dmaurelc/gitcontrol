@@ -12,9 +12,9 @@ import {
   GitPullRequest,
   CircleAlert,
   Activity,
-  UserCircle2,
   ExternalLink,
 } from "lucide-react";
+import { GithubIcon } from "@/components/icons/github-icon";
 import { cn } from "@/lib/utils";
 import { SidebarUserCard } from "@/components/sidebar-user-card";
 
@@ -52,8 +52,8 @@ function buildSections(login: string | undefined): NavSection[] {
           ? [
               {
                 href: `https://github.com/${encodeURIComponent(login)}`,
-                label: "My GitHub",
-                Icon: UserCircle2,
+                label: "GitHub",
+                Icon: GithubIcon,
                 external: true,
               } as NavItem,
             ]

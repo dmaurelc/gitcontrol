@@ -20,15 +20,17 @@ export type GithubClients = {
 export async function getGithubClients(userId: string): Promise<GithubClients> {
   const token = await getGithubToken(userId);
   if (!token) throw new UnauthorizedError("No GitHub token for user");
-  // Octokit logs 304 responses via console.error which surfaces as a red
-  // overlay in Next dev. We treat 304 as a cache hit, so silence info/warn
-  // and only forward true errors to console.error.
+  // Octokit logs non-2xx responses via console.error which surfaces as a red
+  // overlay in Next dev. We handle 304/403/404/422 as expected control-flow
+  // (cache hits, missing scopes, private repos) and silence them. Genuine
+  // unexpected statuses still bubble to console.error.
+  const SILENT_STATUS = /\b(?:304|403|404|422)\b/;
   const noopLog = {
     debug: () => {},
     info: () => {},
     warn: () => {},
     error: (msg: string, ...rest: unknown[]) => {
-      if (typeof msg === "string" && /\b304\b/.test(msg)) return;
+      if (typeof msg === "string" && SILENT_STATUS.test(msg)) return;
       console.error(msg, ...rest);
     },
   };

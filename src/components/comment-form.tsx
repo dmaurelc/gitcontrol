@@ -1,13 +1,15 @@
 "use client";
 import { useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MarkdownBody } from "@/components/markdown-body";
+import type { ActionResult } from "@/lib/actions/result";
 
 type CommentFormProps = {
-  /** Server action that accepts FormData with owner/repo/number/body. */
-  action: (formData: FormData) => Promise<void>;
+  /** Server action that accepts FormData and returns ActionResult. */
+  action: (formData: FormData) => Promise<ActionResult>;
   owner: string;
   repo: string;
   number: number;
@@ -27,9 +29,14 @@ export function CommentForm({ action, owner, repo, number }: CommentFormProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
-      await action(formData);
-      setBody("");
-      formRef.current?.reset();
+      const res = await action(formData);
+      if (res.ok) {
+        toast.success("Comentario publicado");
+        setBody("");
+        formRef.current?.reset();
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 
