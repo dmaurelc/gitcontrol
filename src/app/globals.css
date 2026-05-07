@@ -64,14 +64,14 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: oklch(0.72 0.16 215);
+  --chart-2: oklch(0.74 0.16 165);
+  --chart-3: oklch(0.78 0.17 90);
+  --chart-4: oklch(0.7 0.18 35);
+  --chart-5: oklch(0.66 0.18 145);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.72 0.16 215);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -126,5 +126,88 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ----- Magic UI inspired effects (CSS only, no extra deps) ----- */
+
+/* Border beam: rotating conic gradient outline that runs on hover.
+   Use with `relative` parent + `border-beam` class.
+   The beam is a single thin gradient stroke chasing the perimeter. */
+@property --beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes beam-spin {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
+.border-beam {
+  position: relative;
+  isolation: isolate;
+}
+.border-beam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg,
+    var(--color-chart-1) 40deg,
+    var(--color-chart-2) 70deg,
+    transparent 110deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.border-beam:hover::before,
+.border-beam:focus-visible::before {
+  opacity: 1;
+  animation: beam-spin 3s linear infinite;
+}
+
+/* Magic card glow: soft radial that follows hover position.
+   Set --glow-x, --glow-y from JS or use centered fallback. */
+.magic-card {
+  position: relative;
+  isolation: isolate;
+}
+.magic-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    400px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in oklch, var(--color-chart-1) 25%, transparent),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.magic-card:hover::after,
+.magic-card:focus-within::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .border-beam:hover::before,
+  .border-beam:focus-visible::before {
+    animation: none;
   }
 }
