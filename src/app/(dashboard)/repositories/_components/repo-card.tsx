@@ -42,9 +42,9 @@ export function RepoCard({
     >
       <Card className="h-full overflow-hidden border-none bg-transparent p-0 shadow-card transition-all group-hover:-translate-y-0.5 group-hover:shadow-card-hover group-focus-visible:ring-2 group-focus-visible:ring-ring">
       <MagicCard
-        gradientFrom="oklch(0.72 0.16 215)"
-        gradientTo="oklch(0.74 0.16 165)"
-        gradientColor="color-mix(in oklch, oklch(0.72 0.16 215) 18%, transparent)"
+        gradientFrom="var(--color-chart-1)"
+        gradientTo="var(--color-chart-2)"
+        gradientColor="color-mix(in oklch, var(--color-chart-1) 18%, transparent)"
         gradientSize={260}
         className="h-full rounded-xl p-0"
       >

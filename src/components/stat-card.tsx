@@ -49,9 +49,9 @@ export function StatCard({
       )}
     >
     <MagicCard
-      gradientFrom="oklch(0.72 0.16 215)"
-      gradientTo="oklch(0.74 0.16 165)"
-      gradientColor="color-mix(in oklch, oklch(0.72 0.16 215) 18%, transparent)"
+      gradientFrom="var(--color-chart-1)"
+      gradientTo="var(--color-chart-2)"
+      gradientColor="color-mix(in oklch, var(--color-chart-1) 18%, transparent)"
       gradientSize={220}
       className="flex flex-col gap-2 rounded-xl p-5"
     >
