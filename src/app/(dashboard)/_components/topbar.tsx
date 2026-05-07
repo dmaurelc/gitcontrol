@@ -12,7 +12,10 @@ import { signOutAction } from "@/app/actions/auth";
 import { OrgSwitcher } from "./org-switcher";
 import { MobileSidebar } from "./mobile-sidebar";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { githubService } from "@/lib/github/service";
 import type { ActiveContext } from "@/lib/context/active-context";
+import type { GitHubNotification } from "@/lib/github/service";
 
 type TopbarProps = {
   user: {
@@ -21,11 +24,20 @@ type TopbarProps = {
     image: string | null;
     login: string;
   };
+  userId: string;
   orgs: Array<{ login: string; avatar_url: string }>;
   activeContext: ActiveContext;
 };
 
-export function Topbar({ user, orgs, activeContext }: TopbarProps) {
+export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps) {
+  // Fetch notifications server-side; on error (missing scope etc.) render empty list.
+  let notifications: GitHubNotification[] = [];
+  try {
+    const res = await githubService.listNotifications(userId);
+    notifications = res.data;
+  } catch {
+    // empty list — bell still renders without badge
+  }
   const initials = (user.name || user.login).slice(0, 2).toUpperCase();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
@@ -63,7 +75,8 @@ export function Topbar({ user, orgs, activeContext }: TopbarProps) {
             />
           </div>
 
-          <div className="hidden md:block">
+          <div className="hidden md:flex md:items-center md:gap-1">
+            <NotificationsBell initialNotifications={notifications} />
             <ThemeToggleIcon />
           </div>
 

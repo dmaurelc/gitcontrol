@@ -55,6 +55,7 @@ export default async function DashboardLayout({
             image: session.user.image ?? avatarUrl,
             login: viewerLogin,
           }}
+          userId={session.user.id}
           orgs={orgs}
           activeContext={ctx}
         />
