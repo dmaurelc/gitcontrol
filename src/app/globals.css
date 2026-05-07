@@ -155,9 +155,9 @@
 .border-beam::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -1px;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 1px;
   background: conic-gradient(
     from var(--beam-angle),
     transparent 0deg,
@@ -175,6 +175,11 @@
   opacity: 0;
   transition: opacity 250ms ease;
   z-index: 1;
+}
+/* Hide the static border while the beam is active so they don't overlap. */
+.border-beam:hover,
+.group:hover .border-beam {
+  border-color: transparent;
 }
 .border-beam:hover::before,
 .border-beam:focus-visible::before,
@@ -197,9 +202,9 @@
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(
-    420px circle at var(--glow-x, 50%) var(--glow-y, 50%),
-    color-mix(in oklch, var(--color-chart-1) 22%, transparent),
-    transparent 55%
+    260px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in oklch, var(--color-chart-1) 10%, transparent),
+    transparent 65%
   );
   opacity: 0;
   transition: opacity 280ms ease;
