@@ -5,9 +5,13 @@
 ## Status Snapshot
 
 - **MVP (phases 1-7)**: ✅ shipped to `develop`. Commit `74358d0`.
-- **Post-MVP phase 1-2 + expansion (phases 1-7 from new wave)**: ✅ shipped. Commit `dc3b804` (PR #37).
+- **Post-MVP Wave 1 (visibility filters, stars filters, Actions runs viewer, debug cleanup)**: ✅ shipped.
+- **Post-MVP Wave 2 — Repo Detail Expansion**: ✅ shipped. Commit `dc3b804` (PR #37).
+- **Post-MVP Wave 3 — Dashboard & Activity**: ✅ shipped.
+- **Post-MVP Wave 4 — UI/UX Redesign + Comments**: ✅ shipped (PRs #23, #26).
+- **UX hardening (typed errors, toasts, empty states)**: ✅ `dfdf097`.
 - **Production deploy**: live at `https://dev.webkode.cl` (Dokploy).
-- **Active phase**: Additional post-MVP improvements — features (comments, more Actions enhancements) pending.
+- **Active phase**: backlog grooming — no phase actively in flight.
 
 ## Completed Milestones
 
@@ -30,9 +34,9 @@
 
 | # | Phase | Priority | Status | PR |
 |---|-------|----------|--------|-----|
-| 1 | Visibility filters (orgs + repos) | quick win | ✅ pending | TBD |
-| 2 | Stars filters & sort | quick win | ✅ pending | TBD |
-| 3 | Cleanup prod (remove `/api/debug/*`) | quick win, prod hygiene | ⏳ pending | TBD |
+| 1 | Visibility filters (orgs + repos) | quick win | ✅ | — |
+| 2 | Stars filters & sort | quick win | ✅ `f9a1bbc` | #22 |
+| 3 | Cleanup prod (remove `/api/debug/*`) | quick win, prod hygiene | ✅ | — |
 | 6 | GitHub Actions runs viewer | feature | ✅ `ced92cf` | #30 |
 
 ### Post-MVP Phase 2 — Repo Detail Expansion `plans/260507-1253-repo-detail-expansion/`
@@ -54,16 +58,20 @@
 | Sidebar enhancements | Workspace nav, "My GitHub" link | ✅ `d5361ec`, `bc23baf` |
 | Theme palette lock | Lime/zinc, radius 0, IBM Plex Mono | ✅ `6afc761` |
 
+## Completed Post-MVP (Wave 4) — UI/UX Redesign + Comments
+
+| # | Phase | Notes | Status | PR |
+|---|-------|-------|--------|-----|
+| 4 | Full UI/UX redesign (tokens, shell, dashboard, cards) | sidebar, cards, typography | ✅ `e1c3080` | #23 |
+| — | Pagination polish + dev accents + magic effects + new theme | follow-up polish | ✅ `c1e6afa` | #25 |
+| 5 | Issue/PR detail, comments, close/reopen, new issue | feature | ✅ `3d366ca` | #26 |
+| — | Dashboard polish (chart, activity, ⌘K, notifications, header/sidebar) | phase 07 | ✅ `39dcd2b` | #31 |
+| — | Typed error handling + toasts + contextual empty states | UX hardening | ✅ `dfdf097` | — |
+| — | Git workflow guide | docs | ✅ `687ea53` | #41 |
+
 ## In Progress
 
-### Post-MVP Phase 4 — UI/UX Redesign
-
-| # | Phase | Priority | Status |
-|---|-------|----------|--------|
-| 4 | Full UI/UX redesign (sidebar, cards, typography) | bigger scope | pending |
-| 5 | Issue/PR comments + create issue | feature | pending |
-
-**Build order**: Phase 4 (redesign) alone. Phase 5 (comments) after 4 stabilizes.
+_No active phase. Pick next item from backlog._
 
 ## Backlog (Not Yet Planned)
 
@@ -87,7 +95,7 @@
 | OAuth rate limit exhaustion (5k/h) | medium | high | ETag caching today; GitHub App migration long-term. |
 | Projects v2 GraphQL has no ETag | medium | low | Pure TTL cache (300s) — accept slight staleness. |
 | Redis outage = page crash | low | high | Health endpoint flips to 503; Dokploy can restart. HA out of scope. |
-| Token leak via `/api/debug/*` in prod | low | critical | Post-MVP phase 3 removes those routes before broader rollout. |
+| Token leak via `/api/debug/*` in prod | — | — | ✅ resolved — debug routes removed. |
 
 ## Cadence
 
