@@ -155,6 +155,84 @@ export type PullRequest = {
   changed_files: number;
 };
 
+// ─── Actions / Workflow Runs ─────────────────────────────────────────────────
+
+export type WorkflowRunStatus =
+  | "queued"
+  | "in_progress"
+  | "completed"
+  | "waiting"
+  | "requested"
+  | "pending";
+
+export type WorkflowRunConclusion =
+  | "success"
+  | "failure"
+  | "cancelled"
+  | "skipped"
+  | "neutral"
+  | "timed_out"
+  | "action_required"
+  | null;
+
+export type WorkflowRun = {
+  id: number;
+  name: string | null;
+  display_title: string;
+  run_number: number;
+  status: WorkflowRunStatus | null;
+  conclusion: WorkflowRunConclusion;
+  workflow_id: number;
+  head_branch: string | null;
+  head_sha: string;
+  head_commit: { message: string } | null;
+  actor: { login: string; avatar_url: string } | null;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+  path: string;
+};
+
+export type WorkflowJobStep = {
+  name: string;
+  status: "queued" | "in_progress" | "completed";
+  conclusion: string | null;
+  number: number;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
+export type WorkflowJob = {
+  id: number;
+  name: string;
+  status: "queued" | "in_progress" | "completed";
+  conclusion: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  steps: WorkflowJobStep[];
+  html_url: string | null;
+};
+
+export type Workflow = {
+  id: number;
+  name: string;
+  path: string;
+  state:
+    | "active"
+    | "deleted"
+    | "disabled_fork"
+    | "disabled_inactivity"
+    | "disabled_manually";
+};
+
+export type ListWorkflowRunsOpts = {
+  page?: number;
+  perPage?: number;
+  status?: WorkflowRunStatus | "all";
+  branch?: string;
+  workflowId?: number;
+};
+
 export const githubService = {
   async getViewer(userId: string) {
     const { rest } = await getGithubClients(userId);
@@ -753,6 +831,195 @@ export const githubService = {
       await invalidate(userId, "pr");
       await invalidate(userId, "prs");
       return res.data;
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  // ─── Actions / Workflow Runs ──────────────────────────────────────────────
+
+  /**
+   * List workflows for a repo. Used to populate workflow filter dropdown.
+   * GitHub returns { total_count, workflows } — we extract the array.
+   */
+  async listWorkflows(userId: string, owner: string, repo: string) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, per_page: 100 };
+    // GitHub returns { total_count, workflows } wrapped in data
+    const result = await cachedFetch<{ total_count: number; workflows: Workflow[] }>({
+      userId,
+      resource: "workflows",
+      params: { owner, repo },
+      ttlSeconds: 300,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.listRepoWorkflows as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | {
+              notModified: false;
+              body: { total_count: number; workflows: Workflow[] };
+              etag?: string;
+            }
+        >,
+    });
+    return result.data.workflows;
+  },
+
+  /**
+   * List workflow runs for a repo with optional filters.
+   * GitHub returns { total_count, workflow_runs } — we extract the array.
+   */
+  async listWorkflowRuns(
+    userId: string,
+    owner: string,
+    repo: string,
+    opts: ListWorkflowRunsOpts = {},
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const apiParams: Record<string, unknown> = {
+      owner,
+      repo,
+      per_page: opts.perPage ?? 30,
+      page: opts.page ?? 1,
+    };
+    if (opts.status && opts.status !== "all") apiParams.status = opts.status;
+    if (opts.branch) apiParams.branch = opts.branch;
+
+    const cacheParams = { owner, repo, ...apiParams };
+
+    if (opts.workflowId) {
+      // Use workflow-specific endpoint when filtering by workflow ID
+      apiParams.workflow_id = opts.workflowId;
+      const result = await cachedFetch<{
+        total_count: number;
+        workflow_runs: WorkflowRun[];
+      }>({
+        userId,
+        resource: "workflow-runs",
+        params: cacheParams,
+        ttlSeconds: 30,
+        fetcher: (etag) =>
+          etagFetch(
+            rest.actions.listWorkflowRuns as unknown as AnyEndpoint,
+            apiParams,
+            etag,
+          ) as Promise<
+            | { notModified: true }
+            | {
+                notModified: false;
+                body: { total_count: number; workflow_runs: WorkflowRun[] };
+                etag?: string;
+              }
+          >,
+      });
+      return result.data.workflow_runs;
+    }
+
+    const result = await cachedFetch<{
+      total_count: number;
+      workflow_runs: WorkflowRun[];
+    }>({
+      userId,
+      resource: "workflow-runs",
+      params: cacheParams,
+      ttlSeconds: 30,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.listWorkflowRunsForRepo as unknown as AnyEndpoint,
+          apiParams,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | {
+              notModified: false;
+              body: { total_count: number; workflow_runs: WorkflowRun[] };
+              etag?: string;
+            }
+        >,
+    });
+    return result.data.workflow_runs;
+  },
+
+  async getWorkflowRun(
+    userId: string,
+    owner: string,
+    repo: string,
+    runId: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, run_id: runId };
+    return cachedFetch<WorkflowRun>({
+      userId,
+      resource: "workflow-run",
+      params,
+      ttlSeconds: 60,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.getWorkflowRun as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: WorkflowRun; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * List jobs for a workflow run.
+   * GitHub returns { total_count, jobs } — we extract the array.
+   */
+  async listJobsForWorkflowRun(
+    userId: string,
+    owner: string,
+    repo: string,
+    runId: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, run_id: runId, per_page: 100 };
+    const result = await cachedFetch<{
+      total_count: number;
+      jobs: WorkflowJob[];
+    }>({
+      userId,
+      resource: "workflow-jobs",
+      params: { owner, repo, run_id: runId },
+      ttlSeconds: 30,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.listJobsForWorkflowRun as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | {
+              notModified: false;
+              body: { total_count: number; jobs: WorkflowJob[] };
+              etag?: string;
+            }
+        >,
+    });
+    return result.data.jobs;
+  },
+
+  /**
+   * Re-run a workflow run, then invalidate runs cache.
+   * Requires `workflow` scope — handled gracefully by mapGithubError.
+   */
+  async reRunWorkflow(
+    userId: string,
+    owner: string,
+    repo: string,
+    runId: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      await rest.actions.reRunWorkflow({ owner, repo, run_id: runId });
+      await invalidate(userId, "workflow-runs");
+      await invalidate(userId, "workflow-run");
     } catch (err) {
       throw mapGithubError(err);
     }
