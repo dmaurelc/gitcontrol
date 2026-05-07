@@ -22,23 +22,23 @@ export function HyperText({
   className,
   animateOnce = true,
 }: Props) {
-  const reducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  const [display, setDisplay] = React.useState(() =>
-    animateOnce && !reducedMotion ? scrambleAll(text) : text,
-  );
+  // Render the real text on first paint to avoid SSR/client hydration drift.
+  // The scramble starts on mount via useEffect.
+  const [display, setDisplay] = React.useState(text);
   const ranRef = React.useRef(false);
 
   React.useEffect(() => {
     if (animateOnce && ranRef.current) return;
     ranRef.current = true;
-    if (reducedMotion) return;
+    const reduced = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduced) return;
 
     const chars = text.split("");
     const total = chars.length;
     const settleStep = Math.max(1, Math.floor(duration / Math.max(total, 1)));
-    let frame = 0;
+    let frame = -1;
     const id = setInterval(() => {
       frame += 1;
       setDisplay(
@@ -56,7 +56,7 @@ export function HyperText({
       }
     }, settleStep);
     return () => clearInterval(id);
-  }, [text, duration, animateOnce, reducedMotion]);
+  }, [text, duration, animateOnce]);
 
   return (
     <span className={cn("inline-block tabular-nums", className)} aria-label={text}>
@@ -65,9 +65,3 @@ export function HyperText({
   );
 }
 
-function scrambleAll(text: string) {
-  return text
-    .split("")
-    .map((c) => (c === " " ? " " : ALPHABET[Math.floor(Math.random() * ALPHABET.length)]))
-    .join("");
-}
