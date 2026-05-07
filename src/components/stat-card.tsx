@@ -43,7 +43,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "relative gap-2 overflow-hidden p-5 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5",
+        "border-beam relative gap-2 overflow-hidden p-5 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5",
         className,
       )}
     >
