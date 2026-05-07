@@ -5,7 +5,7 @@
 
 ## Overview
 - **Priority**: P2
-- **Status**: pending
+- **Status**: done
 - User pidió filtros para ordenar starred por diferentes parámetros (lang, fecha starred, fecha update, stars del repo).
 
 ## Key Insights
@@ -47,10 +47,10 @@ githubService.listStars: añadir params { sort, direction }
 5. PR feat/phase-02-stars-filters
 
 ## Todo List
-- [ ] Service params
-- [ ] Filters component
-- [ ] Page integration
-- [ ] Build OK + PR
+- [x] listStars accepts {page, sort, direction}
+- [x] StarsFilters client component (search + lang + sort)
+- [x] /stars page parses searchParams + local filter/sort
+- [x] Build OK
 
 ## Success Criteria
 - Sort por starred_at / updated / stars-desc

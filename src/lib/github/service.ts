@@ -280,9 +280,22 @@ export const githubService = {
     });
   },
 
-  async listStars(userId: string, page = 1) {
+  async listStars(
+    userId: string,
+    opts: {
+      page?: number;
+      perPage?: number;
+      sort?: "created" | "updated";
+      direction?: "asc" | "desc";
+    } = {},
+  ) {
     const { rest } = await getGithubClients(userId);
-    const params = { per_page: 30, page };
+    const params = {
+      per_page: opts.perPage ?? 30,
+      page: opts.page ?? 1,
+      sort: opts.sort ?? "created",
+      direction: opts.direction ?? "desc",
+    };
     return cachedFetch<unknown[]>({
       userId,
       resource: "stars",
