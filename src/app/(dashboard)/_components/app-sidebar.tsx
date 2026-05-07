@@ -9,6 +9,9 @@ import {
   Package,
   Settings,
   Sparkles,
+  GitPullRequest,
+  CircleAlert,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SidebarUserCard } from "@/components/sidebar-user-card";
@@ -30,6 +33,9 @@ const SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
       { href: "/repositories", label: "Repositories", Icon: GitBranch },
+      { href: "/pulls", label: "Pull requests", Icon: GitPullRequest },
+      { href: "/issues", label: "Issues", Icon: CircleAlert },
+      { href: "/activity", label: "Activity", Icon: Activity },
       { href: "/stars", label: "Stars", Icon: Star },
     ],
   },
