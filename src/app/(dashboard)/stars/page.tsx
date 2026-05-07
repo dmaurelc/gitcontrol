@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
-import { GlowCard } from "@/components/magic-card";
+import { MagicCard } from "@/components/ui/magic-card";
 import { getLanguageColor } from "@/lib/github/language-colors";
 import { StarsFilters } from "./_components/stars-filters";
 import { clampPerPage } from "@/lib/pagination/per-page";
@@ -155,9 +155,16 @@ export default async function StarsPage({
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {slice.map((s) => (
-            <GlowCard key={s.repo.id} className="rounded-xl">
             <Card
-              className="border-beam magic-card p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+              key={s.repo.id}
+              className="overflow-hidden border-none bg-transparent p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+            >
+            <MagicCard
+              gradientFrom="oklch(0.72 0.16 215)"
+              gradientTo="oklch(0.74 0.16 165)"
+              gradientColor="color-mix(in oklch, oklch(0.72 0.16 215) 18%, transparent)"
+              gradientSize={260}
+              className="rounded-xl p-0"
             >
               <CardContent className="flex h-full flex-col gap-3 p-5">
                 <a
@@ -194,8 +201,8 @@ export default async function StarsPage({
                   </span>
                 </div>
               </CardContent>
+            </MagicCard>
             </Card>
-            </GlowCard>
           ))}
         </div>
       )}
