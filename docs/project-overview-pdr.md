@@ -16,18 +16,25 @@ GitHub's UI is broad and noisy. Personal dashboards (Linear-like) compress infor
 - Small teams self-hosting on a Dokploy-managed VPS.
 - Power users who want fewer clicks between "open dashboard" and "see what changed today".
 
-## 4. Functional Requirements (MVP — Phases 1-7, shipped to `develop`)
+## 4. Functional Requirements
+
+### MVP — Phases 1-7 (shipped to `develop`, commit `74358d0`)
 
 | Area | Capability |
 |------|------------|
 | Auth | GitHub OAuth via Better Auth. Encrypted access token (AES-256-GCM) per user. Account revocation deletes user + cascades sessions. |
 | Context | User can switch between personal account and any org they belong to. Active context persisted via httpOnly cookie. |
-| Overview | Dashboard with metrics (repos, stars, open PRs, open issues) for the active context, plus recently updated repos. |
-| Repositories | List with filters (search, language, visibility, sort), pagination. Pin/unpin to surface in a dedicated section. New-repo dialog (name, description, private, auto-init). Detail view with tabs (overview, issues, pulls). |
-| Stars | Paginated list of starred repos with `starred_at` timestamp. |
+| Dashboard | Metrics (repos, stars, open PRs, open issues) for the active context, plus recently updated repos. KPI links navigate to relevant sections. Chart/card reordering. |
+| Repositories | List with filters (search, language, visibility, sort), pagination. Pin/unpin to surface in a dedicated section. New-repo dialog (name, description, private, auto-init). |
+| Repo Detail | Tabs: overview, issues, pulls, files (browser + preview), insights (commit activity, code frequency, traffic). Aside: releases, tags, contributors. |
+| Issues/PRs | Per-repo views. Cross-repo aggregated views (all issues, all PRs across visible repos). |
+| Activity | Viewer events page with pagination. Full event history of activity. |
+| Notifications | Notification inbox with mark-all-read. CI fallback for testing. |
+| Stars | Paginated list of starred repos with `starred_at` timestamp. Filters + sort (post-MVP). |
 | Projects | GitHub Projects v2 listing via GraphQL (`viewer.projectsV2`). |
 | Packages | GitHub Packages by type (container/npm/maven/rubygems/nuget). Permission-error guidance when scope missing. |
-| Settings | Theme (light/dark/system), pinned repos management, GitHub access revocation. |
+| Actions | GitHub Actions runs viewer with filtering + pagination. |
+| Settings | Theme (light/dark/system, locked palette: lime/zinc, radius 0, IBM Plex Mono), pinned repos management, GitHub access revocation. |
 | Health | `/api/health` returns DB + Redis status (used by Dokploy probes). |
 
 ## 5. Non-Functional Requirements
@@ -53,13 +60,18 @@ GitHub's UI is broad and noisy. Personal dashboards (Linear-like) compress infor
 | Deploy | Docker (multi-stage) + Dokploy + standalone Next output | Self-hosted. |
 | Pkg mgr | pnpm 10 | Workspaces + lockfile. |
 
-## 7. Out of Scope (MVP)
+## 7. Out of Scope (Current)
 
-- Notifications inbox.
-- Global search (Cmd+K).
-- GitHub App migration (rate-limit 15k/h + repo selection UI). Deferred to post-MVP.
 - Issue/PR comment authoring (read-only currently). Tracked in post-MVP phase 5.
-- GitHub Actions runs viewer. Tracked in post-MVP phase 6.
+- Global search (Cmd+K) — not yet implemented.
+- GitHub App migration (rate-limit 15k/h + repo selection UI). Deferred to long-term backlog.
+- Telemetry/observability — structured logging + Prometheus metrics.
+- Multi-region deployment — assumes single-instance self-hosted VPS.
+
+**Previously marked out-of-scope, now shipped:**
+- Notifications inbox ✅ (phase 3)
+- GitHub Actions runs viewer ✅ (phase 1, PR #30)
+- Activity page ✅ (phase 3)
 
 ## 8. Success Metrics
 

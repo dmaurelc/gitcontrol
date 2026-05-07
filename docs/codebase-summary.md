@@ -1,6 +1,6 @@
 # Codebase Summary
 
-> Snapshot of the repository as of 2026-05-06 — branch `develop`, 5,065 LOC across 67 TS/TSX files in `src/`.
+> Snapshot of the repository as of 2026-05-07 — branch `develop`, 13,185 LOC across 122 TS/TSX files in `src/`.
 
 ## Top-Level Layout
 
@@ -110,14 +110,22 @@ Migration files live in `drizzle/` and are applied at container start by `script
 |------|------|-------|
 | `/` | RSC | Redirects to `/dashboard` (or `/login`). |
 | `/login` | RSC + client | OAuth start. |
-| `/dashboard` | RSC | Metrics + recent repos with two `<Suspense>` boundaries. |
-| `/repositories` | RSC | List + filters. `searchParams` is a Promise (Next 16). |
-| `/repositories/[owner]/[repo]` | RSC layout | Tabs nav. |
+| `/dashboard` | RSC | Metrics + recent repos with KPI links + dashboard tweaks. |
+| `/repositories` | RSC | List + filters. Hidden pinned repos from listing. |
+| `/repositories/[owner]/[repo]` | RSC layout | Tabs nav (overview, issues, pulls, files, insights). |
+| `/repositories/[owner]/[repo]/overview` | RSC | Repo detail with releases, tags, contributors sidebar. |
 | `/repositories/[owner]/[repo]/issues` | RSC | Repo issues. |
 | `/repositories/[owner]/[repo]/pulls` | RSC | Repo PRs. |
-| `/stars` | RSC | Paginated stars. |
-| `/projects` | RSC | Projects v2. |
-| `/packages` | RSC | Packages by type. |
+| `/repositories/[owner]/[repo]/files` | RSC | File browser + preview. |
+| `/repositories/[owner]/[repo]/insights` | RSC | Commit activity, code frequency, traffic. |
+| `/issues` | RSC | Cross-repo aggregated issues view. |
+| `/pulls` | RSC | Cross-repo aggregated PRs view. |
+| `/activity` | RSC | Viewer events page with pagination. |
+| `/stars` | RSC | Paginated starred repos with `starred_at`. |
+| `/projects` | RSC | Projects v2 (GraphQL). |
+| `/packages` | RSC | GitHub Packages by type. |
+| `/notifications` | RSC | Notification inbox with mark-all-read. |
+| `/actions` | RSC | GitHub Actions runs viewer (phase 06). |
 | `/settings` | RSC | Tabs: Appearance, Account. |
 | `/api/auth/[...all]` | API | Better Auth catch-all. |
 | `/api/health` | API | `force-dynamic`. DB + Redis status. |
@@ -127,3 +135,4 @@ Migration files live in `drizzle/` and are applied at container start by `script
 
 - `plans/260506-1300-github-dashboard/` — MVP (7 phases, all merged to `develop`).
 - `plans/260506-1818-post-mvp-improvements/` — visibility filters, stars filters, prod cleanup, UI redesign, comments, Actions runs.
+- `plans/260507-1253-repo-detail-expansion/` — Files tab, Insights tab, Releases/Tags/Contributors aside (merged).
