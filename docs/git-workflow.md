@@ -11,6 +11,8 @@ Branching model based on Git Flow. Default branch is `main`.
 | `feature/<slug>` | New feature work. Branched from `develop`. | Yes (the author's local branch) |
 | `fix/<slug>` | Bug fixes targeting the next release. Branched from `develop`. | Yes |
 | `hotfix/<slug>` | Urgent production fix. Branched from `main`, merged to both `main` and `develop`. | Yes |
+| `docs/<slug>` | Documentation-only changes. Branched from `develop`. | Yes |
+| `chore/<slug>` | Tooling, deps, build config. Branched from `develop`. | Yes |
 
 ## Flow
 
@@ -37,6 +39,8 @@ fix/z                       ────────●
 - `feature/repo-detail-expansion`
 - `fix/auth-token-expiry`
 - `hotfix/missing-env-var`
+- `docs/roadmap-update`
+- `chore/bump-deps`
 - Use kebab-case slugs. No issue numbers in branch name (link them in the PR).
 
 ## Commit messages
