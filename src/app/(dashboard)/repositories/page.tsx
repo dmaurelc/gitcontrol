@@ -100,6 +100,7 @@ async function List({
       break;
     }
     const visibleSoFar = filterVisible(all, prefs, pinnedSet).filter((r) => {
+      if (pinnedSet.has(r.full_name)) return false;
       if (q && !r.full_name.toLowerCase().includes(q)) return false;
       if (lang && r.language !== lang) return false;
       return true;
@@ -108,6 +109,7 @@ async function List({
   }
 
   const filteredAll = filterVisible(all, prefs, pinnedSet).filter((r) => {
+    if (pinnedSet.has(r.full_name)) return false;
     if (q && !r.full_name.toLowerCase().includes(q)) return false;
     if (lang && r.language !== lang) return false;
     return true;
