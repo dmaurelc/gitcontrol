@@ -131,6 +131,10 @@ Migration files live in `drizzle/` and are applied at container start by `script
 | `/api/health` | API | `force-dynamic`. DB + Redis status. |
 | `/api/debug/{tables,viewer}` | API | Dev-only inspectors (post-MVP phase 3 will remove from prod). |
 
+## Git Workflow
+
+See [`docs/git-workflow.md`](./git-workflow.md). Default branch `main`. Feature work branches off `develop`, merges back via PR. Releases promote `develop` → `main` via PR.
+
 ## Plans Index
 
 - `plans/260506-1300-github-dashboard/` — MVP (7 phases, all merged to `develop`).
