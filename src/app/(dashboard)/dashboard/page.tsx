@@ -25,6 +25,8 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { ActivityFeed } from "@/components/activity-feed";
+import { ContributionsChart } from "@/components/contributions-chart";
+import type { ContributionDay } from "@/lib/github/service";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -64,6 +66,10 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Suspense fallback={<ContributionsSkeleton />}>
+        <ContributionsSection userId={session.user.id} />
+      </Suspense>
     </div>
   );
 }
@@ -234,6 +240,51 @@ async function RecentRepos({ userId }: { userId: string }) {
             ))}
           </ul>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+async function ContributionsSection({ userId }: { userId: string }) {
+  let days: ContributionDay[] = [];
+  try {
+    const res = await githubService.getContributionsCalendar(userId);
+    days = res.data;
+  } catch {
+    // render empty state inside the chart
+  }
+
+  const total = days.reduce((sum, d) => sum + d.count, 0);
+
+  return (
+    <Card className="shadow-card">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="space-y-0.5">
+            <CardTitle className="text-base">Contributions</CardTitle>
+            <p className="text-xs text-muted-foreground">Last 28 days</p>
+          </div>
+          {total > 0 && (
+            <span className="text-sm font-semibold tabular-nums">{total}</span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pb-4">
+        <ContributionsChart data={days} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ContributionsSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-36 rounded" />
+        <Skeleton className="mt-1 h-3 w-24 rounded" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-32 w-full rounded" />
       </CardContent>
     </Card>
   );
