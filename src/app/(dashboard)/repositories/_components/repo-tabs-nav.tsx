@@ -16,6 +16,7 @@ export function RepoTabsNav({
     { href: base, label: "Overview" },
     { href: `${base}/issues`, label: "Issues" },
     { href: `${base}/pulls`, label: "Pull requests" },
+    { href: `${base}/actions`, label: "Actions" },
   ];
   return (
     <div className="border-b">
