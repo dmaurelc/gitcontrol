@@ -270,6 +270,38 @@ export type GitHubNotification = {
   updated_at: string;
 };
 
+// ─── Search (cross-repo issues/PRs) ───────────────────────────────────────────
+
+export type SearchIssueItem = {
+  id: number;
+  number: number;
+  title: string;
+  state: "open" | "closed";
+  html_url: string;
+  repository_url: string;
+  pull_request?: { url: string } | null;
+  user: { login: string; avatar_url: string } | null;
+  created_at: string;
+  updated_at: string;
+  comments: number;
+  draft?: boolean;
+};
+
+export type SearchIssuesResult = {
+  total_count: number;
+  incomplete_results: boolean;
+  items: SearchIssueItem[];
+};
+
+export type SearchIssuesOpts = {
+  type: "pr" | "issue";
+  state?: "open" | "closed";
+  scope?: "author" | "assignee" | "mentions";
+  org?: string;
+  page?: number;
+  perPage?: number;
+};
+
 // ─── Contributions ────────────────────────────────────────────────────────────
 
 export type ContributionDay = {
@@ -1076,7 +1108,11 @@ export const githubService = {
    * GitHub login (fetched separately to avoid a nested async in cachedFetch).
    * TTL: 60s. Resource key: "events".
    */
-  async listViewerEvents(userId: string, perPage = 15): Promise<{ data: ViewerEvent[] }> {
+  async listViewerEvents(
+    userId: string,
+    perPage = 15,
+    page = 1,
+  ): Promise<{ data: ViewerEvent[] }> {
     const { rest } = await getGithubClients(userId);
     // We need the viewer's login to call listEventsForAuthenticatedUser.
     let login: string;
@@ -1089,13 +1125,14 @@ export const githubService = {
     return cachedFetch<ViewerEvent[]>({
       userId,
       resource: "events",
-      params: { login, perPage },
+      params: { login, perPage, page },
       ttlSeconds: 60,
       fetcher: async (etag) => {
         try {
           const params: Record<string, unknown> = {
             username: login,
             per_page: perPage,
+            page,
           };
           if (etag) params.headers = { "If-None-Match": etag };
           const res = await rest.activity.listEventsForAuthenticatedUser(
@@ -1165,6 +1202,85 @@ export const githubService = {
     } catch (err) {
       throw mapGithubError(err);
     }
+  },
+
+  /**
+   * Marks all notifications as read up to current time. Invalidates cache.
+   */
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    const { rest } = await getGithubClients(userId);
+    try {
+      await rest.activity.markNotificationsAsRead({
+        last_read_at: new Date().toISOString(),
+      });
+      await invalidate(userId, "notifications");
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  // ─── Search (cross-repo issues/PRs) ─────────────────────────────────────────
+
+  /**
+   * Searches issues or pull requests across all repos accessible to the viewer.
+   * Uses GitHub Search API. TTL: 60s. Resource key: "search-issues".
+   */
+  async searchIssuesAcrossRepos(
+    userId: string,
+    opts: SearchIssuesOpts,
+  ): Promise<{ data: SearchIssuesResult }> {
+    const { rest } = await getGithubClients(userId);
+    const state = opts.state ?? "open";
+    const scope = opts.scope ?? "author";
+    const perPage = opts.perPage ?? 30;
+    const page = opts.page ?? 1;
+
+    const qParts: string[] = [
+      `is:${opts.type}`,
+      `state:${state}`,
+      `${scope}:@me`,
+      "archived:false",
+    ];
+    if (opts.org) qParts.push(`org:${opts.org}`);
+    const q = qParts.join(" ");
+
+    return cachedFetch<SearchIssuesResult>({
+      userId,
+      resource: "search-issues",
+      params: { q, page, perPage },
+      ttlSeconds: 60,
+      fetcher: async (etag) => {
+        try {
+          const params: Record<string, unknown> = {
+            q,
+            per_page: perPage,
+            page,
+            sort: "updated",
+            order: "desc",
+          };
+          if (etag) params.headers = { "If-None-Match": etag };
+          const res = await rest.search.issuesAndPullRequests(
+            params as Parameters<typeof rest.search.issuesAndPullRequests>[0],
+          );
+          return {
+            notModified: false as const,
+            body: res.data as unknown as SearchIssuesResult,
+            etag: res.headers.etag,
+          };
+        } catch (err) {
+          const e = err as { status?: number };
+          if (e.status === 304) return { notModified: true as const };
+          // graceful empty on rate-limit/forbidden
+          if (e.status === 403 || e.status === 422) {
+            return {
+              notModified: false as const,
+              body: { total_count: 0, incomplete_results: false, items: [] },
+            };
+          }
+          throw mapGithubError(err);
+        }
+      },
+    });
   },
 
   // ─── Contributions ────────────────────────────────────────────────────────
