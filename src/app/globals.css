@@ -131,39 +131,38 @@
 
 /* ----- Magic UI inspired effects (CSS only, no extra deps) ----- */
 
-/* Rotating conic gradient on a custom CSS property so we can animate. */
-@property --beam-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-@keyframes beam-spin {
+@keyframes beam-rotate {
   to {
-    --beam-angle: 360deg;
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
-/* Border beam: glowing rotating outline that appears on hover.
-   Apply to an element that already has a background + border-radius (Card).
-   Uses an absolutely-positioned ::before sized slightly larger than the
-   element with border-radius preserved via a CSS variable. */
+/* Border beam: a large conic-gradient layer rotates inside the card,
+   masked to only show through the rounded outline. Works in any browser
+   that supports conic-gradient and pseudo-elements (no @property needed). */
 .border-beam {
   position: relative;
   isolation: isolate;
 }
-.border-beam::before {
+.border-beam::before,
+.border-beam::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  pointer-events: none;
   border-radius: inherit;
-  padding: 1px;
+  transition: opacity 250ms ease;
+  opacity: 0;
+}
+/* Outer mask: clips a 1.5px outline ring. */
+.border-beam::before {
+  inset: -1.5px;
+  padding: 1.5px;
   background: conic-gradient(
-    from var(--beam-angle),
+    from 0deg,
     transparent 0deg,
-    var(--color-chart-1) 30deg,
-    var(--color-chart-2) 70deg,
-    transparent 130deg,
+    var(--color-chart-1) 25deg,
+    var(--color-chart-2) 65deg,
+    transparent 120deg,
     transparent 360deg
   );
   -webkit-mask:
@@ -171,61 +170,79 @@
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 250ms ease;
-  z-index: 1;
+  animation: beam-rotate 3s linear infinite paused;
+  z-index: 2;
 }
-/* Hide the static border while the beam is active so they don't overlap. */
+/* Soft glow halo beneath the beam. */
+.border-beam::after {
+  inset: -3px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in oklch, var(--color-chart-1) 50%, transparent) 25deg,
+    color-mix(in oklch, var(--color-chart-2) 50%, transparent) 65deg,
+    transparent 120deg,
+    transparent 360deg
+  );
+  filter: blur(6px);
+  animation: beam-rotate 3s linear infinite paused;
+  z-index: 0;
+}
+
+.border-beam:hover::before,
+.border-beam:focus-visible::before,
+.border-beam:hover::after,
+.border-beam:focus-visible::after,
+.group:hover .border-beam::before,
+.group:hover .border-beam::after {
+  opacity: 1;
+  animation-play-state: running;
+}
+
 .border-beam:hover,
 .group:hover .border-beam {
   border-color: transparent;
 }
-.border-beam:hover::before,
-.border-beam:focus-visible::before,
-.group:hover .border-beam::before {
-  opacity: 1;
-  animation: beam-spin 3s linear infinite;
-}
 
-/* Magic card glow: soft radial that follows the cursor.
-   Sits behind the children of the card. Apply to an element with a solid
-   background color so the children stay legible. */
+/* Magic card glow: soft radial that follows the cursor. Apply alongside
+   .border-beam (or alone). The wrapper sets --glow-x/--glow-y. */
 .magic-card {
   position: relative;
   isolation: isolate;
   overflow: hidden;
 }
-.magic-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    260px circle at var(--glow-x, 50%) var(--glow-y, 50%),
-    color-mix(in oklch, var(--color-chart-1) 10%, transparent),
-    transparent 65%
-  );
-  opacity: 0;
-  transition: opacity 280ms ease;
-  pointer-events: none;
-  z-index: 0;
-}
-.magic-card:hover::after,
-.magic-card:focus-within::after,
-.group:hover .magic-card::after {
-  opacity: 1;
-}
-/* Make sure card children sit above the glow. */
 .magic-card > * {
   position: relative;
   z-index: 1;
+}
+/* Use a child marker layer for the glow so it doesn't conflict with
+   .border-beam pseudos. Add an empty <span class="card-glow"/> inside, OR
+   use CSS variables on the card directly via background-image. */
+.magic-card {
+  background-image: radial-gradient(
+    260px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in oklch, var(--color-chart-1) 0%, transparent),
+    transparent 65%
+  );
+  transition: background-image 200ms ease;
+}
+.magic-card:hover,
+.magic-card:focus-within,
+.group:hover .magic-card {
+  background-image: radial-gradient(
+    260px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in oklch, var(--color-chart-1) 12%, transparent),
+    transparent 65%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
   .border-beam:hover::before,
   .border-beam:focus-visible::before,
-  .group:hover .border-beam::before {
+  .border-beam:hover::after,
+  .border-beam:focus-visible::after,
+  .group:hover .border-beam::before,
+  .group:hover .border-beam::after {
     animation: none;
   }
 }
