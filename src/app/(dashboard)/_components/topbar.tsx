@@ -1,4 +1,3 @@
-import { Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,6 +12,7 @@ import { OrgSwitcher } from "./org-switcher";
 import { MobileSidebar } from "./mobile-sidebar";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
 import { NotificationsBell } from "@/components/notifications-bell";
+import { CommandPaletteServer } from "@/components/command-palette-server";
 import { githubService } from "@/lib/github/service";
 import type { ActiveContext } from "@/lib/context/active-context";
 import type { GitHubNotification } from "@/lib/github/service";
@@ -52,18 +52,7 @@ export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps)
 
       <div className="flex flex-1 items-center justify-end gap-2 md:justify-between">
         <div className="hidden flex-1 max-w-md md:block">
-          <button
-            type="button"
-            disabled
-            aria-label="Search (coming soon)"
-            className="group flex h-9 w-full items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
-          >
-            <Search className="size-4" />
-            <span className="flex-1 text-left">Search…</span>
-            <kbd className="pointer-events-none hidden select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          </button>
+          <CommandPaletteServer userId={userId} />
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2">
