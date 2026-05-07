@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SidebarUserCard } from "@/components/sidebar-user-card";
 
 type NavItem = {
   href: string;
@@ -45,12 +46,20 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
+type AppSidebarUser = {
+  name: string;
+  email: string;
+  image: string | null;
+  login: string;
+};
+
 type AppSidebarProps = {
   className?: string;
   onNavigate?: () => void;
+  user?: AppSidebarUser;
 };
 
-export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
+export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
   const pathname = usePathname();
   return (
     <aside
@@ -110,11 +119,16 @@ export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
           </div>
         ))}
       </nav>
-      <div className="border-t border-sidebar-border p-3">
-        <p className="px-1 text-[0.6875rem] text-muted-foreground/70">
-          v0.1 — self-hosted
-        </p>
-      </div>
+      {user ? (
+        <div className="border-t border-sidebar-border p-3">
+          <SidebarUserCard
+            name={user.name}
+            email={user.email}
+            image={user.image}
+            login={user.login}
+          />
+        </div>
+      ) : null}
     </aside>
   );
 }

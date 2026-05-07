@@ -5,7 +5,16 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "./app-sidebar";
 
-export function MobileSidebar() {
+type MobileSidebarProps = {
+  user?: {
+    name: string;
+    email: string;
+    image: string | null;
+    login: string;
+  };
+};
+
+export function MobileSidebar({ user }: MobileSidebarProps) {
   const [open, setOpen] = React.useState(false);
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
@@ -31,6 +40,7 @@ export function MobileSidebar() {
           <AppSidebar
             className="flex-1"
             onNavigate={() => setOpen(false)}
+            user={user}
           />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

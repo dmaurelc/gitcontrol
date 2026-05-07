@@ -1,4 +1,3 @@
-import { Search, Bell } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -8,11 +7,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/actions/auth";
 import { OrgSwitcher } from "./org-switcher";
 import { MobileSidebar } from "./mobile-sidebar";
+import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { CommandPaletteServer } from "@/components/command-palette-server";
+import { githubService } from "@/lib/github/service";
 import type { ActiveContext } from "@/lib/context/active-context";
+import type { GitHubNotification } from "@/lib/github/service";
 
 type TopbarProps = {
   user: {
@@ -21,15 +24,24 @@ type TopbarProps = {
     image: string | null;
     login: string;
   };
+  userId: string;
   orgs: Array<{ login: string; avatar_url: string }>;
   activeContext: ActiveContext;
 };
 
-export function Topbar({ user, orgs, activeContext }: TopbarProps) {
+export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps) {
+  // Fetch notifications server-side; on error (missing scope etc.) render empty list.
+  let notifications: GitHubNotification[] = [];
+  try {
+    const res = await githubService.listNotifications(userId);
+    notifications = res.data;
+  } catch {
+    // empty list — bell still renders without badge
+  }
   const initials = (user.name || user.login).slice(0, 2).toUpperCase();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
-      <MobileSidebar />
+      <MobileSidebar user={user} />
       <div className="hidden md:block">
         <OrgSwitcher
           userLogin={user.login}
@@ -40,18 +52,7 @@ export function Topbar({ user, orgs, activeContext }: TopbarProps) {
 
       <div className="flex flex-1 items-center justify-end gap-2 md:justify-between">
         <div className="hidden flex-1 max-w-md md:block">
-          <button
-            type="button"
-            disabled
-            aria-label="Search (coming soon)"
-            className="group flex h-9 w-full items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
-          >
-            <Search className="size-4" />
-            <span className="flex-1 text-left">Search…</span>
-            <kbd className="pointer-events-none hidden select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          </button>
+          <CommandPaletteServer userId={userId} />
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2">
@@ -63,15 +64,10 @@ export function Topbar({ user, orgs, activeContext }: TopbarProps) {
             />
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden size-10 md:inline-flex"
-            aria-label="Notifications (coming soon)"
-            disabled
-          >
-            <Bell className="size-4" />
-          </Button>
+          <div className="hidden md:flex md:items-center md:gap-1">
+            <NotificationsBell initialNotifications={notifications} />
+            <ThemeToggleIcon />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger
