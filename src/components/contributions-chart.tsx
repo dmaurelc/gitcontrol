@@ -1,5 +1,5 @@
 "use client";
-import { Bar, BarChart, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, XAxis, Tooltip } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
 import type { ContributionDay } from "@/lib/github/service";
