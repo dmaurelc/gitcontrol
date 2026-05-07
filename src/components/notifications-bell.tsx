@@ -1,7 +1,8 @@
 "use client";
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,7 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { markNotificationReadAction } from "@/app/actions/notifications";
+import {
+  markNotificationReadAction,
+  markAllNotificationsReadAction,
+} from "@/app/actions/notifications";
 import type { GitHubNotification } from "@/lib/github/service";
 
 // Maps GitHub notification reason to a short human label
@@ -34,18 +38,39 @@ const REASON_LABELS: Record<string, string> = {
 /** Attempts to convert a GitHub API subject URL to an internal app route. */
 function toInternalRoute(notification: GitHubNotification): string | null {
   const { subject, repository } = notification;
-  if (!subject.url) return null;
 
-  // e.g. https://api.github.com/repos/owner/repo/issues/42
-  const issueMatch = subject.url.match(/\/repos\/([^/]+\/[^/]+)\/issues\/(\d+)$/);
-  if (issueMatch) return `/repositories/${issueMatch[1]}/issues/${issueMatch[2]}`;
+  if (subject.url) {
+    const issueMatch = subject.url.match(/\/repos\/([^/]+\/[^/]+)\/issues\/(\d+)$/);
+    if (issueMatch) return `/repositories/${issueMatch[1]}/issues/${issueMatch[2]}`;
 
-  const prMatch = subject.url.match(/\/repos\/([^/]+\/[^/]+)\/pulls\/(\d+)$/);
-  if (prMatch) return `/repositories/${prMatch[1]}/pulls/${prMatch[2]}`;
+    const prMatch = subject.url.match(/\/repos\/([^/]+\/[^/]+)\/pulls\/(\d+)$/);
+    if (prMatch) return `/repositories/${prMatch[1]}/pulls/${prMatch[2]}`;
+  }
 
-  // Fallback: link to the repo page
+  // CI / CheckSuite notifications have a null subject.url; route to the repo's
+  // actions tab so the user can find the failed/finished run.
+  if (
+    repository?.full_name &&
+    (subject.type === "CheckSuite" || subject.type === "WorkflowRun")
+  ) {
+    return `/repositories/${repository.full_name}/actions`;
+  }
+
   if (repository?.full_name) return `/repositories/${repository.full_name}`;
   return null;
+}
+
+/** Falls back to a github.com URL for subjects without an internal route. */
+function toExternalUrl(notification: GitHubNotification): string | null {
+  const url = notification.subject.url;
+  if (!url) {
+    return notification.repository?.full_name
+      ? `https://github.com/${notification.repository.full_name}`
+      : null;
+  }
+  return url
+    .replace("https://api.github.com/repos/", "https://github.com/")
+    .replace("/pulls/", "/pull/");
 }
 
 type NotificationsBellProps = {
@@ -57,23 +82,40 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
   const [notifications, setNotifications] = React.useState(initialNotifications);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  async function handleMarkRead(threadId: string, href: string | null) {
-    // Optimistically remove from unread list
+  async function handleClick(n: GitHubNotification) {
+    const internalHref = toInternalRoute(n);
+    const externalUrl = toExternalUrl(n);
+
+    // Optimistic mark as read
     setNotifications((prev) =>
-      prev.map((n) => (n.id === threadId ? { ...n, unread: false } : n)),
+      prev.map((m) => (m.id === n.id ? { ...m, unread: false } : m)),
     );
     const fd = new FormData();
-    fd.set("threadId", threadId);
+    fd.set("threadId", n.id);
     try {
       await markNotificationReadAction(fd);
     } catch {
-      // Revert on error
       setNotifications((prev) =>
-        prev.map((n) => (n.id === threadId ? { ...n, unread: true } : n)),
+        prev.map((m) => (m.id === n.id ? { ...m, unread: true } : m)),
       );
     }
-    if (href) {
-      router.push(href);
+
+    if (internalHref) {
+      router.push(internalHref);
+    } else if (externalUrl) {
+      window.open(externalUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  async function handleMarkAll(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const previous = notifications;
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    try {
+      await markAllNotificationsReadAction();
+    } catch {
+      setNotifications(previous);
     }
   }
 
@@ -98,13 +140,18 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex items-center justify-between">
+        <DropdownMenuLabel className="flex items-center justify-between gap-2">
           <span>Notifications</span>
-          {unreadCount > 0 && (
-            <span className="text-xs font-normal text-muted-foreground">
-              {unreadCount} unread
-            </span>
-          )}
+          {unreadCount > 0 ? (
+            <button
+              type="button"
+              onClick={handleMarkAll}
+              className="inline-flex items-center gap-1 rounded text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <CheckCheck className="size-3" />
+              Mark all read
+            </button>
+          ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
@@ -114,13 +161,12 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
         ) : (
           <div className="max-h-80 overflow-y-auto">
             {notifications.map((n) => {
-              const href = toInternalRoute(n);
               const reasonLabel = REASON_LABELS[n.reason] ?? n.reason;
               return (
                 <DropdownMenuItem
                   key={n.id}
                   className="flex flex-col items-start gap-0.5 px-3 py-2.5 focus:bg-accent"
-                  onSelect={() => void handleMarkRead(n.id, href)}
+                  onSelect={() => void handleClick(n)}
                 >
                   <div className="flex w-full items-start gap-2">
                     {n.unread && (
@@ -145,6 +191,15 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
             })}
           </div>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link
+            href="/notifications"
+            className="w-full cursor-pointer justify-center text-xs font-medium"
+          >
+            View all notifications
+          </Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

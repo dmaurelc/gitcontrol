@@ -22,3 +22,11 @@ export async function markNotificationReadAction(formData: FormData): Promise<vo
   const threadId = threadIdSchema.parse(typeof raw === "string" ? raw : "");
   await githubService.markNotificationRead(userId, threadId);
 }
+
+/**
+ * Marks all notifications as read up to current time.
+ */
+export async function markAllNotificationsReadAction(): Promise<void> {
+  const userId = await requireUserId();
+  await githubService.markAllNotificationsRead(userId);
+}

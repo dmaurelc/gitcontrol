@@ -44,6 +44,11 @@ export default async function DashboardPage() {
           fallbackLogin={session.user.email}
         />
       </Suspense>
+
+      <Suspense fallback={<ContributionsSkeleton />}>
+        <ContributionsSection userId={session.user.id} />
+      </Suspense>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Suspense fallback={<RecentSkeleton />}>
@@ -51,25 +56,27 @@ export default async function DashboardPage() {
           </Suspense>
         </div>
         <Card className="h-full shadow-card">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-2">
             <div className="space-y-0.5">
               <CardTitle className="text-base">Activity</CardTitle>
               <p className="text-xs text-muted-foreground">
                 Recent GitHub events
               </p>
             </div>
+            <Link
+              href="/activity"
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              View all <ArrowUpRight className="size-3.5" />
+            </Link>
           </CardHeader>
           <CardContent>
             <Suspense fallback={<ActivitySkeleton />}>
-              <ActivityFeed userId={session.user.id} />
+              <ActivityFeed userId={session.user.id} limit={6} />
             </Suspense>
           </CardContent>
         </Card>
       </div>
-
-      <Suspense fallback={<ContributionsSkeleton />}>
-        <ContributionsSection userId={session.user.id} />
-      </Suspense>
     </div>
   );
 }
@@ -116,6 +123,7 @@ async function Metrics({
         icon={GitBranch}
         accent="chart-1"
         hint="Owned and collaborator"
+        href="/repositories"
       />
       <StatCard
         title="Stars given"
@@ -123,6 +131,7 @@ async function Metrics({
         icon={Star}
         accent="chart-4"
         hint="Across all repos"
+        href="/stars"
       />
       <StatCard
         title="Open PRs"
@@ -130,6 +139,7 @@ async function Metrics({
         icon={GitPullRequest}
         accent="chart-2"
         hint="Across the org"
+        href="/pulls"
       />
       <StatCard
         title="Open issues"
@@ -137,6 +147,7 @@ async function Metrics({
         icon={CircleAlert}
         accent="chart-5"
         hint="Needing triage"
+        href="/issues"
       />
     </div>
   );
@@ -171,8 +182,8 @@ async function RecentRepos({ userId }: { userId: string }) {
   }> = [];
   try {
     const res = await githubService.listRepos(userId, {
-      sort: "updated",
-      perPage: 30,
+      sort: "pushed",
+      perPage: 20,
     });
     repos = res.data;
   } catch {
@@ -180,14 +191,16 @@ async function RecentRepos({ userId }: { userId: string }) {
   }
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
-  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 10);
+  repos = filterVisible(repos, prefs, pinnedSet)
+    .filter((r) => !pinnedSet.has(r.full_name))
+    .slice(0, 6);
   return (
     <Card className="h-full shadow-card">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <div className="space-y-0.5">
           <CardTitle className="text-base">Recently updated</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Latest activity across visible repos
+            Last pushed (excluding pinned)
           </p>
         </div>
         <Link
