@@ -160,9 +160,9 @@ export default async function StarsPage({
               className="overflow-hidden border-none bg-transparent p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
             >
             <MagicCard
-              gradientFrom="oklch(0.72 0.16 215)"
-              gradientTo="oklch(0.74 0.16 165)"
-              gradientColor="color-mix(in oklch, oklch(0.72 0.16 215) 18%, transparent)"
+              gradientFrom="var(--color-chart-1)"
+              gradientTo="var(--color-chart-2)"
+              gradientColor="color-mix(in oklch, var(--color-chart-1) 18%, transparent)"
               gradientSize={260}
               className="rounded-xl p-0"
             >
