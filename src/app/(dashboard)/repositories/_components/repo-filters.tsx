@@ -1,6 +1,7 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -55,7 +56,7 @@ export function RepoFilters() {
   }
 
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:items-center">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card/50 p-3 shadow-soft md:flex-row md:items-center">
       <DebouncedSearch
         initial={params.get("q") ?? ""}
         onChange={(v) => update("q", v.trim())}
@@ -132,11 +133,14 @@ function DebouncedSearch({
   }, [value, onChange]);
 
   return (
-    <Input
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      placeholder="Filter by name…"
-      className="md:max-w-xs"
-    />
+    <div className="relative md:max-w-xs md:flex-1">
+      <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Filter by name…"
+        className="pl-8"
+      />
+    </div>
   );
 }
