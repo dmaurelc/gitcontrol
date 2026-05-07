@@ -7,7 +7,6 @@ import {
   GitPullRequest,
   CircleAlert,
   ArrowUpRight,
-  Activity,
 } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
@@ -25,6 +24,9 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
+import { ActivityFeed } from "@/components/activity-feed";
+import { ContributionsChart } from "@/components/contributions-chart";
+import type { ContributionDay } from "@/lib/github/service";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -48,8 +50,26 @@ export default async function DashboardPage() {
             <RecentRepos userId={session.user.id} />
           </Suspense>
         </div>
-        <ActivityCard />
+        <Card className="h-full shadow-card">
+          <CardHeader>
+            <div className="space-y-0.5">
+              <CardTitle className="text-base">Activity</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Recent GitHub events
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<ActivitySkeleton />}>
+              <ActivityFeed userId={session.user.id} />
+            </Suspense>
+          </CardContent>
+        </Card>
       </div>
+
+      <Suspense fallback={<ContributionsSkeleton />}>
+        <ContributionsSection userId={session.user.id} />
+      </Suspense>
     </div>
   );
 }
@@ -160,7 +180,7 @@ async function RecentRepos({ userId }: { userId: string }) {
   }
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
-  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 8);
+  repos = filterVisible(repos, prefs, pinnedSet).slice(0, 10);
   return (
     <Card className="h-full shadow-card">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -225,26 +245,64 @@ async function RecentRepos({ userId }: { userId: string }) {
   );
 }
 
-function ActivityCard() {
+async function ContributionsSection({ userId }: { userId: string }) {
+  let days: ContributionDay[] = [];
+  try {
+    const res = await githubService.getContributionsCalendar(userId);
+    days = res.data;
+  } catch {
+    // render empty state inside the chart
+  }
+
+  const total = days.reduce((sum, d) => sum + d.count, 0);
+
   return (
-    <Card className="h-full shadow-card">
-      <CardHeader>
-        <div className="space-y-0.5">
-          <CardTitle className="text-base">Activity</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Coming soon — commits, releases, mentions
-          </p>
+    <Card className="shadow-card">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="space-y-0.5">
+            <CardTitle className="text-base">Contributions</CardTitle>
+            <p className="text-xs text-muted-foreground">Last 28 days</p>
+          </div>
+          {total > 0 && (
+            <span className="text-sm font-semibold tabular-nums">{total}</span>
+          )}
         </div>
       </CardHeader>
-      <CardContent>
-        <EmptyState
-          icon={Activity}
-          title="Activity feed in development"
-          description="Soon you'll see commits, releases and mentions here."
-          className="border-none bg-transparent py-4"
-        />
+      <CardContent className="pb-4">
+        <ContributionsChart data={days} />
       </CardContent>
     </Card>
+  );
+}
+
+function ContributionsSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-36 rounded" />
+        <Skeleton className="mt-1 h-3 w-24 rounded" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-32 w-full rounded" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActivitySkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-start gap-2.5">
+          <Skeleton className="mt-0.5 size-6 shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Skeleton className="h-3 w-3/4 rounded" />
+            <Skeleton className="h-3 w-1/2 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -155,6 +155,128 @@ export type PullRequest = {
   changed_files: number;
 };
 
+// ─── Actions / Workflow Runs ─────────────────────────────────────────────────
+
+export type WorkflowRunStatus =
+  | "queued"
+  | "in_progress"
+  | "completed"
+  | "waiting"
+  | "requested"
+  | "pending";
+
+export type WorkflowRunConclusion =
+  | "success"
+  | "failure"
+  | "cancelled"
+  | "skipped"
+  | "neutral"
+  | "timed_out"
+  | "action_required"
+  | null;
+
+export type WorkflowRun = {
+  id: number;
+  name: string | null;
+  display_title: string;
+  run_number: number;
+  status: WorkflowRunStatus | null;
+  conclusion: WorkflowRunConclusion;
+  workflow_id: number;
+  head_branch: string | null;
+  head_sha: string;
+  head_commit: { message: string } | null;
+  actor: { login: string; avatar_url: string } | null;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+  path: string;
+};
+
+export type WorkflowJobStep = {
+  name: string;
+  status: "queued" | "in_progress" | "completed";
+  conclusion: string | null;
+  number: number;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
+export type WorkflowJob = {
+  id: number;
+  name: string;
+  status: "queued" | "in_progress" | "completed";
+  conclusion: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  steps: WorkflowJobStep[];
+  html_url: string | null;
+};
+
+export type Workflow = {
+  id: number;
+  name: string;
+  path: string;
+  state:
+    | "active"
+    | "deleted"
+    | "disabled_fork"
+    | "disabled_inactivity"
+    | "disabled_manually";
+};
+
+export type ListWorkflowRunsOpts = {
+  page?: number;
+  perPage?: number;
+  status?: WorkflowRunStatus | "all";
+  branch?: string;
+  workflowId?: number;
+};
+
+// ─── Activity Events ─────────────────────────────────────────────────────────
+
+export type ViewerEventPayload = {
+  action?: string;
+  ref?: string;
+  ref_type?: string;
+  forkee?: { full_name: string };
+  pull_request?: { number: number; title: string };
+  issue?: { number: number; title: string };
+  commits?: Array<{ message: string }>;
+  size?: number;
+};
+
+export type ViewerEvent = {
+  id: string;
+  type: string | null;
+  actor: { login: string; avatar_url: string };
+  repo: { name: string };
+  created_at: string | null;
+  payload: ViewerEventPayload;
+};
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export type GitHubNotification = {
+  id: string;
+  unread: boolean;
+  reason: string;
+  subject: {
+    title: string;
+    type: string;
+    url: string | null;
+  };
+  repository: { full_name: string };
+  updated_at: string;
+};
+
+// ─── Contributions ────────────────────────────────────────────────────────────
+
+export type ContributionDay = {
+  date: string;
+  count: number;
+};
+
 export const githubService = {
   async getViewer(userId: string) {
     const { rest } = await getGithubClients(userId);
@@ -756,6 +878,353 @@ export const githubService = {
     } catch (err) {
       throw mapGithubError(err);
     }
+  },
+
+  // ─── Actions / Workflow Runs ──────────────────────────────────────────────
+
+  /**
+   * List workflows for a repo. Used to populate workflow filter dropdown.
+   * GitHub returns { total_count, workflows } — we extract the array.
+   */
+  async listWorkflows(userId: string, owner: string, repo: string) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, per_page: 100 };
+    // GitHub returns { total_count, workflows } wrapped in data
+    const result = await cachedFetch<{ total_count: number; workflows: Workflow[] }>({
+      userId,
+      resource: "workflows",
+      params: { owner, repo },
+      ttlSeconds: 300,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.listRepoWorkflows as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | {
+              notModified: false;
+              body: { total_count: number; workflows: Workflow[] };
+              etag?: string;
+            }
+        >,
+    });
+    return result.data.workflows;
+  },
+
+  /**
+   * List workflow runs for a repo with optional filters.
+   * GitHub returns { total_count, workflow_runs } — we extract the array.
+   */
+  async listWorkflowRuns(
+    userId: string,
+    owner: string,
+    repo: string,
+    opts: ListWorkflowRunsOpts = {},
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const apiParams: Record<string, unknown> = {
+      owner,
+      repo,
+      per_page: opts.perPage ?? 30,
+      page: opts.page ?? 1,
+    };
+    if (opts.status && opts.status !== "all") apiParams.status = opts.status;
+    if (opts.branch) apiParams.branch = opts.branch;
+
+    const cacheParams = { owner, repo, ...apiParams };
+
+    if (opts.workflowId) {
+      // Use workflow-specific endpoint when filtering by workflow ID
+      apiParams.workflow_id = opts.workflowId;
+      const result = await cachedFetch<{
+        total_count: number;
+        workflow_runs: WorkflowRun[];
+      }>({
+        userId,
+        resource: "workflow-runs",
+        params: cacheParams,
+        ttlSeconds: 30,
+        fetcher: (etag) =>
+          etagFetch(
+            rest.actions.listWorkflowRuns as unknown as AnyEndpoint,
+            apiParams,
+            etag,
+          ) as Promise<
+            | { notModified: true }
+            | {
+                notModified: false;
+                body: { total_count: number; workflow_runs: WorkflowRun[] };
+                etag?: string;
+              }
+          >,
+      });
+      return result.data.workflow_runs;
+    }
+
+    const result = await cachedFetch<{
+      total_count: number;
+      workflow_runs: WorkflowRun[];
+    }>({
+      userId,
+      resource: "workflow-runs",
+      params: cacheParams,
+      ttlSeconds: 30,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.listWorkflowRunsForRepo as unknown as AnyEndpoint,
+          apiParams,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | {
+              notModified: false;
+              body: { total_count: number; workflow_runs: WorkflowRun[] };
+              etag?: string;
+            }
+        >,
+    });
+    return result.data.workflow_runs;
+  },
+
+  async getWorkflowRun(
+    userId: string,
+    owner: string,
+    repo: string,
+    runId: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, run_id: runId };
+    return cachedFetch<WorkflowRun>({
+      userId,
+      resource: "workflow-run",
+      params,
+      ttlSeconds: 60,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.getWorkflowRun as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: WorkflowRun; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * List jobs for a workflow run.
+   * GitHub returns { total_count, jobs } — we extract the array.
+   */
+  async listJobsForWorkflowRun(
+    userId: string,
+    owner: string,
+    repo: string,
+    runId: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, run_id: runId, per_page: 100 };
+    const result = await cachedFetch<{
+      total_count: number;
+      jobs: WorkflowJob[];
+    }>({
+      userId,
+      resource: "workflow-jobs",
+      params: { owner, repo, run_id: runId },
+      ttlSeconds: 30,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.actions.listJobsForWorkflowRun as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | {
+              notModified: false;
+              body: { total_count: number; jobs: WorkflowJob[] };
+              etag?: string;
+            }
+        >,
+    });
+    return result.data.jobs;
+  },
+
+  /**
+   * Re-run a workflow run, then invalidate runs cache.
+   * Requires `workflow` scope — handled gracefully by mapGithubError.
+   */
+  async reRunWorkflow(
+    userId: string,
+    owner: string,
+    repo: string,
+    runId: number,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      await rest.actions.reRunWorkflow({ owner, repo, run_id: runId });
+      await invalidate(userId, "workflow-runs");
+      await invalidate(userId, "workflow-run");
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  // ─── Activity Events ──────────────────────────────────────────────────────
+
+  /**
+   * Returns recent events for the authenticated user. Requires the viewer's
+   * GitHub login (fetched separately to avoid a nested async in cachedFetch).
+   * TTL: 60s. Resource key: "events".
+   */
+  async listViewerEvents(userId: string, perPage = 15): Promise<{ data: ViewerEvent[] }> {
+    const { rest } = await getGithubClients(userId);
+    // We need the viewer's login to call listEventsForAuthenticatedUser.
+    let login: string;
+    try {
+      const viewer = await this.getViewer(userId);
+      login = viewer.data.login;
+    } catch {
+      return { data: [] };
+    }
+    return cachedFetch<ViewerEvent[]>({
+      userId,
+      resource: "events",
+      params: { login, perPage },
+      ttlSeconds: 60,
+      fetcher: async (etag) => {
+        try {
+          const params: Record<string, unknown> = {
+            username: login,
+            per_page: perPage,
+          };
+          if (etag) params.headers = { "If-None-Match": etag };
+          const res = await rest.activity.listEventsForAuthenticatedUser(
+            params as Parameters<typeof rest.activity.listEventsForAuthenticatedUser>[0],
+          );
+          return {
+            notModified: false as const,
+            body: res.data as unknown as ViewerEvent[],
+            etag: res.headers.etag,
+          };
+        } catch (err) {
+          const e = err as { status?: number };
+          if (e.status === 304) return { notModified: true as const };
+          // Swallow errors (scope may be missing) and return empty list.
+          return { notModified: false as const, body: [] };
+        }
+      },
+    });
+  },
+
+  // ─── Notifications ────────────────────────────────────────────────────────
+
+  /**
+   * Lists GitHub notifications for the authenticated user. TTL: 30s.
+   */
+  async listNotifications(
+    userId: string,
+    opts: { all?: boolean } = {},
+  ): Promise<{ data: GitHubNotification[] }> {
+    const { rest } = await getGithubClients(userId);
+    const params = { all: opts.all ?? false, per_page: 30 };
+    return cachedFetch<GitHubNotification[]>({
+      userId,
+      resource: "notifications",
+      params,
+      ttlSeconds: 30,
+      fetcher: async (etag) => {
+        try {
+          const reqParams: Record<string, unknown> = { ...params };
+          if (etag) reqParams.headers = { "If-None-Match": etag };
+          const res = await rest.activity.listNotificationsForAuthenticatedUser(
+            reqParams as Parameters<typeof rest.activity.listNotificationsForAuthenticatedUser>[0],
+          );
+          return {
+            notModified: false as const,
+            body: res.data as unknown as GitHubNotification[],
+            etag: res.headers.etag,
+          };
+        } catch (err) {
+          const e = err as { status?: number };
+          if (e.status === 304) return { notModified: true as const };
+          // Notifications scope may be missing — return empty list gracefully.
+          return { notModified: false as const, body: [] };
+        }
+      },
+    });
+  },
+
+  /**
+   * Marks a notification thread as read and invalidates notifications cache.
+   */
+  async markNotificationRead(userId: string, threadId: string): Promise<void> {
+    const { rest } = await getGithubClients(userId);
+    try {
+      await rest.activity.markThreadAsRead({ thread_id: parseInt(threadId, 10) });
+      await invalidate(userId, "notifications");
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  // ─── Contributions ────────────────────────────────────────────────────────
+
+  /**
+   * Returns flattened contribution days for the last ~4 weeks (28 entries) via
+   * GraphQL contributionCalendar. TTL: 300s. Resource key: "contributions".
+   */
+  async getContributionsCalendar(userId: string): Promise<{ data: ContributionDay[] }> {
+    const { gql } = await getGithubClients(userId);
+    type CalendarResponse = {
+      viewer: {
+        contributionsCollection: {
+          contributionCalendar: {
+            totalContributions: number;
+            weeks: Array<{
+              contributionDays: Array<{ date: string; contributionCount: number }>;
+            }>;
+          };
+        };
+      };
+    };
+    return cachedFetch<ContributionDay[]>({
+      userId,
+      resource: "contributions",
+      ttlSeconds: 300,
+      fetcher: async () => {
+        try {
+          const data = await gql<CalendarResponse>(`
+            query {
+              viewer {
+                contributionsCollection {
+                  contributionCalendar {
+                    totalContributions
+                    weeks {
+                      contributionDays {
+                        date
+                        contributionCount
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          `);
+          const allDays = data.viewer.contributionsCollection.contributionCalendar.weeks
+            .flatMap((w) =>
+              w.contributionDays.map((d) => ({
+                date: d.date,
+                count: d.contributionCount,
+              })),
+            );
+          // Return last 28 days
+          const last28 = allDays.slice(-28);
+          return { notModified: false as const, body: last28 };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
   },
 };
 
