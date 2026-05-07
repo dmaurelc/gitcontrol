@@ -2,17 +2,15 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-type Props = React.ComponentProps<"div"> & {
-  beam?: boolean;
-};
+type Props = React.ComponentProps<"div">;
 
 /**
- * Card wrapper with optional rotating border beam on hover and a soft glow
- * that tracks the cursor. CSS-only, no animation libs.
+ * Wrapper that tracks the cursor and sets `--glow-x` / `--glow-y` CSS vars on
+ * itself. Descendants with `.magic-card` inherit those vars and use them in a
+ * radial-gradient ::after for the glow.
  */
-export function MagicCard({
+export function GlowCard({
   className,
-  beam = true,
   onMouseMove,
   children,
   ...rest
@@ -30,11 +28,7 @@ export function MagicCard({
   );
 
   return (
-    <div
-      {...rest}
-      onMouseMove={handleMouseMove}
-      className={cn("magic-card", beam && "border-beam", className)}
-    >
+    <div {...rest} onMouseMove={handleMouseMove} className={cn(className)}>
       {children}
     </div>
   );

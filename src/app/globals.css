@@ -131,9 +131,7 @@
 
 /* ----- Magic UI inspired effects (CSS only, no extra deps) ----- */
 
-/* Border beam: rotating conic gradient outline that runs on hover.
-   Use with `relative` parent + `border-beam` class.
-   The beam is a single thin gradient stroke chasing the perimeter. */
+/* Rotating conic gradient on a custom CSS property so we can animate. */
 @property --beam-angle {
   syntax: "<angle>";
   inherits: false;
@@ -146,6 +144,10 @@
   }
 }
 
+/* Border beam: glowing rotating outline that appears on hover.
+   Apply to an element that already has a background + border-radius (Card).
+   Uses an absolutely-positioned ::before sized slightly larger than the
+   element with border-radius preserved via a CSS variable. */
 .border-beam {
   position: relative;
   isolation: isolate;
@@ -155,13 +157,13 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
+  padding: 1.5px;
   background: conic-gradient(
     from var(--beam-angle),
     transparent 0deg,
-    var(--color-chart-1) 40deg,
+    var(--color-chart-1) 30deg,
     var(--color-chart-2) 70deg,
-    transparent 110deg,
+    transparent 130deg,
     transparent 360deg
   );
   -webkit-mask:
@@ -171,19 +173,23 @@
   mask-composite: exclude;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 200ms ease;
+  transition: opacity 250ms ease;
+  z-index: 1;
 }
 .border-beam:hover::before,
-.border-beam:focus-visible::before {
+.border-beam:focus-visible::before,
+.group:hover .border-beam::before {
   opacity: 1;
   animation: beam-spin 3s linear infinite;
 }
 
-/* Magic card glow: soft radial that follows hover position.
-   Set --glow-x, --glow-y from JS or use centered fallback. */
+/* Magic card glow: soft radial that follows the cursor.
+   Sits behind the children of the card. Apply to an element with a solid
+   background color so the children stay legible. */
 .magic-card {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
 }
 .magic-card::after {
   content: "";
@@ -191,23 +197,30 @@
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(
-    400px circle at var(--glow-x, 50%) var(--glow-y, 50%),
-    color-mix(in oklch, var(--color-chart-1) 25%, transparent),
-    transparent 60%
+    420px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in oklch, var(--color-chart-1) 22%, transparent),
+    transparent 55%
   );
   opacity: 0;
-  transition: opacity 250ms ease;
+  transition: opacity 280ms ease;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
 }
 .magic-card:hover::after,
-.magic-card:focus-within::after {
+.magic-card:focus-within::after,
+.group:hover .magic-card::after {
   opacity: 1;
+}
+/* Make sure card children sit above the glow. */
+.magic-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .border-beam:hover::before,
-  .border-beam:focus-visible::before {
+  .border-beam:focus-visible::before,
+  .group:hover .border-beam::before {
     animation: none;
   }
 }
