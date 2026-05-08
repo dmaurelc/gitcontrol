@@ -7,6 +7,7 @@ import type {
   ManifestWithRows,
 } from "../page";
 import type { OutdatedSeverity } from "@/lib/dependencies/compute-outdated";
+export type { OutdatedSeverity };
 
 const SEVERITY_TONE: Record<OutdatedSeverity, string> = {
   major: "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
@@ -22,12 +23,28 @@ type Props = {
   manifest: ManifestWithRows["manifest"];
   rows: DependencyRow[];
   filter: "all" | "outdated";
+  severitySet: Set<OutdatedSeverity>;
 };
 
-export function ManifestCard({ manifest, rows, filter }: Props) {
-  const visible =
-    filter === "outdated" ? rows.filter((r) => r.outdated.isOutdated) : rows;
-  const outdatedCount = rows.filter((r) => r.outdated.isOutdated).length;
+export function ManifestCard({
+  manifest,
+  rows,
+  filter,
+  severitySet,
+}: Props) {
+  const visible = rows.filter((r) => {
+    // "Outdated only" hides up-to-date rows.
+    if (filter === "outdated" && !r.outdated.isOutdated) return false;
+    // Severity filter only narrows the outdated rows. Up-to-date rows
+    // are always shown when filter === "all".
+    if (r.outdated.isOutdated && !severitySet.has(r.outdated.severity)) {
+      return false;
+    }
+    return true;
+  });
+  const outdatedCount = rows.filter(
+    (r) => r.outdated.isOutdated && severitySet.has(r.outdated.severity),
+  ).length;
 
   return (
     <Card className="shadow-card">

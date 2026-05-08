@@ -22,13 +22,22 @@ type Props = {
   owner: string;
   repo: string;
   outdated: OutdatedDepRow[];
+  /** Description of the active severity filter for the issue title. */
+  severityLabel?: string;
 };
 
-export function CreateOutdatedIssueDialog({ owner, repo, outdated }: Props) {
+export function CreateOutdatedIssueDialog({
+  owner,
+  repo,
+  outdated,
+  severityLabel,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(
-    `chore(deps): bump ${outdated.length} outdated dependencies`,
+    severityLabel
+      ? `chore(deps): bump ${outdated.length} ${severityLabel} dependencies`
+      : `chore(deps): bump ${outdated.length} outdated dependencies`,
   );
   const [body, setBody] = useState(buildIssueBody(outdated));
   const [labels, setLabels] = useState("dependencies");
