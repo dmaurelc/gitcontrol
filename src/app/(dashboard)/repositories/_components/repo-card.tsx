@@ -37,12 +37,15 @@ export function RepoCard({
   const avatarUrl = owner
     ? `https://github.com/${encodeURIComponent(owner)}.png?size=64`
     : undefined;
-  const stackInput =
+  const stackInput: Record<string, number> | string[] =
     languages && Object.keys(languages).length > 0
       ? languages
       : language
         ? [language]
         : [];
+  const hasStack = Array.isArray(stackInput)
+    ? stackInput.length > 0
+    : Object.keys(stackInput).length > 0;
   return (
     <Link
       href={`/repositories/${fullName}`}
@@ -99,7 +102,7 @@ export function RepoCard({
             {description ?? ""}
           </p>
           <div className="mt-auto flex items-center gap-3 border-t pt-3 text-xs text-muted-foreground tabular-nums">
-            {stackInput.length > 0 ? (
+            {hasStack ? (
               <DeviconStack languages={stackInput} max={2} size={14} />
             ) : null}
             <span className="flex items-center gap-1" title="Stars">

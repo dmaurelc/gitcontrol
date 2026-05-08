@@ -20,12 +20,15 @@ export function StarListRow({
   htmlUrl,
   starredAt,
 }: Props) {
-  const stackInput =
+  const stackInput: Record<string, number> | string[] =
     languages && Object.keys(languages).length > 0
       ? languages
       : language
         ? [language]
         : [];
+  const hasStack = Array.isArray(stackInput)
+    ? stackInput.length > 0
+    : Object.keys(stackInput).length > 0;
   return (
     <a
       href={htmlUrl}
@@ -45,7 +48,7 @@ export function StarListRow({
       </div>
 
       <div className="hidden shrink-0 items-center gap-3 text-xs text-muted-foreground tabular-nums sm:flex">
-        {stackInput.length > 0 ? (
+        {hasStack ? (
           <DeviconStack languages={stackInput} max={2} size={14} />
         ) : null}
         <span className="flex items-center gap-1" title="Stars">
