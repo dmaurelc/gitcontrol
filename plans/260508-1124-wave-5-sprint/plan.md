@@ -1,20 +1,29 @@
 ---
-status: in-progress
+status: completed
 created: 2026-05-08
+completed: 2026-05-08
 project: maureldev-wave-5
 branch: develop
-progress: 2/6
+progress: 6/6
 ---
 
 # Wave 5 Sprint — Plan
 
 Sprint Wave 5 derivado de `plans/reports/scout-260508-1035-devdock-crmdev-ideas.md`. Cada feature = rama propia → PR a `develop`. Release final: PR `develop` → `main`.
 
-## Estado actual
+## Estado final — Wave 5 cerrado 2026-05-08
 
-- **Mergeado:** #45 perPage selector recovery (pre-Wave 5), #46 view-mode toggle, #47 docs git-workflow sync-back, #48 sync status indicator.
-- **Sync develop ↔ main:** alineado vía merge-back (commit 20c1c6c).
-- **Próxima fase:** #3 Devicon tech-stack badges.
+Todas 6 fases mergeadas a `develop`. PRs:
+- #45 perPage selector recovery (commit huérfano de fase 06 actions runs)
+- #46 view-mode toggle
+- #47 docs git-workflow sync-back
+- #48 sync status indicator
+- #50 Devicon language stack
+- #51 repo health badge
+- #52 Cmd+K org repos + fuzzy
+- #53 dependency tracker + outdated auto-issue (severity filter)
+
+**Release:** PR `develop → main` siguiente paso para deploy producción.
 
 ## Decisiones de alcance (validadas con usuario)
 
@@ -36,10 +45,10 @@ Sprint Wave 5 derivado de `plans/reports/scout-260508-1035-devdock-crmdev-ideas.
 |---|------|----------|--------|--------|-----|---------|
 | 1 | View mode toggle (grid/list) | S | `feature/view-mode-toggle` | ✅ done | #46 | [phase-01-view-mode-toggle.md](phase-01-view-mode-toggle.md) |
 | 2 | Sync status indicator | S | `feature/sync-status-indicator` | ✅ done | #48 | [phase-02-sync-status-indicator.md](phase-02-sync-status-indicator.md) |
-| 3 | Devicon tech-stack badges | S | `feature/devicon-badges` | 🟡 in progress | — | [phase-03-devicon-badges.md](phase-03-devicon-badges.md) |
-| 4 | Health-score badge | M | `feature/repo-health-score` | pending | — | [phase-04-repo-health-score.md](phase-04-repo-health-score.md) |
-| 5 | Cmd+K repos search index | M | `feature/cmdk-repos-index` | pending | — | [phase-05-cmdk-repos-index.md](phase-05-cmdk-repos-index.md) |
-| 6 | Dependency tracker + auto-issue | M-L | `feature/dependency-tracker` | pending | — | [phase-06-dependency-tracker.md](phase-06-dependency-tracker.md) |
+| 3 | Devicon tech-stack badges | S | `feature/devicon-badges` | ✅ done | #50 | [phase-03-devicon-badges.md](phase-03-devicon-badges.md) |
+| 4 | Health-score badge | M | `feature/repo-health-score` | ✅ done | #51 | [phase-04-repo-health-score.md](phase-04-repo-health-score.md) |
+| 5 | Cmd+K repos search index | M | `feature/cmdk-repos-index` | ✅ done | #52 | [phase-05-cmdk-repos-index.md](phase-05-cmdk-repos-index.md) |
+| 6 | Dependency tracker + auto-issue | M-L | `feature/dependency-tracker` | ✅ done | #53 | [phase-06-dependency-tracker.md](phase-06-dependency-tracker.md) |
 
 Quick wins primero (#1-3) → mid (#4-5) → más pesado (#6). Cada uno independiente, mergeable individualmente.
 

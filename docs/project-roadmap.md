@@ -1,6 +1,6 @@
 # Project Roadmap
 
-> Living document. Updated 2026-05-07.
+> Living document. Updated 2026-05-08.
 
 ## Status Snapshot
 
@@ -10,8 +10,9 @@
 - **Post-MVP Wave 3 — Dashboard & Activity**: ✅ shipped.
 - **Post-MVP Wave 4 — UI/UX Redesign + Comments**: ✅ shipped (PRs #23, #26).
 - **UX hardening (typed errors, toasts, empty states)**: ✅ `dfdf097`.
+- **Post-MVP Wave 5 — Power-user UX + Dependency Tracker**: ✅ shipped to `develop` 2026-05-08 (PRs #46, #48, #50, #51, #52, #53).
 - **Production deploy**: live at `https://dev.webkode.cl` (Dokploy).
-- **Active phase**: backlog grooming — no phase actively in flight.
+- **Active phase**: release Wave 5 to `main`, then backlog grooming.
 
 ## Completed Milestones
 
@@ -69,6 +70,25 @@
 | — | Typed error handling + toasts + contextual empty states | UX hardening | ✅ `dfdf097` | — |
 | — | Git workflow guide | docs | ✅ `687ea53` | #41 |
 
+## Completed Post-MVP (Wave 5) — Power-user UX + Dependency Tracker
+
+`plans/260508-1124-wave-5-sprint/`. Sprint derived from `plans/reports/scout-260508-1035-devdock-crmdev-ideas.md`.
+
+| # | Phase | Notes | Status | PR |
+|---|-------|-------|--------|-----|
+| 1 | View mode toggle (grid/list) | persisted in `user_preferences.filters.viewMode` jsonb; `/repositories` + `/stars` | ✅ | #46 |
+| 2 | Sync status badge | exposes Redis `fetchedAt` + TTL on `/repositories` and `/stars`; click to revalidate | ✅ | #48 |
+| 3 | Devicon language stack | top-2 icons + "+N" overflow on cards/rows; backed by `getLanguages` byte-share | ✅ | #50 |
+| 4 | Repo health badge | quick health from `pushed_at` on cards; full orchestrator (`getRepoHealth`) reserved for overview panel | ✅ | #51 |
+| 5 | Cmd+K org repo index | viewer + every active org, dedup by id, fuzzy on name + description + language | ✅ | #52 |
+| 6 | Dependency tracker | per-repo `/dependencies` tab via Dep Graph GraphQL + npm-latest cross-check; severity filter; auto-issue dialog | ✅ | #53 |
+
+Supporting docs/infra:
+- #44 Wave 5 sprint plan + scout report (docs)
+- #45 perPage selector recovery (rescued from orphaned branch)
+- #47 git-workflow sync-back doc
+- #49 mid-sprint progress update
+
 ## In Progress
 
 _No active phase. Pick next item from backlog._
@@ -77,10 +97,12 @@ _No active phase. Pick next item from backlog._
 
 - **GitHub App migration** — replaces OAuth App. Benefits: 15k req/h vs 5k, per-repo scope selection, no need for `repo` blanket scope. Cost: full re-onboarding of existing users.
 - **Notifications inbox** — `/notifications` view backed by GitHub's notifications API.
-- **Global search (Cmd+K)** — searchable index across repos / issues / PRs from cached data.
+- **Cmd+K issues + PRs** — extend index beyond repos.
 - **Telemetry/observability** — structured logging + Prometheus metrics endpoint.
 - **Rate-limit banner** — surface `RateLimitError` with `retryAfterSeconds` to the user instead of swallowing.
 - **Saved searches** — persist common filter combos in `user_preferences.filters`.
+- **Multi-language outdated tracking** — extend dep tracker beyond npm to PyPI / Go / Maven.
+- **Repo health breakdown panel** — surface the full `getRepoHealth` orchestrator on repo overview.
 
 ## Non-Goals
 
