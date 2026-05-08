@@ -457,6 +457,37 @@ export const githubService = {
     });
   },
 
+  async listOrgRepos(
+    userId: string,
+    org: string,
+    params: { perPage?: number; page?: number; sort?: RepoSort } = {},
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const apiParams = {
+      org,
+      type: "all",
+      sort: params.sort ?? "updated",
+      direction: "desc",
+      per_page: params.perPage ?? 30,
+      page: params.page ?? 1,
+    };
+    return cachedFetch<Repo[]>({
+      userId,
+      resource: "org-repos",
+      params: apiParams,
+      ttlSeconds: TTL.repos,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.repos.listForOrg as unknown as AnyEndpoint,
+          apiParams,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: Repo[]; etag?: string }
+        >,
+    });
+  },
+
   async getRepo(userId: string, owner: string, repo: string) {
     const { rest } = await getGithubClients(userId);
     return cachedFetch<Repo>({
