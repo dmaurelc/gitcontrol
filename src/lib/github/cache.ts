@@ -21,6 +21,7 @@ export const TTL = {
   commitActivity: 3600,
   codeFrequency: 3600,
   traffic: 600,
+  repoHealth: 600,
 } as const;
 
 export type CacheKind = keyof typeof TTL;

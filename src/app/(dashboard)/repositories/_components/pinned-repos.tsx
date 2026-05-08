@@ -71,7 +71,9 @@ export async function PinnedRepos({
               </Card>
             );
           }
-          const d = r.value.data;
+          const d = r.value.data as typeof r.value.data & {
+            archived?: boolean;
+          };
           return (
             <RepoCard
               key={d.id}
@@ -84,6 +86,7 @@ export async function PinnedRepos({
               openIssues={d.open_issues_count}
               isPrivate={d.private}
               pushedAt={d.pushed_at}
+              archived={d.archived}
               pinned
             />
           );
