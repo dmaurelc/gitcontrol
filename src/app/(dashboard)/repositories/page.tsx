@@ -14,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
-import { ViewModeToggle } from "@/components/view-mode-toggle";
 import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
@@ -76,7 +75,6 @@ export default async function RepositoriesPage({
                 path="/repositories"
               />
             ) : null}
-            <ViewModeToggle scope="repos" current={viewMode} />
             <NewRepoDialog />
           </div>
         }
@@ -84,7 +82,7 @@ export default async function RepositoriesPage({
       {prefs.pinnedRepos.length > 0 ? (
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
-      <RepoFilters />
+      <RepoFilters viewMode={viewMode} />
       <Suspense fallback={<ListSkeleton viewMode={viewMode} />}>
         <List userId={session.user.id} sp={sp} viewMode={viewMode} />
       </Suspense>

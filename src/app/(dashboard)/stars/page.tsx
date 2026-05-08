@@ -11,7 +11,12 @@ import { MagicCard } from "@/components/ui/magic-card";
 import { getLanguageColor } from "@/lib/github/language-colors";
 import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { StarsFilters } from "./_components/stars-filters";
+import { StarListRow } from "./_components/star-list-row";
 import { clampPerPage } from "@/lib/pagination/per-page";
+import {
+  getUserPreferences,
+  readViewMode,
+} from "@/lib/preferences/get-user-preferences";
 
 type StarRow = {
   starred_at: string;
@@ -73,6 +78,8 @@ export default async function StarsPage({
   const page = Math.max(1, Number(sp.page ?? "1"));
   const perPage = clampPerPage(sp.perPage);
   const { apiSort, apiDirection, localSort } = parseSort(sp.sort);
+  const prefs = await getUserPreferences(session.user.id);
+  const viewMode = readViewMode(prefs.filters, "stars");
 
   const q = sp.q?.toLowerCase().trim();
   const lang = sp.language?.trim();
@@ -167,13 +174,27 @@ export default async function StarsPage({
           ) : undefined
         }
       />
-      <StarsFilters />
+      <StarsFilters viewMode={viewMode} />
       {slice.length === 0 ? (
         <EmptyState
           icon={Star}
           title="No stars match"
           description="Adjust filters or star repos on GitHub to see them here."
         />
+      ) : viewMode === "list" ? (
+        <div className="flex flex-col gap-2">
+          {slice.map((s) => (
+            <StarListRow
+              key={s.repo.id}
+              fullName={s.repo.full_name}
+              description={s.repo.description}
+              language={s.repo.language}
+              stars={s.repo.stargazers_count}
+              htmlUrl={s.repo.html_url}
+              starredAt={s.starred_at}
+            />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {slice.map((s) => (

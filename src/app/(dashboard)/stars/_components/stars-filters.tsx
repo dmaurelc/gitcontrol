@@ -15,6 +15,8 @@ import {
   DEFAULT_PER_PAGE,
   clampPerPage,
 } from "@/lib/pagination/per-page";
+import { ViewModeToggle } from "@/components/view-mode-toggle";
+import type { ViewMode } from "@/lib/preferences/get-user-preferences";
 
 const SORTS = [
   { value: "created-desc", label: "Recently starred" },
@@ -39,7 +41,7 @@ const LANGUAGES = [
   "Kotlin",
 ];
 
-export function StarsFilters() {
+export function StarsFilters({ viewMode }: { viewMode: ViewMode }) {
   const router = useRouter();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -107,22 +109,25 @@ export function StarsFilters() {
           ))}
         </SelectContent>
       </Select>
-      <Select
-        value={currentPerPage}
-        onValueChange={updatePerPage}
-        disabled={pending}
-      >
-        <SelectTrigger className="md:ml-auto md:w-[120px]">
-          <SelectValue placeholder="Per page" />
-        </SelectTrigger>
-        <SelectContent>
-          {PER_PAGE_OPTIONS.map((n) => (
-            <SelectItem key={n} value={String(n)}>
-              {n} / page
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2 md:ml-auto">
+        <Select
+          value={currentPerPage}
+          onValueChange={updatePerPage}
+          disabled={pending}
+        >
+          <SelectTrigger className="md:w-[120px]">
+            <SelectValue placeholder="Per page" />
+          </SelectTrigger>
+          <SelectContent>
+            {PER_PAGE_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n} / page
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <ViewModeToggle scope="stars" current={viewMode} />
+      </div>
     </div>
   );
 }

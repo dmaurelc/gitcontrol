@@ -4,9 +4,7 @@ import { db } from "@/lib/db/client";
 import { userPreferences } from "@/lib/db/schema";
 
 export type ViewMode = "grid" | "list";
-// Scopes: only `repos` ships in v1. PR/issue lists already use a row layout
-// where a grid view would lose information density — see plan phase 01 notes.
-export type ViewModeScope = "repos";
+export type ViewModeScope = "repos" | "stars";
 
 export type PreferenceFilters = {
   viewMode?: Partial<Record<ViewModeScope, ViewMode>>;
