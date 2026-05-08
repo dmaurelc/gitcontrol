@@ -32,11 +32,13 @@ export function ManifestCard({
   filter,
   severitySet,
 }: Props) {
+  // When the user narrows the severity set, they only care about outdated
+  // rows. Hide up-to-date rows in that case so the table doesn't dump 100
+  // green entries below 3 reds.
+  const allSeverities = severitySet.size === 4;
   const visible = rows.filter((r) => {
-    // "Outdated only" hides up-to-date rows.
     if (filter === "outdated" && !r.outdated.isOutdated) return false;
-    // Severity filter only narrows the outdated rows. Up-to-date rows
-    // are always shown when filter === "all".
+    if (!allSeverities && !r.outdated.isOutdated) return false;
     if (r.outdated.isOutdated && !severitySet.has(r.outdated.severity)) {
       return false;
     }
