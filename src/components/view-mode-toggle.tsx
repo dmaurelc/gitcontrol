@@ -21,7 +21,16 @@ export function ViewModeToggle({ scope, current }: Props) {
       await setViewModeAction(scope, mode);
       // revalidatePath invalidates the server cache; router.refresh forces
       // the client to fetch the new RSC payload so `current` updates.
-      router.refresh();
+      // Wrap the refresh in a View Transition when supported so the
+      // grid/list swap fades instead of snapping.
+      const doc = document as Document & {
+        startViewTransition?: (cb: () => void) => unknown;
+      };
+      if (typeof doc.startViewTransition === "function") {
+        doc.startViewTransition(() => router.refresh());
+      } else {
+        router.refresh();
+      }
     });
   }
 
