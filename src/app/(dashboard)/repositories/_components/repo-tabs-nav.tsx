@@ -18,6 +18,7 @@ export function RepoTabsNav({
     { href: `${base}/issues`, label: "Issues" },
     { href: `${base}/pulls`, label: "Pull requests" },
     { href: `${base}/actions`, label: "Actions" },
+    { href: `${base}/dependencies`, label: "Dependencies" },
     { href: `${base}/insights`, label: "Insights" },
   ];
   return (
