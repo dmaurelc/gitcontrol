@@ -206,6 +206,7 @@ async function List({
               isPrivate={r.private}
               pushedAt={r.pushed_at}
               pinned={pinnedSet.has(r.full_name)}
+              archived={r.archived}
             />
           ))}
         </div>
@@ -224,6 +225,7 @@ async function List({
               isPrivate={r.private}
               pushedAt={r.pushed_at}
               pinned={pinnedSet.has(r.full_name)}
+              archived={r.archived}
             />
           ))}
         </div>

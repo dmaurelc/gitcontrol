@@ -3,6 +3,8 @@ import { Star, GitFork, Lock, Globe, CircleAlert } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PinButton } from "./pin-button";
 import { DeviconStack } from "@/components/devicon-stack";
+import { RepoHealthBadge } from "@/components/repo-health-badge";
+import { computeQuickHealth } from "@/lib/github/health-score";
 
 type Props = {
   fullName: string;
@@ -15,6 +17,7 @@ type Props = {
   isPrivate: boolean;
   pushedAt: string;
   pinned?: boolean;
+  archived?: boolean;
 };
 
 export function RepoListRow({
@@ -28,11 +31,13 @@ export function RepoListRow({
   isPrivate,
   pushedAt,
   pinned = false,
+  archived = false,
 }: Props) {
   const [owner] = fullName.split("/");
   const avatarUrl = owner
     ? `https://github.com/${encodeURIComponent(owner)}.png?size=64`
     : undefined;
+  const health = computeQuickHealth(pushedAt);
   const stackInput: Record<string, number> | string[] =
     languages && Object.keys(languages).length > 0
       ? languages
@@ -96,6 +101,7 @@ export function RepoListRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        <RepoHealthBadge score={health} hidden={archived} />
         <span
           className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0 text-[10px] font-medium"
           aria-label={isPrivate ? "Private" : "Public"}
