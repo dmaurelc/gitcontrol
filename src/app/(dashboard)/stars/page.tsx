@@ -170,7 +170,11 @@ export default async function StarsPage({
           owner,
           name,
         );
-        return res.data;
+        const data = res.data;
+        if (Object.keys(data).length === 0 && s.repo.language) {
+          return { [s.repo.language]: 1 };
+        }
+        return data;
       } catch {
         return s.repo.language ? { [s.repo.language]: 1 } : {};
       }

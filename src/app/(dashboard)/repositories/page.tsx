@@ -175,7 +175,14 @@ async function List({
       const [owner, name] = r.full_name.split("/");
       try {
         const res = await githubService.getLanguages(userId, owner, name);
-        return res.data;
+        const data = res.data;
+        // Empty languages map can happen for empty repos. If the repo has
+        // a primary language reported by the listRepos call, fall back to
+        // that single entry so the badge still renders.
+        if (Object.keys(data).length === 0 && r.language) {
+          return { [r.language]: 1 };
+        }
+        return data;
       } catch {
         return r.language ? { [r.language]: 1 } : {};
       }
