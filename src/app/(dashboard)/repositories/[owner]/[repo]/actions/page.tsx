@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
 import { RunRow } from "./_components/run-row";
 import { RunsFilters } from "./_components/runs-filters";
+import { clampPerPage } from "@/lib/pagination/per-page";
 import type { WorkflowRunStatus, WorkflowRun, Workflow } from "@/lib/github/service";
 
 type SP = {
@@ -15,6 +16,7 @@ type SP = {
   workflow?: string;
   branch?: string;
   page?: string;
+  perPage?: string;
 };
 
 export default async function ActionsPage({
@@ -30,6 +32,7 @@ export default async function ActionsPage({
   const { owner, repo } = await params;
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page ?? "1"));
+  const perPage = clampPerPage(sp.perPage);
   const statusRaw = sp.status ?? "all";
   const workflowIdRaw = sp.workflow ? Number(sp.workflow) : undefined;
   const branch = sp.branch?.trim() || undefined;
@@ -53,7 +56,7 @@ export default async function ActionsPage({
   const [runsResult, workflowsResult] = await Promise.allSettled([
     githubService.listWorkflowRuns(session.user.id, owner, repo, {
       page,
-      perPage: 30,
+      perPage,
       status,
       branch,
       workflowId: workflowIdRaw,
@@ -101,11 +104,11 @@ export default async function ActionsPage({
         </ul>
       )}
 
-      {(runs.length === 30 || page > 1) && (
+      {(runs.length === perPage || page > 1) && (
         <PaginationNav
           basePath={basePath}
           page={page}
-          hasNext={runs.length === 30}
+          hasNext={runs.length === perPage}
         />
       )}
     </div>
