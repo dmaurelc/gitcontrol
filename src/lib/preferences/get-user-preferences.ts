@@ -3,6 +3,15 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { userPreferences } from "@/lib/db/schema";
 
+export type ViewMode = "grid" | "list";
+export type ViewModeScope = "repos" | "stars";
+
+export type PreferenceFilters = {
+  viewMode?: Partial<Record<ViewModeScope, ViewMode>>;
+  // Future filter keys live here. Keep typed when added.
+  [key: string]: unknown;
+};
+
 export type UserPreferences = {
   userId: string;
   theme: "light" | "dark" | "system";
@@ -10,8 +19,18 @@ export type UserPreferences = {
   pinnedRepos: string[];
   hiddenOrgs: string[];
   hiddenRepos: string[];
-  filters: Record<string, unknown>;
+  filters: PreferenceFilters;
 };
+
+export const DEFAULT_VIEW_MODE: ViewMode = "grid";
+
+export function readViewMode(
+  filters: PreferenceFilters,
+  scope: ViewModeScope,
+): ViewMode {
+  const v = filters.viewMode?.[scope];
+  return v === "list" || v === "grid" ? v : DEFAULT_VIEW_MODE;
+}
 
 const DEFAULTS: Omit<UserPreferences, "userId"> = {
   theme: "system",
@@ -44,7 +63,7 @@ export async function getUserPreferences(
       pinnedRepos: rows[0].pinnedRepos ?? [],
       hiddenOrgs: rows[0].hiddenOrgs ?? [],
       hiddenRepos: rows[0].hiddenRepos ?? [],
-      filters: rows[0].filters ?? {},
+      filters: (rows[0].filters ?? {}) as PreferenceFilters,
     };
   }
   await db.insert(userPreferences).values({ userId, ...DEFAULTS });

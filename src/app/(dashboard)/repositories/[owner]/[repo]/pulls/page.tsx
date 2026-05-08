@@ -7,9 +7,16 @@ import { githubService } from "@/lib/github/service";
 import { GithubError } from "@/lib/github/errors";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { PaginationNav } from "@/components/pagination-nav";
+import { PerPageSelect } from "@/components/per-page-select";
+import { clampPerPage } from "@/lib/pagination/per-page";
 import { IssueList, type IssueLike } from "../../../_components/issue-list";
 
-type SP = { state?: "open" | "closed" | "all"; page?: string };
+type SP = {
+  state?: "open" | "closed" | "all";
+  page?: string;
+  perPage?: string;
+};
 
 type LoadResult =
   | { kind: "ok"; items: IssueLike[] }
@@ -30,13 +37,25 @@ export default async function PullsPage({
   const sp = await searchParams;
   const state = sp.state ?? "open";
   const page = Math.max(1, Number(sp.page ?? "1"));
+  const perPage = clampPerPage(sp.perPage);
 
-  const result = await loadPulls(session.user.id, owner, repo, state, page);
+  const basePath = `/repositories/${owner}/${repo}/pulls`;
+
+  const result = await loadPulls(
+    session.user.id,
+    owner,
+    repo,
+    state,
+    page,
+    perPage,
+  );
 
   if (result.kind !== "ok") {
     return (
       <div className="flex flex-col gap-3">
-        <StateTabs owner={owner} repo={repo} active={state} />
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/50 p-3 shadow-soft">
+          <StateTabs owner={owner} repo={repo} active={state} />
+        </div>
         <PullsErrorState kind={result.kind} />
       </div>
     );
@@ -44,14 +63,15 @@ export default async function PullsPage({
 
   return (
     <div className="flex flex-col gap-3">
-      <StateTabs owner={owner} repo={repo} active={state} />
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/50 p-3 shadow-soft">
+        <StateTabs owner={owner} repo={repo} active={state} />
+        <PerPageSelect basePath={basePath} />
+      </div>
       <IssueList items={result.items} kind="pr" owner={owner} repo={repo} />
-      <Pagination
-        owner={owner}
-        repo={repo}
+      <PaginationNav
+        basePath={basePath}
         page={page}
-        state={state}
-        hasNext={result.items.length === 30}
+        hasNext={result.items.length === perPage}
       />
     </div>
   );
@@ -63,6 +83,7 @@ async function loadPulls(
   repo: string,
   state: "open" | "closed" | "all",
   page: number,
+  perPage: number,
 ): Promise<LoadResult> {
   try {
     const res = await githubService.listPullRequests(
@@ -71,6 +92,7 @@ async function loadPulls(
       repo,
       state,
       page,
+      perPage,
     );
     return { kind: "ok", items: res.data as IssueLike[] };
   } catch (err) {
@@ -139,33 +161,6 @@ function StateTabs({
           </Link>
         </Button>
       ))}
-    </div>
-  );
-}
-
-function Pagination({
-  owner,
-  repo,
-  page,
-  state,
-  hasNext,
-}: {
-  owner: string;
-  repo: string;
-  page: number;
-  state: string;
-  hasNext: boolean;
-}) {
-  const base = `/repositories/${owner}/${repo}/pulls?state=${state}&page=`;
-  return (
-    <div className="flex items-center justify-end gap-2">
-      <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-        <Link href={`${base}${Math.max(1, page - 1)}`}>Previous</Link>
-      </Button>
-      <span className="text-xs text-muted-foreground">Page {page}</span>
-      <Button asChild variant="outline" size="sm" disabled={!hasNext}>
-        <Link href={`${base}${page + 1}`}>Next</Link>
-      </Button>
     </div>
   );
 }

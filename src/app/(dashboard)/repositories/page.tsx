@@ -4,15 +4,20 @@ import { Suspense } from "react";
 import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
-import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
+import {
+  getUserPreferences,
+  readViewMode,
+} from "@/lib/preferences/get-user-preferences";
 import { filterVisible } from "@/lib/preferences/visibility-filter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
+import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
+import { RepoListRow } from "./_components/repo-list-row";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
 import { PinnedRepos } from "./_components/pinned-repos";
 import { clampPerPage } from "@/lib/pagination/per-page";
@@ -35,20 +40,51 @@ export default async function RepositoriesPage({
   if (!session) redirect("/login");
   const sp = await searchParams;
   const prefs = await getUserPreferences(session.user.id);
+  const viewMode = readViewMode(prefs.filters, "repos");
+
+  // Warm the first page of repos so the header can show sync status.
+  // The Suspense'd <List> below re-uses the same cache entry instantly.
+  let badgeFetchedAt: number | undefined;
+  let badgeTtl: number | undefined;
+  try {
+    const sort = sp.sort ?? "updated";
+    const visibility = sp.visibility ?? "all";
+    const res = await githubService.listRepos(session.user.id, {
+      sort,
+      visibility,
+      perPage: FETCH_PAGE_SIZE,
+      page: 1,
+    });
+    badgeFetchedAt = res.fetchedAt;
+    badgeTtl = res.ttlSeconds;
+  } catch {
+    // Best-effort — header just won't show the badge.
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Repositories"
         description="Filter, sort and open repositories you own or collaborate on."
-        action={<NewRepoDialog />}
+        action={
+          <div className="flex items-center gap-2">
+            {badgeFetchedAt !== undefined && badgeTtl !== undefined ? (
+              <SyncStatusBadge
+                fetchedAt={badgeFetchedAt}
+                ttlSeconds={badgeTtl}
+                path="/repositories"
+              />
+            ) : null}
+            <NewRepoDialog />
+          </div>
+        }
       />
       {prefs.pinnedRepos.length > 0 ? (
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
-      <RepoFilters />
-      <Suspense fallback={<ListSkeleton />}>
-        <List userId={session.user.id} sp={sp} />
+      <RepoFilters viewMode={viewMode} />
+      <Suspense fallback={<ListSkeleton viewMode={viewMode} />}>
+        <List userId={session.user.id} sp={sp} viewMode={viewMode} />
       </Suspense>
     </div>
   );
@@ -61,9 +97,11 @@ const FETCH_PAGE_SIZE = 100;
 async function List({
   userId,
   sp,
+  viewMode,
 }: {
   userId: string;
   sp: SearchParams;
+  viewMode: "grid" | "list";
 }) {
   const page = Math.max(1, Number(sp.page ?? "1"));
   const perPage = clampPerPage(sp.perPage);
@@ -129,30 +167,94 @@ async function List({
     );
   }
 
+  // Fetch language breakdown for visible slice in parallel. Heavily cached
+  // (TTL.languages = 1h) so repeat renders are free; failures fall back to
+  // the repo's primary `language` field.
+  const languagesByRepo = await Promise.all(
+    slice.map(async (r) => {
+      const [owner, name] = r.full_name.split("/");
+      try {
+        const res = await githubService.getLanguages(userId, owner, name);
+        const data = res.data;
+        // Empty languages map can happen for empty repos. If the repo has
+        // a primary language reported by the listRepos call, fall back to
+        // that single entry so the badge still renders.
+        if (Object.keys(data).length === 0 && r.language) {
+          return { [r.language]: 1 };
+        }
+        return data;
+      } catch {
+        return r.language ? { [r.language]: 1 } : {};
+      }
+    }),
+  );
+
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {slice.map((r) => (
-          <RepoCard
-            key={r.id}
-            fullName={r.full_name}
-            description={r.description}
-            language={r.language}
-            stars={r.stargazers_count}
-            forks={r.forks_count}
-            openIssues={r.open_issues_count}
-            isPrivate={r.private}
-            pushedAt={r.pushed_at}
-            pinned={pinnedSet.has(r.full_name)}
-          />
-        ))}
-      </div>
+      {viewMode === "list" ? (
+        <div className="flex flex-col gap-2">
+          {slice.map((r, i) => (
+            <RepoListRow
+              key={r.id}
+              fullName={r.full_name}
+              description={r.description}
+              language={r.language}
+              languages={languagesByRepo[i]}
+              stars={r.stargazers_count}
+              forks={r.forks_count}
+              openIssues={r.open_issues_count}
+              isPrivate={r.private}
+              pushedAt={r.pushed_at}
+              pinned={pinnedSet.has(r.full_name)}
+              archived={r.archived}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {slice.map((r, i) => (
+            <RepoCard
+              key={r.id}
+              fullName={r.full_name}
+              description={r.description}
+              language={r.language}
+              languages={languagesByRepo[i]}
+              stars={r.stargazers_count}
+              forks={r.forks_count}
+              openIssues={r.open_issues_count}
+              isPrivate={r.private}
+              pushedAt={r.pushed_at}
+              pinned={pinnedSet.has(r.full_name)}
+              archived={r.archived}
+            />
+          ))}
+        </div>
+      )}
       <PaginationNav basePath="/repositories" page={page} hasNext={hasNext} />
     </>
   );
 }
 
-function ListSkeleton() {
+function ListSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
+  if (viewMode === "list") {
+    return (
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-md border bg-card/50 px-3 py-2.5 shadow-soft"
+          >
+            <Skeleton className="size-7 shrink-0 rounded-md" />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Skeleton className="h-3.5 w-48 rounded" />
+              <Skeleton className="h-3 w-3/4 rounded" />
+            </div>
+            <Skeleton className="hidden h-3 w-32 rounded sm:block" />
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (

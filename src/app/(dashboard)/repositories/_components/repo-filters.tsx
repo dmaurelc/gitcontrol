@@ -15,6 +15,8 @@ import {
   DEFAULT_PER_PAGE,
   clampPerPage,
 } from "@/lib/pagination/per-page";
+import { ViewModeToggle } from "@/components/view-mode-toggle";
+import type { ViewMode } from "@/lib/preferences/get-user-preferences";
 
 const SORTS = [
   { value: "updated", label: "Recently updated" },
@@ -45,7 +47,7 @@ const LANGUAGES = [
   "Kotlin",
 ];
 
-export function RepoFilters() {
+export function RepoFilters({ viewMode }: { viewMode: ViewMode }) {
   const router = useRouter();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -129,22 +131,25 @@ export function RepoFilters() {
           ))}
         </SelectContent>
       </Select>
-      <Select
-        value={currentPerPage}
-        onValueChange={updatePerPage}
-        disabled={pending}
-      >
-        <SelectTrigger className="md:ml-auto md:w-[120px]">
-          <SelectValue placeholder="Per page" />
-        </SelectTrigger>
-        <SelectContent>
-          {PER_PAGE_OPTIONS.map((n) => (
-            <SelectItem key={n} value={String(n)}>
-              {n} / page
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2 md:ml-auto">
+        <Select
+          value={currentPerPage}
+          onValueChange={updatePerPage}
+          disabled={pending}
+        >
+          <SelectTrigger className="md:w-[120px]">
+            <SelectValue placeholder="Per page" />
+          </SelectTrigger>
+          <SelectContent>
+            {PER_PAGE_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n} / page
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <ViewModeToggle scope="repos" current={viewMode} />
+      </div>
     </div>
   );
 }

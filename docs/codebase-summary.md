@@ -1,6 +1,6 @@
 # Codebase Summary
 
-> Snapshot of the repository as of 2026-05-07 — branch `develop`, 13,185 LOC across 122 TS/TSX files in `src/`.
+> Snapshot of the repository as of 2026-05-08 — branch `develop`, post-Wave 5.
 
 ## Top-Level Layout
 
@@ -140,3 +140,13 @@ See [`docs/git-workflow.md`](./git-workflow.md). Default branch `main`. Feature 
 - `plans/260506-1300-github-dashboard/` — MVP (7 phases, all merged to `develop`).
 - `plans/260506-1818-post-mvp-improvements/` — visibility filters, stars filters, prod cleanup, UI redesign, comments, Actions runs.
 - `plans/260507-1253-repo-detail-expansion/` — Files tab, Insights tab, Releases/Tags/Contributors aside (merged).
+- `plans/260508-1124-wave-5-sprint/` — view-mode toggle, sync-status badge, Devicon stack, repo health, Cmd+K org index, dependency tracker (all merged).
+
+## Wave 5 Additions
+
+- `app/(dashboard)/repositories/[owner]/[repo]/dependencies/` — Dep Graph + npm-latest tab, severity filter, auto-issue dialog.
+- `lib/github/dependencies.ts`, `lib/registries/npm-registry.ts`, `lib/dependencies/{compute-outdated,build-issue-body}.ts` — dep tracker plumbing.
+- `lib/github/health-score.ts` + `components/repo-health-badge.tsx` — repo health pill (quick + full orchestrator).
+- `lib/github/freshness.ts` + `components/sync-status-badge.tsx` — cache freshness pill.
+- `components/{devicon-badge,devicon-stack}.tsx` + `lib/github/language-devicon-map.ts` — language stack icons.
+- `components/view-mode-toggle.tsx` + `app/actions/view-mode.ts` — grid/list toggle persisted in jsonb.

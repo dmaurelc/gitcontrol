@@ -93,6 +93,7 @@ export type Repo = {
   pushed_at: string;
   updated_at: string;
   default_branch: string;
+  archived?: boolean;
 };
 
 export type IssueLabel = {
@@ -456,6 +457,37 @@ export const githubService = {
     });
   },
 
+  async listOrgRepos(
+    userId: string,
+    org: string,
+    params: { perPage?: number; page?: number; sort?: RepoSort } = {},
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const apiParams = {
+      org,
+      type: "all",
+      sort: params.sort ?? "updated",
+      direction: "desc",
+      per_page: params.perPage ?? 30,
+      page: params.page ?? 1,
+    };
+    return cachedFetch<Repo[]>({
+      userId,
+      resource: "org-repos",
+      params: apiParams,
+      ttlSeconds: TTL.repos,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.repos.listForOrg as unknown as AnyEndpoint,
+          apiParams,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: Repo[]; etag?: string }
+        >,
+    });
+  },
+
   async getRepo(userId: string, owner: string, repo: string) {
     const { rest } = await getGithubClients(userId);
     return cachedFetch<Repo>({
@@ -495,6 +527,88 @@ export const githubService = {
               etag?: string;
             }
         >,
+    });
+  },
+
+  /**
+   * Returns the language byte-counts for a repo, e.g. { TypeScript: 12345,
+   * CSS: 678 }. Cached with TTL.languages (1h).
+   */
+  async getLanguages(userId: string, owner: string, repo: string) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo };
+    return cachedFetch<Record<string, number>>({
+      userId,
+      resource: "languages",
+      params,
+      ttlSeconds: TTL.languages,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.repos.listLanguages as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: Record<string, number>; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * Computes the full repo health score by reading `pushed_at`, recent open
+   * PRs, recent open issues, and the latest workflow run conclusion in
+   * parallel. Result is memoized in Redis for `TTL.repoHealth` so the
+   * breakdown panel on the repo overview is cheap on repeat renders.
+   */
+  async getRepoHealth(userId: string, owner: string, repo: string) {
+    const { computeHealthScore } = await import("./health-score");
+    const params = { owner, repo };
+    return cachedFetch<ReturnType<typeof computeHealthScore>>({
+      userId,
+      resource: "repoHealth",
+      params,
+      ttlSeconds: TTL.repoHealth,
+      fetcher: async () => {
+        const repoSelf = this as unknown as typeof githubService;
+        const [repoRes, prsRes, issuesRes, runs] = await Promise.allSettled([
+          repoSelf.getRepo(userId, owner, repo),
+          repoSelf.listPullRequests(userId, owner, repo, "open", 1, 30),
+          repoSelf.listIssues(userId, owner, repo, "open", 1, 30),
+          repoSelf.listWorkflowRuns(userId, owner, repo, { perPage: 1 }),
+        ]);
+        const pushedAt =
+          repoRes.status === "fulfilled"
+            ? (repoRes.value.data as { pushed_at: string }).pushed_at
+            : null;
+        const openPrCreatedAt =
+          prsRes.status === "fulfilled"
+            ? (prsRes.value.data as Array<{ created_at: string }>).map(
+                (p) => p.created_at,
+              )
+            : [];
+        const openIssueUpdatedAt =
+          issuesRes.status === "fulfilled"
+            ? (issuesRes.value.data as Array<{
+                updated_at: string;
+                pull_request?: unknown;
+              }>)
+                .filter((i) => !i.pull_request)
+                .map((i) => i.updated_at)
+            : [];
+        const lastRun =
+          runs.status === "fulfilled" && runs.value.length > 0
+            ? runs.value[0]
+            : null;
+        const lastRunConclusion = (lastRun?.conclusion ?? null) as
+          Parameters<typeof computeHealthScore>[0]["lastRunConclusion"];
+        const score = computeHealthScore({
+          pushedAt,
+          openPrCreatedAt,
+          openIssueUpdatedAt,
+          lastRunConclusion,
+        });
+        return { notModified: false as const, body: score };
+      },
     });
   },
 
@@ -740,9 +854,10 @@ export const githubService = {
     repo: string,
     state: "open" | "closed" | "all" = "open",
     page = 1,
+    perPage = 30,
   ) {
     const { rest } = await getGithubClients(userId);
-    const params = { owner, repo, state, per_page: 30, page };
+    const params = { owner, repo, state, per_page: perPage, page };
     return cachedFetch<unknown[]>({
       userId,
       resource: "issues",
@@ -766,9 +881,10 @@ export const githubService = {
     repo: string,
     state: "open" | "closed" | "all" = "open",
     page = 1,
+    perPage = 30,
   ) {
     const { rest } = await getGithubClients(userId);
-    const params = { owner, repo, state, per_page: 30, page };
+    const params = { owner, repo, state, per_page: perPage, page };
     return cachedFetch<unknown[]>({
       userId,
       resource: "prs",

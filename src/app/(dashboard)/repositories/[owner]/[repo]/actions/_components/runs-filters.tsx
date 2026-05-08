@@ -9,6 +9,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  PER_PAGE_OPTIONS,
+  DEFAULT_PER_PAGE,
+  clampPerPage,
+} from "@/lib/pagination/per-page";
 import type { Workflow } from "@/lib/github/service";
 
 const STATUS_OPTIONS = [
@@ -99,6 +104,27 @@ export function RunsFilters({ owner, repo, workflows }: Props) {
           }
         }}
       />
+
+      {/* Per-page selector */}
+      <Select
+        value={String(clampPerPage(params.get("perPage")))}
+        onValueChange={(v) => {
+          if (v === String(DEFAULT_PER_PAGE)) update("perPage", "");
+          else update("perPage", v);
+        }}
+        disabled={pending}
+      >
+        <SelectTrigger className="md:ml-auto md:w-[120px]">
+          <SelectValue placeholder="Per page" />
+        </SelectTrigger>
+        <SelectContent>
+          {PER_PAGE_OPTIONS.map((n) => (
+            <SelectItem key={n} value={String(n)}>
+              {n} / page
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

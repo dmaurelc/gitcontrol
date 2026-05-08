@@ -7,9 +7,16 @@ import { githubService } from "@/lib/github/service";
 import { GithubError } from "@/lib/github/errors";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { PaginationNav } from "@/components/pagination-nav";
+import { PerPageSelect } from "@/components/per-page-select";
+import { clampPerPage } from "@/lib/pagination/per-page";
 import { IssueList, type IssueLike } from "../../../_components/issue-list";
 
-type SP = { state?: "open" | "closed" | "all"; page?: string };
+type SP = {
+  state?: "open" | "closed" | "all";
+  page?: string;
+  perPage?: string;
+};
 
 type LoadResult =
   | { kind: "ok"; items: IssueLike[] }
@@ -30,13 +37,23 @@ export default async function IssuesPage({
   const sp = await searchParams;
   const state = sp.state ?? "open";
   const page = Math.max(1, Number(sp.page ?? "1"));
+  const perPage = clampPerPage(sp.perPage);
 
-  const result = await loadIssues(session.user.id, owner, repo, state, page);
+  const basePath = `/repositories/${owner}/${repo}/issues`;
+
+  const result = await loadIssues(
+    session.user.id,
+    owner,
+    repo,
+    state,
+    page,
+    perPage,
+  );
 
   if (result.kind !== "ok") {
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/50 p-3 shadow-soft">
           <StateTabs owner={owner} repo={repo} active={state} />
         </div>
         <IssuesErrorState kind={result.kind} />
@@ -46,21 +63,20 @@ export default async function IssuesPage({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/50 p-3 shadow-soft">
         <StateTabs owner={owner} repo={repo} active={state} />
-        <Button asChild size="sm">
-          <Link href={`/repositories/${owner}/${repo}/issues/new`}>
-            New issue
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <PerPageSelect basePath={basePath} />
+          <Button asChild size="sm">
+            <Link href={`${basePath}/new`}>New issue</Link>
+          </Button>
+        </div>
       </div>
       <IssueList items={result.items} kind="issue" owner={owner} repo={repo} />
-      <Pagination
-        owner={owner}
-        repo={repo}
+      <PaginationNav
+        basePath={basePath}
         page={page}
-        state={state}
-        hasNext={result.items.length === 30}
+        hasNext={result.items.length === perPage}
       />
     </div>
   );
@@ -72,9 +88,17 @@ async function loadIssues(
   repo: string,
   state: "open" | "closed" | "all",
   page: number,
+  perPage: number,
 ): Promise<LoadResult> {
   try {
-    const res = await githubService.listIssues(userId, owner, repo, state, page);
+    const res = await githubService.listIssues(
+      userId,
+      owner,
+      repo,
+      state,
+      page,
+      perPage,
+    );
     // GitHub's issues endpoint also returns PRs; filter them out.
     const items = (res.data as IssueLike[]).filter((i) => !i.pull_request);
     return { kind: "ok", items };
@@ -144,33 +168,6 @@ function StateTabs({
           </Link>
         </Button>
       ))}
-    </div>
-  );
-}
-
-function Pagination({
-  owner,
-  repo,
-  page,
-  state,
-  hasNext,
-}: {
-  owner: string;
-  repo: string;
-  page: number;
-  state: string;
-  hasNext: boolean;
-}) {
-  const base = `/repositories/${owner}/${repo}/issues?state=${state}&page=`;
-  return (
-    <div className="flex items-center justify-end gap-2">
-      <Button asChild variant="outline" size="sm" disabled={page <= 1}>
-        <Link href={`${base}${Math.max(1, page - 1)}`}>Previous</Link>
-      </Button>
-      <span className="text-xs text-muted-foreground">Page {page}</span>
-      <Button asChild variant="outline" size="sm" disabled={!hasNext}>
-        <Link href={`${base}${page + 1}`}>Next</Link>
-      </Button>
     </div>
   );
 }
