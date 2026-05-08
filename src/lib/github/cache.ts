@@ -50,6 +50,10 @@ export type FetchResult<T> = {
   data: T;
   etag?: string;
   fromCache: boolean;
+  /** Epoch seconds. When the cached body was last fetched from GitHub. */
+  fetchedAt: number;
+  /** Same as the TTL the entry was written with. */
+  ttlSeconds: number;
 };
 
 /**
@@ -80,7 +84,13 @@ export async function cachedFetch<T>(opts: {
   if (result.notModified && cached) {
     // Refresh TTL on hit-via-304.
     await redis.expire(key, opts.ttlSeconds);
-    return { data: cached.body, etag: cached.etag, fromCache: true };
+    return {
+      data: cached.body,
+      etag: cached.etag,
+      fromCache: true,
+      fetchedAt: cached.fetchedAt,
+      ttlSeconds: opts.ttlSeconds,
+    };
   }
 
   if (result.notModified) {
@@ -88,13 +98,20 @@ export async function cachedFetch<T>(opts: {
     throw new Error("cachedFetch received notModified without prior cache");
   }
 
+  const fetchedAt = Math.floor(Date.now() / 1000);
   const envelope: CachedEnvelope<T> = {
     body: result.body,
     etag: result.etag,
-    fetchedAt: Math.floor(Date.now() / 1000),
+    fetchedAt,
   };
   await redis.set(key, JSON.stringify(envelope), "EX", opts.ttlSeconds);
-  return { data: result.body, etag: result.etag, fromCache: false };
+  return {
+    data: result.body,
+    etag: result.etag,
+    fromCache: false,
+    fetchedAt,
+    ttlSeconds: opts.ttlSeconds,
+  };
 }
 
 /**

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
 import { MagicCard } from "@/components/ui/magic-card";
 import { getLanguageColor } from "@/lib/github/language-colors";
+import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { StarsFilters } from "./_components/stars-filters";
 import { clampPerPage } from "@/lib/pagination/per-page";
 
@@ -79,6 +80,8 @@ export default async function StarsPage({
 
   const all: StarRow[] = [];
   let exhausted = false;
+  let oldestFetchedAt: number | undefined;
+  let ttlSeconds: number | undefined;
 
   if (hasLocalFilter) {
     const needed = page * perPage + 1;
@@ -92,6 +95,11 @@ export default async function StarsPage({
           direction: apiDirection,
         });
         batch = res.data as unknown as StarRow[];
+        oldestFetchedAt =
+          oldestFetchedAt === undefined
+            ? res.fetchedAt
+            : Math.min(oldestFetchedAt, res.fetchedAt);
+        ttlSeconds = res.ttlSeconds;
       } catch {
         exhausted = true;
         break;
@@ -117,6 +125,8 @@ export default async function StarsPage({
         direction: apiDirection,
       });
       all.push(...(res.data as unknown as StarRow[]));
+      oldestFetchedAt = res.fetchedAt;
+      ttlSeconds = res.ttlSeconds;
     } catch {
       // ignore
     }
@@ -144,7 +154,19 @@ export default async function StarsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Stars" description="Repositories you have starred." />
+      <PageHeader
+        title="Stars"
+        description="Repositories you have starred."
+        action={
+          oldestFetchedAt !== undefined && ttlSeconds !== undefined ? (
+            <SyncStatusBadge
+              fetchedAt={oldestFetchedAt}
+              ttlSeconds={ttlSeconds}
+              path="/stars"
+            />
+          ) : undefined
+        }
+      />
       <StarsFilters />
       {slice.length === 0 ? (
         <EmptyState

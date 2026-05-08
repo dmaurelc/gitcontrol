@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { RepoListRow } from "./_components/repo-list-row";
@@ -93,6 +94,10 @@ async function List({
   const needed = page * perPage + 1;
   const all: Awaited<ReturnType<typeof githubService.listRepos>>["data"] = [];
   let exhausted = false;
+  // Track the oldest fetchedAt across the loop so the sync badge reflects
+  // the worst-case freshness shown on the page.
+  let oldestFetchedAt: number | undefined;
+  let ttlSeconds: number | undefined;
   for (let p = 1; p <= MAX_FETCH_PAGES; p++) {
     let batch: typeof all = [];
     try {
@@ -103,6 +108,11 @@ async function List({
         page: p,
       });
       batch = res.data;
+      oldestFetchedAt =
+        oldestFetchedAt === undefined
+          ? res.fetchedAt
+          : Math.min(oldestFetchedAt, res.fetchedAt);
+      ttlSeconds = res.ttlSeconds;
     } catch {
       exhausted = true;
       break;
@@ -144,6 +154,15 @@ async function List({
 
   return (
     <>
+      {oldestFetchedAt !== undefined && ttlSeconds !== undefined ? (
+        <div className="flex justify-end">
+          <SyncStatusBadge
+            fetchedAt={oldestFetchedAt}
+            ttlSeconds={ttlSeconds}
+            path="/repositories"
+          />
+        </div>
+      ) : null}
       {viewMode === "list" ? (
         <div className="flex flex-col gap-2">
           {slice.map((r) => (
