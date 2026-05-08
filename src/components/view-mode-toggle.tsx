@@ -1,5 +1,6 @@
 "use client";
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, List } from "lucide-react";
 import { setViewModeAction } from "@/app/actions/view-mode";
 import type { ViewMode, ViewModeScope } from "@/lib/preferences/get-user-preferences";
@@ -12,11 +13,15 @@ type Props = {
 
 export function ViewModeToggle({ scope, current }: Props) {
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   function set(mode: ViewMode) {
     if (mode === current || pending) return;
     startTransition(async () => {
       await setViewModeAction(scope, mode);
+      // revalidatePath invalidates the server cache; router.refresh forces
+      // the client to fetch the new RSC payload so `current` updates.
+      router.refresh();
     });
   }
 

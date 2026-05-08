@@ -21,17 +21,25 @@ export function SyncStatusBadge({
   path,
   className,
 }: Props) {
-  // Recompute label every 30s so it ages without a network round-trip.
-  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  // Initialize to fetchedAt so SSR and first client render match
+  // (avoids hydration mismatch on the relative-age label and tooltip).
+  // After mount, an effect flips state to the real "now" and starts a
+  // 30s ticker so the label ages without a network round-trip.
+  const [tick, setTick] = useState<{ now: number; mounted: boolean }>({
+    now: fetchedAt,
+    mounted: false,
+  });
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    const id = setInterval(
-      () => setNow(Math.floor(Date.now() / 1000)),
-      30_000,
-    );
+    const update = () =>
+      setTick({ now: Math.floor(Date.now() / 1000), mounted: true });
+    update();
+    const id = setInterval(update, 30_000);
     return () => clearInterval(id);
   }, []);
+
+  const { now, mounted } = tick;
 
   const { state, ageSeconds } = computeFreshness(fetchedAt, ttlSeconds, now);
 
@@ -63,11 +71,15 @@ export function SyncStatusBadge({
     if (pending) return;
     startTransition(async () => {
       await revalidatePathAction(path);
-      setNow(Math.floor(Date.now() / 1000));
+      setTick({ now: Math.floor(Date.now() / 1000), mounted: true });
     });
   }
 
-  const fetchedAtLabel = new Date(fetchedAt * 1000).toLocaleString();
+  // Locale-dependent date formatting only after mount to avoid SSR/CSR
+  // mismatch when the user's locale doesn't match the server's.
+  const fetchedAtLabel = mounted
+    ? new Date(fetchedAt * 1000).toLocaleString()
+    : new Date(fetchedAt * 1000).toISOString();
   const tooltip = `Last fetched: ${fetchedAtLabel}\nTTL: ${ttlSeconds}s · click to refresh`;
 
   return (

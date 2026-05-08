@@ -43,6 +43,25 @@ export default async function RepositoriesPage({
   const prefs = await getUserPreferences(session.user.id);
   const viewMode = readViewMode(prefs.filters, "repos");
 
+  // Warm the first page of repos so the header can show sync status.
+  // The Suspense'd <List> below re-uses the same cache entry instantly.
+  let badgeFetchedAt: number | undefined;
+  let badgeTtl: number | undefined;
+  try {
+    const sort = sp.sort ?? "updated";
+    const visibility = sp.visibility ?? "all";
+    const res = await githubService.listRepos(session.user.id, {
+      sort,
+      visibility,
+      perPage: FETCH_PAGE_SIZE,
+      page: 1,
+    });
+    badgeFetchedAt = res.fetchedAt;
+    badgeTtl = res.ttlSeconds;
+  } catch {
+    // Best-effort — header just won't show the badge.
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -50,6 +69,13 @@ export default async function RepositoriesPage({
         description="Filter, sort and open repositories you own or collaborate on."
         action={
           <div className="flex items-center gap-2">
+            {badgeFetchedAt !== undefined && badgeTtl !== undefined ? (
+              <SyncStatusBadge
+                fetchedAt={badgeFetchedAt}
+                ttlSeconds={badgeTtl}
+                path="/repositories"
+              />
+            ) : null}
             <ViewModeToggle scope="repos" current={viewMode} />
             <NewRepoDialog />
           </div>
@@ -94,10 +120,6 @@ async function List({
   const needed = page * perPage + 1;
   const all: Awaited<ReturnType<typeof githubService.listRepos>>["data"] = [];
   let exhausted = false;
-  // Track the oldest fetchedAt across the loop so the sync badge reflects
-  // the worst-case freshness shown on the page.
-  let oldestFetchedAt: number | undefined;
-  let ttlSeconds: number | undefined;
   for (let p = 1; p <= MAX_FETCH_PAGES; p++) {
     let batch: typeof all = [];
     try {
@@ -108,11 +130,6 @@ async function List({
         page: p,
       });
       batch = res.data;
-      oldestFetchedAt =
-        oldestFetchedAt === undefined
-          ? res.fetchedAt
-          : Math.min(oldestFetchedAt, res.fetchedAt);
-      ttlSeconds = res.ttlSeconds;
     } catch {
       exhausted = true;
       break;
@@ -154,15 +171,6 @@ async function List({
 
   return (
     <>
-      {oldestFetchedAt !== undefined && ttlSeconds !== undefined ? (
-        <div className="flex justify-end">
-          <SyncStatusBadge
-            fetchedAt={oldestFetchedAt}
-            ttlSeconds={ttlSeconds}
-            path="/repositories"
-          />
-        </div>
-      ) : null}
       {viewMode === "list" ? (
         <div className="flex flex-col gap-2">
           {slice.map((r) => (
