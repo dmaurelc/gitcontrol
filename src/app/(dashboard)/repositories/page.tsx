@@ -4,15 +4,20 @@ import { Suspense } from "react";
 import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
-import { getUserPreferences } from "@/lib/preferences/get-user-preferences";
+import {
+  getUserPreferences,
+  readViewMode,
+} from "@/lib/preferences/get-user-preferences";
 import { filterVisible } from "@/lib/preferences/visibility-filter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
+import { ViewModeToggle } from "@/components/view-mode-toggle";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
+import { RepoListRow } from "./_components/repo-list-row";
 import { NewRepoDialog } from "./_components/new-repo-dialog";
 import { PinnedRepos } from "./_components/pinned-repos";
 import { clampPerPage } from "@/lib/pagination/per-page";
@@ -35,20 +40,26 @@ export default async function RepositoriesPage({
   if (!session) redirect("/login");
   const sp = await searchParams;
   const prefs = await getUserPreferences(session.user.id);
+  const viewMode = readViewMode(prefs.filters, "repos");
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Repositories"
         description="Filter, sort and open repositories you own or collaborate on."
-        action={<NewRepoDialog />}
+        action={
+          <div className="flex items-center gap-2">
+            <ViewModeToggle scope="repos" current={viewMode} />
+            <NewRepoDialog />
+          </div>
+        }
       />
       {prefs.pinnedRepos.length > 0 ? (
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
       <RepoFilters />
-      <Suspense fallback={<ListSkeleton />}>
-        <List userId={session.user.id} sp={sp} />
+      <Suspense fallback={<ListSkeleton viewMode={viewMode} />}>
+        <List userId={session.user.id} sp={sp} viewMode={viewMode} />
       </Suspense>
     </div>
   );
@@ -61,9 +72,11 @@ const FETCH_PAGE_SIZE = 100;
 async function List({
   userId,
   sp,
+  viewMode,
 }: {
   userId: string;
   sp: SearchParams;
+  viewMode: "grid" | "list";
 }) {
   const page = Math.max(1, Number(sp.page ?? "1"));
   const perPage = clampPerPage(sp.perPage);
@@ -131,28 +144,66 @@ async function List({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {slice.map((r) => (
-          <RepoCard
-            key={r.id}
-            fullName={r.full_name}
-            description={r.description}
-            language={r.language}
-            stars={r.stargazers_count}
-            forks={r.forks_count}
-            openIssues={r.open_issues_count}
-            isPrivate={r.private}
-            pushedAt={r.pushed_at}
-            pinned={pinnedSet.has(r.full_name)}
-          />
-        ))}
-      </div>
+      {viewMode === "list" ? (
+        <div className="flex flex-col gap-2">
+          {slice.map((r) => (
+            <RepoListRow
+              key={r.id}
+              fullName={r.full_name}
+              description={r.description}
+              language={r.language}
+              stars={r.stargazers_count}
+              forks={r.forks_count}
+              openIssues={r.open_issues_count}
+              isPrivate={r.private}
+              pushedAt={r.pushed_at}
+              pinned={pinnedSet.has(r.full_name)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {slice.map((r) => (
+            <RepoCard
+              key={r.id}
+              fullName={r.full_name}
+              description={r.description}
+              language={r.language}
+              stars={r.stargazers_count}
+              forks={r.forks_count}
+              openIssues={r.open_issues_count}
+              isPrivate={r.private}
+              pushedAt={r.pushed_at}
+              pinned={pinnedSet.has(r.full_name)}
+            />
+          ))}
+        </div>
+      )}
       <PaginationNav basePath="/repositories" page={page} hasNext={hasNext} />
     </>
   );
 }
 
-function ListSkeleton() {
+function ListSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
+  if (viewMode === "list") {
+    return (
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-md border bg-card/50 px-3 py-2.5 shadow-soft"
+          >
+            <Skeleton className="size-7 shrink-0 rounded-md" />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Skeleton className="h-3.5 w-48 rounded" />
+              <Skeleton className="h-3 w-3/4 rounded" />
+            </div>
+            <Skeleton className="hidden h-3 w-32 rounded sm:block" />
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
