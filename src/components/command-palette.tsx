@@ -105,17 +105,37 @@ export function CommandPalette({ repos }: CommandPaletteProps) {
           {repos.length > 0 && (
             <>
               <CommandSeparator />
-              <CommandGroup heading="Repositories">
+              <CommandGroup heading={`Repositories (${repos.length})`}>
                 {repos.map((repo) => (
                   <CommandItem
                     key={repo.id}
-                    value={repo.full_name}
+                    // Concat all searchable fields so cmdk's filter matches
+                    // owner, name, description, and language fragments.
+                    value={[
+                      repo.full_name,
+                      repo.description ?? "",
+                      repo.language ?? "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                     onSelect={() => navigate(`/repositories/${repo.full_name}`)}
                   >
-                    <GitBranch className="size-4" />
-                    <span className="flex-1 truncate">{repo.full_name}</span>
+                    <GitBranch className="size-4 shrink-0" />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm">{repo.full_name}</span>
+                      {repo.description ? (
+                        <span className="truncate text-[11px] text-muted-foreground">
+                          {repo.description}
+                        </span>
+                      ) : null}
+                    </div>
+                    {repo.language ? (
+                      <span className="ml-auto shrink-0 text-[0.6875rem] text-muted-foreground tabular-nums">
+                        {repo.language}
+                      </span>
+                    ) : null}
                     {repo.private && (
-                      <span className="ml-auto text-[0.6875rem] text-muted-foreground">
+                      <span className="shrink-0 text-[0.6875rem] text-muted-foreground">
                         private
                       </span>
                     )}
