@@ -44,7 +44,6 @@ type ManifestNode = {
       packageName: string | null;
       requirements: string | null;
       packageManager: string | null;
-      repository: { url: string | null } | null;
     }>;
   };
 };
@@ -97,38 +96,57 @@ export async function getDependencyManifests(
     params,
     ttlSeconds: TTL.dependencyManifests,
     fetcher: async () => {
-      try {
-        // hawkgirl-preview previously gated dependencyGraphManifests; it
-        // is GA on github.com but harmless on requests that don't need it.
-        const gqlWithPreview = gql.defaults({
-          headers: { accept: "application/vnd.github.hawkgirl-preview+json" },
-        });
-        const data = await gqlWithPreview<DependencyGraphResponse>(
-          `
-            query($owner: String!, $repo: String!) {
-              repository(owner: $owner, name: $repo) {
-                dependencyGraphManifests(first: 20) {
-                  nodes {
-                    id
-                    filename
-                    parseable
-                    blobPath
-                    dependenciesCount
-                    dependencies(first: 100) {
-                      nodes {
-                        packageName
-                        requirements
-                        packageManager
-                        repository { url }
+      // hawkgirl-preview previously gated dependencyGraphManifests; it
+      // is GA on github.com but harmless on requests that don't need it.
+      const gqlWithPreview = gql.defaults({
+        headers: { accept: "application/vnd.github.hawkgirl-preview+json" },
+      });
+
+      // GitHub's dependency graph endpoint is occasionally flaky on large
+      // queries — retry once after a short backoff before giving up.
+      let data: DependencyGraphResponse | null = null;
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          data = await gqlWithPreview<DependencyGraphResponse>(
+            `
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  dependencyGraphManifests(first: 10) {
+                    nodes {
+                      id
+                      filename
+                      parseable
+                      blobPath
+                      dependenciesCount
+                      dependencies(first: 100) {
+                        nodes {
+                          packageName
+                          requirements
+                          packageManager
+                        }
                       }
                     }
                   }
                 }
               }
-            }
-          `,
-          { owner, repo },
+            `,
+            { owner, repo },
+          );
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 500));
+        }
+      }
+      if (!data) {
+        console.error(
+          `[dependencies] GraphQL fetch failed for ${owner}/${repo}:`,
+          lastErr instanceof Error ? lastErr.message : lastErr,
         );
+        return { notModified: false as const, body: [] };
+      }
+      try {
         const nodes = data.repository?.dependencyGraphManifests?.nodes ?? [];
         const manifests: RepoManifest[] = nodes
           .filter((n) => n.parseable)
@@ -143,16 +161,13 @@ export async function getDependencyManifests(
                 packageName: d.packageName as string,
                 requirements: d.requirements ?? "",
                 ecosystem: ecosystemFromPackageManager(d.packageManager),
-                packageUrl: d.repository?.url ?? null,
+                packageUrl: null,
               })),
           }));
         return { notModified: false as const, body: manifests };
       } catch (err) {
-        // Surface GraphQL errors in dev so we can tell "graph disabled"
-        // (HEADER preview missing / scope) from "repo really has no
-        // manifests". Error is non-fatal — caller renders empty state.
         console.error(
-          `[dependencies] GraphQL fetch failed for ${owner}/${repo}:`,
+          `[dependencies] parse failed for ${owner}/${repo}:`,
           err instanceof Error ? err.message : err,
         );
         return { notModified: false as const, body: [] };
