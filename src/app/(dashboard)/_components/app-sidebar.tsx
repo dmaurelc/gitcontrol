@@ -99,12 +99,16 @@ export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
         className,
       )}
     >
-      <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-5">
+      <Link
+        href="/dashboard"
+        onClick={onNavigate}
+        className="flex h-14 items-center gap-2 border-b border-sidebar-border px-5 transition-colors hover:bg-sidebar-accent/40"
+      >
         <div className="grid size-7 place-items-center rounded-md bg-linear-to-br from-chart-1 to-chart-4 text-primary-foreground shadow-soft">
           <Sparkles className="size-3.5" />
         </div>
         <span className="text-sm font-semibold tracking-tight">MaurelDev</span>
-      </div>
+      </Link>
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">
         {SECTIONS.map((section) => (
           <div key={section.label} className="flex flex-col gap-1">
