@@ -59,8 +59,11 @@ export function ManifestCard({ manifest, rows, filter }: Props) {
           </p>
         ) : (
           <ul className="divide-y divide-border/60">
-            {visible.map((row) => (
-              <DependencyRowItem key={row.dep.packageName} row={row} />
+            {visible.map((row, idx) => (
+              <DependencyRowItem
+                key={`${row.dep.ecosystem}:${row.dep.packageName}:${idx}`}
+                row={row}
+              />
             ))}
           </ul>
         )}
