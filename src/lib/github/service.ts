@@ -498,6 +498,30 @@ export const githubService = {
     });
   },
 
+  /**
+   * Returns the language byte-counts for a repo, e.g. { TypeScript: 12345,
+   * CSS: 678 }. Cached with TTL.languages (1h).
+   */
+  async getLanguages(userId: string, owner: string, repo: string) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo };
+    return cachedFetch<Record<string, number>>({
+      userId,
+      resource: "languages",
+      params,
+      ttlSeconds: TTL.languages,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.repos.listLanguages as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: Record<string, number>; etag?: string }
+        >,
+    });
+  },
+
   async listTags(userId: string, owner: string, repo: string, perPage = 6) {
     const { rest } = await getGithubClients(userId);
     const params = { owner, repo, per_page: perPage };

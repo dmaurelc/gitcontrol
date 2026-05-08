@@ -8,8 +8,8 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
 import { MagicCard } from "@/components/ui/magic-card";
-import { getLanguageColor } from "@/lib/github/language-colors";
 import { SyncStatusBadge } from "@/components/sync-status-badge";
+import { DeviconStack } from "@/components/devicon-stack";
 import { StarsFilters } from "./_components/stars-filters";
 import { StarListRow } from "./_components/star-list-row";
 import { clampPerPage } from "@/lib/pagination/per-page";
@@ -159,6 +159,28 @@ export default async function StarsPage({
     ? filtered.length > page * perPage || !exhausted
     : all.length >= perPage;
 
+  // Fetch language breakdown for the visible slice in parallel. Cached 1h
+  // by the github cache layer, so repeat renders are free.
+  const languagesByRepo = await Promise.all(
+    slice.map(async (s) => {
+      const [owner, name] = s.repo.full_name.split("/");
+      try {
+        const res = await githubService.getLanguages(
+          session.user.id,
+          owner,
+          name,
+        );
+        const data = res.data;
+        if (Object.keys(data).length === 0 && s.repo.language) {
+          return { [s.repo.language]: 1 };
+        }
+        return data;
+      } catch {
+        return s.repo.language ? { [s.repo.language]: 1 } : {};
+      }
+    }),
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -183,12 +205,13 @@ export default async function StarsPage({
         />
       ) : viewMode === "list" ? (
         <div className="flex flex-col gap-2">
-          {slice.map((s) => (
+          {slice.map((s, i) => (
             <StarListRow
               key={s.repo.id}
               fullName={s.repo.full_name}
               description={s.repo.description}
               language={s.repo.language}
+              languages={languagesByRepo[i]}
               stars={s.repo.stargazers_count}
               htmlUrl={s.repo.html_url}
               starredAt={s.starred_at}
@@ -197,7 +220,7 @@ export default async function StarsPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {slice.map((s) => (
+          {slice.map((s, i) => (
             <Card
               key={s.repo.id}
               className="overflow-hidden border-none bg-transparent p-0 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
@@ -222,19 +245,18 @@ export default async function StarsPage({
                   {s.repo.description ?? ""}
                 </p>
                 <div className="mt-auto flex items-center gap-3 border-t pt-3 text-xs text-muted-foreground tabular-nums">
-                  {s.repo.language ? (
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className="size-2.5 rounded-full ring-1 ring-border"
-                        style={{
-                          backgroundColor: getLanguageColor(s.repo.language),
-                        }}
-                      />
-                      <span className="text-foreground/80">
-                        {s.repo.language}
-                      </span>
-                    </span>
-                  ) : null}
+                  {(() => {
+                    const langs = languagesByRepo[i];
+                    const stack =
+                      langs && Object.keys(langs).length > 0
+                        ? langs
+                        : s.repo.language
+                          ? [s.repo.language]
+                          : [];
+                    return stack.length > 0 ? (
+                      <DeviconStack languages={stack} max={2} size={14} />
+                    ) : null;
+                  })()}
                   <span className="flex items-center gap-1">
                     <Star className="size-3" />
                     {s.repo.stargazers_count}

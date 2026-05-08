@@ -11,11 +11,31 @@ export async function PinnedRepos({
   pinned: string[];
   userId: string;
 }) {
-  // Fetch each pinned repo in parallel; tolerate failures (lost access).
+  // Fetch each pinned repo + its language breakdown in parallel; tolerate
+  // failures (lost access, etc.). The languages call is cached for 1h so
+  // it's effectively free on repeat renders.
   const settled = await Promise.allSettled(
     pinned.map((p) => {
       const [owner, name] = p.split("/");
       return githubService.getRepo(userId, owner, name);
+    }),
+  );
+  const languagesByRepo = await Promise.all(
+    pinned.map(async (p, i) => {
+      const [owner, name] = p.split("/");
+      try {
+        const res = await githubService.getLanguages(userId, owner, name);
+        const data = res.data;
+        if (Object.keys(data).length === 0) {
+          const r = settled[i];
+          if (r.status === "fulfilled" && r.value.data.language) {
+            return { [r.value.data.language]: 1 };
+          }
+        }
+        return data;
+      } catch {
+        return {} as Record<string, number>;
+      }
     }),
   );
 
@@ -58,6 +78,7 @@ export async function PinnedRepos({
               fullName={d.full_name}
               description={d.description}
               language={d.language}
+              languages={languagesByRepo[i]}
               stars={d.stargazers_count}
               forks={d.forks_count}
               openIssues={d.open_issues_count}

@@ -2,12 +2,13 @@ import Link from "next/link";
 import { Star, GitFork, Lock, Globe, CircleAlert } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PinButton } from "./pin-button";
-import { getLanguageColor } from "@/lib/github/language-colors";
+import { DeviconStack } from "@/components/devicon-stack";
 
 type Props = {
   fullName: string;
   description: string | null;
   language: string | null;
+  languages?: Record<string, number>;
   stars: number;
   forks: number;
   openIssues: number;
@@ -20,6 +21,7 @@ export function RepoListRow({
   fullName,
   description,
   language,
+  languages,
   stars,
   forks,
   openIssues,
@@ -31,7 +33,15 @@ export function RepoListRow({
   const avatarUrl = owner
     ? `https://github.com/${encodeURIComponent(owner)}.png?size=64`
     : undefined;
-  const langColor = getLanguageColor(language);
+  const stackInput: Record<string, number> | string[] =
+    languages && Object.keys(languages).length > 0
+      ? languages
+      : language
+        ? [language]
+        : [];
+  const hasStack = Array.isArray(stackInput)
+    ? stackInput.length > 0
+    : Object.keys(stackInput).length > 0;
 
   return (
     <Link
@@ -65,14 +75,8 @@ export function RepoListRow({
       </div>
 
       <div className="hidden shrink-0 items-center gap-3 text-xs text-muted-foreground tabular-nums sm:flex">
-        {language ? (
-          <span className="flex items-center gap-1.5">
-            <span
-              className="size-2.5 rounded-full ring-1 ring-border"
-              style={{ backgroundColor: langColor }}
-            />
-            <span className="text-foreground/80">{language}</span>
-          </span>
+        {hasStack ? (
+          <DeviconStack languages={stackInput} max={2} size={14} />
         ) : null}
         <span className="flex items-center gap-1" title="Stars">
           <Star className="size-3" />
