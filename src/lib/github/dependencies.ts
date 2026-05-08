@@ -114,7 +114,7 @@ export async function getDependencyManifests(
                     parseable
                     blobPath
                     dependenciesCount
-                    dependencies(first: 200) {
+                    dependencies(first: 100) {
                       nodes {
                         packageName
                         requirements
