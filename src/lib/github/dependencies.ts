@@ -98,7 +98,12 @@ export async function getDependencyManifests(
     ttlSeconds: TTL.dependencyManifests,
     fetcher: async () => {
       try {
-        const data = await gql<DependencyGraphResponse>(
+        // hawkgirl-preview previously gated dependencyGraphManifests; it
+        // is GA on github.com but harmless on requests that don't need it.
+        const gqlWithPreview = gql.defaults({
+          headers: { accept: "application/vnd.github.hawkgirl-preview+json" },
+        });
+        const data = await gqlWithPreview<DependencyGraphResponse>(
           `
             query($owner: String!, $repo: String!) {
               repository(owner: $owner, name: $repo) {
@@ -142,7 +147,14 @@ export async function getDependencyManifests(
               })),
           }));
         return { notModified: false as const, body: manifests };
-      } catch {
+      } catch (err) {
+        // Surface GraphQL errors in dev so we can tell "graph disabled"
+        // (HEADER preview missing / scope) from "repo really has no
+        // manifests". Error is non-fatal — caller renders empty state.
+        console.error(
+          `[dependencies] GraphQL fetch failed for ${owner}/${repo}:`,
+          err instanceof Error ? err.message : err,
+        );
         return { notModified: false as const, body: [] };
       }
     },

@@ -86,7 +86,24 @@ export default async function DependenciesPage({
         <EmptyState
           icon={Package}
           title="No dependency manifests detected"
-          description="GitHub didn't surface any parseable manifests for this repo. Make sure Dependency Graph is enabled (Settings → Code security)."
+          description={
+            <span className="flex flex-col gap-1.5 text-left">
+              <span>Possible reasons:</span>
+              <span>
+                • Dependency Graph is disabled on this repo (default for
+                private repos). Enable it in Settings → Code security &amp;
+                analysis → Dependency graph.
+              </span>
+              <span>
+                • GitHub hasn&apos;t indexed the repo yet — fresh pushes can
+                take a few minutes.
+              </span>
+              <span>
+                • The repo has no parseable manifests (no package.json,
+                requirements.txt, go.mod, etc.).
+              </span>
+            </span>
+          }
         />
       </div>
     );
