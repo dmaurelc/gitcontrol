@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve previous tag
+        id: prev
+        run: |
+          set -e
+          CURRENT="${GITHUB_REF_NAME}"
+          PREV=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${CURRENT}$" | head -n1 || true)
+          echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
+          echo "previous=${PREV}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine prerelease flag
+        id: flag
+        run: |
+          if [[ "${GITHUB_REF_NAME}" =~ -(alpha|beta|rc) ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT: ${{ steps.prev.outputs.current }}
+          PREVIOUS: ${{ steps.prev.outputs.previous }}
+          PRERELEASE: ${{ steps.flag.outputs.prerelease }}
+        run: |
+          set -e
+          ARGS=(--title "${CURRENT}" --generate-notes)
+          if [[ -n "${PREVIOUS}" ]]; then
+            ARGS+=(--notes-start-tag "${PREVIOUS}")
+          fi
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            ARGS+=(--prerelease)
+          fi
+          gh release create "${CURRENT}" "${ARGS[@]}"

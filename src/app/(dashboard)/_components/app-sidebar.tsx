@@ -13,6 +13,8 @@ import {
   CircleAlert,
   Activity,
   ExternalLink,
+  Bug,
+  Newspaper,
 } from "lucide-react";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { cn } from "@/lib/utils";
@@ -58,6 +60,13 @@ function buildSections(login: string | undefined): NavSection[] {
               } as NavItem,
             ]
           : []),
+      ],
+    },
+    {
+      label: "Project",
+      items: [
+        { href: "/changelog", label: "Changelog", Icon: Newspaper },
+        { href: "/report-bug", label: "Report a bug", Icon: Bug },
       ],
     },
     {
