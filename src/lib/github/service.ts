@@ -740,9 +740,10 @@ export const githubService = {
     repo: string,
     state: "open" | "closed" | "all" = "open",
     page = 1,
+    perPage = 30,
   ) {
     const { rest } = await getGithubClients(userId);
-    const params = { owner, repo, state, per_page: 30, page };
+    const params = { owner, repo, state, per_page: perPage, page };
     return cachedFetch<unknown[]>({
       userId,
       resource: "issues",
@@ -766,9 +767,10 @@ export const githubService = {
     repo: string,
     state: "open" | "closed" | "all" = "open",
     page = 1,
+    perPage = 30,
   ) {
     const { rest } = await getGithubClients(userId);
-    const params = { owner, repo, state, per_page: 30, page };
+    const params = { owner, repo, state, per_page: perPage, page };
     return cachedFetch<unknown[]>({
       userId,
       resource: "prs",
