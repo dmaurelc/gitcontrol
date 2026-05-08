@@ -167,16 +167,32 @@ async function List({
     );
   }
 
+  // Fetch language breakdown for visible slice in parallel. Heavily cached
+  // (TTL.languages = 1h) so repeat renders are free; failures fall back to
+  // the repo's primary `language` field.
+  const languagesByRepo = await Promise.all(
+    slice.map(async (r) => {
+      const [owner, name] = r.full_name.split("/");
+      try {
+        const res = await githubService.getLanguages(userId, owner, name);
+        return res.data;
+      } catch {
+        return r.language ? { [r.language]: 1 } : {};
+      }
+    }),
+  );
+
   return (
     <>
       {viewMode === "list" ? (
         <div className="flex flex-col gap-2">
-          {slice.map((r) => (
+          {slice.map((r, i) => (
             <RepoListRow
               key={r.id}
               fullName={r.full_name}
               description={r.description}
               language={r.language}
+              languages={languagesByRepo[i]}
               stars={r.stargazers_count}
               forks={r.forks_count}
               openIssues={r.open_issues_count}
@@ -188,12 +204,13 @@ async function List({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {slice.map((r) => (
+          {slice.map((r, i) => (
             <RepoCard
               key={r.id}
               fullName={r.full_name}
               description={r.description}
               language={r.language}
+              languages={languagesByRepo[i]}
               stars={r.stargazers_count}
               forks={r.forks_count}
               openIssues={r.open_issues_count}

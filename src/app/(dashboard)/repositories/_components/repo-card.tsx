@@ -5,13 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MagicCard } from "@/components/ui/magic-card";
 import { PinButton } from "./pin-button";
-import { DeviconBadge } from "@/components/devicon-badge";
-import { getLanguageColor } from "@/lib/github/language-colors";
+import { DeviconStack } from "@/components/devicon-stack";
 
 type RepoCardProps = {
   fullName: string;
   description: string | null;
   language: string | null;
+  /** Optional language byte-counts from listLanguages. Falls back to `language`. */
+  languages?: Record<string, number>;
   stars: number;
   forks: number;
   openIssues: number;
@@ -24,6 +25,7 @@ export function RepoCard({
   fullName,
   description,
   language,
+  languages,
   stars,
   forks,
   openIssues,
@@ -35,7 +37,12 @@ export function RepoCard({
   const avatarUrl = owner
     ? `https://github.com/${encodeURIComponent(owner)}.png?size=64`
     : undefined;
-  const langColor = getLanguageColor(language);
+  const stackInput =
+    languages && Object.keys(languages).length > 0
+      ? languages
+      : language
+        ? [language]
+        : [];
   return (
     <Link
       href={`/repositories/${fullName}`}
@@ -92,15 +99,8 @@ export function RepoCard({
             {description ?? ""}
           </p>
           <div className="mt-auto flex items-center gap-3 border-t pt-3 text-xs text-muted-foreground tabular-nums">
-            {language ? (
-              <span className="flex items-center gap-1.5">
-                <DeviconBadge language={language} size={14} hideOnUnknown />
-                <span
-                  className="size-2.5 rounded-full ring-1 ring-border"
-                  style={{ backgroundColor: langColor }}
-                />
-                <span className="text-foreground/80">{language}</span>
-              </span>
+            {stackInput.length > 0 ? (
+              <DeviconStack languages={stackInput} max={2} size={14} />
             ) : null}
             <span className="flex items-center gap-1" title="Stars">
               <Star className="size-3" />
