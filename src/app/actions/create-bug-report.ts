@@ -16,14 +16,20 @@ const schema = z.object({
 });
 
 function buildBody(input: z.infer<typeof schema>): string {
-  const fallback = "_Not provided_";
-  const sections = [
-    `## Description\n\n${input.description}`,
-    `## Steps to reproduce\n\n${input.steps?.trim() || fallback}`,
-    `## Expected behavior\n\n${input.expected?.trim() || fallback}`,
-    `## Actual behavior\n\n${input.actual?.trim() || fallback}`,
-    `---\n_Reported via MaurelDev bug report form._`,
-  ];
+  const sections: string[] = [`## Description\n\n${input.description}`];
+
+  // Optional sections are skipped entirely when empty so the issue body
+  // stays concise and doesn't show placeholder "_Not provided_" lines.
+  const steps = input.steps?.trim();
+  if (steps) sections.push(`## Steps to reproduce\n\n${steps}`);
+
+  const expected = input.expected?.trim();
+  if (expected) sections.push(`## Expected behavior\n\n${expected}`);
+
+  const actual = input.actual?.trim();
+  if (actual) sections.push(`## Actual behavior\n\n${actual}`);
+
+  sections.push(`---\n_Reported via MaurelDev bug report form._`);
   return sections.join("\n\n");
 }
 
@@ -68,7 +74,7 @@ export async function createBugReportAction(
       {
         title: parsed.data.title,
         body,
-        labels: ["bug-report", parsed.data.type],
+        labels: [parsed.data.type],
       },
     );
     redirect(`/repositories/${UPSTREAM_OWNER}/${UPSTREAM_REPO}/issues/${issue.number}`);
