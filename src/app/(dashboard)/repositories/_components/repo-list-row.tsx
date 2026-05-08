@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Star, GitFork, Lock, Globe, CircleAlert } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PinButton } from "./pin-button";
+import { DeviconBadge } from "@/components/devicon-badge";
 import { getLanguageColor } from "@/lib/github/language-colors";
 
 type Props = {
@@ -67,6 +68,7 @@ export function RepoListRow({
       <div className="hidden shrink-0 items-center gap-3 text-xs text-muted-foreground tabular-nums sm:flex">
         {language ? (
           <span className="flex items-center gap-1.5">
+            <DeviconBadge language={language} size={14} hideOnUnknown />
             <span
               className="size-2.5 rounded-full ring-1 ring-border"
               style={{ backgroundColor: langColor }}

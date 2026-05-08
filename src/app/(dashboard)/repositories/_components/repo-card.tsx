@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MagicCard } from "@/components/ui/magic-card";
 import { PinButton } from "./pin-button";
+import { DeviconBadge } from "@/components/devicon-badge";
 import { getLanguageColor } from "@/lib/github/language-colors";
 
 type RepoCardProps = {
@@ -93,6 +94,7 @@ export function RepoCard({
           <div className="mt-auto flex items-center gap-3 border-t pt-3 text-xs text-muted-foreground tabular-nums">
             {language ? (
               <span className="flex items-center gap-1.5">
+                <DeviconBadge language={language} size={14} hideOnUnknown />
                 <span
                   className="size-2.5 rounded-full ring-1 ring-border"
                   style={{ backgroundColor: langColor }}
