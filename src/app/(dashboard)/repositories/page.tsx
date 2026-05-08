@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationNav } from "@/components/pagination-nav";
-import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { SyncStatusBadge } from "@/components/sync-status-badge";
 import { RepoFilters } from "./_components/repo-filters";
 import { RepoCard } from "./_components/repo-card";
 import { RepoListRow } from "./_components/repo-list-row";
@@ -42,6 +42,25 @@ export default async function RepositoriesPage({
   const prefs = await getUserPreferences(session.user.id);
   const viewMode = readViewMode(prefs.filters, "repos");
 
+  // Warm the first page of repos so the header can show sync status.
+  // The Suspense'd <List> below re-uses the same cache entry instantly.
+  let badgeFetchedAt: number | undefined;
+  let badgeTtl: number | undefined;
+  try {
+    const sort = sp.sort ?? "updated";
+    const visibility = sp.visibility ?? "all";
+    const res = await githubService.listRepos(session.user.id, {
+      sort,
+      visibility,
+      perPage: FETCH_PAGE_SIZE,
+      page: 1,
+    });
+    badgeFetchedAt = res.fetchedAt;
+    badgeTtl = res.ttlSeconds;
+  } catch {
+    // Best-effort — header just won't show the badge.
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -49,7 +68,13 @@ export default async function RepositoriesPage({
         description="Filter, sort and open repositories you own or collaborate on."
         action={
           <div className="flex items-center gap-2">
-            <ViewModeToggle scope="repos" current={viewMode} />
+            {badgeFetchedAt !== undefined && badgeTtl !== undefined ? (
+              <SyncStatusBadge
+                fetchedAt={badgeFetchedAt}
+                ttlSeconds={badgeTtl}
+                path="/repositories"
+              />
+            ) : null}
             <NewRepoDialog />
           </div>
         }
@@ -57,7 +82,7 @@ export default async function RepositoriesPage({
       {prefs.pinnedRepos.length > 0 ? (
         <PinnedRepos pinned={prefs.pinnedRepos} userId={session.user.id} />
       ) : null}
-      <RepoFilters />
+      <RepoFilters viewMode={viewMode} />
       <Suspense fallback={<ListSkeleton viewMode={viewMode} />}>
         <List userId={session.user.id} sp={sp} viewMode={viewMode} />
       </Suspense>

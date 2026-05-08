@@ -9,7 +9,7 @@ import { userPreferences } from "@/lib/db/schema";
 import { runAction, type ActionResult } from "@/lib/actions/result";
 
 const viewModeSchema = z.object({
-  scope: z.enum(["repos"]),
+  scope: z.enum(["repos", "stars"]),
   mode: z.enum(["grid", "list"]),
 });
 
@@ -23,13 +23,20 @@ export async function setViewModeAction(
     const userId = session.user.id;
     const parsed = viewModeSchema.parse({ scope, mode });
 
-    // Merge into filters jsonb without clobbering other keys. Postgres
-    // jsonb_set creates the path if missing.
+    // Read-modify-write the filters blob in one statement. jsonb_set's
+    // create_missing flag only creates the final path segment, so for a
+    // nested path like {viewMode, repos} we first ensure filters.viewMode
+    // is at least an empty object, then set the leaf key.
     await db
       .update(userPreferences)
       .set({
         filters: sql`jsonb_set(
-          COALESCE(${userPreferences.filters}, '{}'::jsonb),
+          jsonb_set(
+            COALESCE(${userPreferences.filters}, '{}'::jsonb),
+            '{viewMode}',
+            COALESCE(${userPreferences.filters}->'viewMode', '{}'::jsonb),
+            true
+          ),
           ${`{viewMode,${parsed.scope}}`}::text[],
           to_jsonb(${parsed.mode}::text),
           true
@@ -38,6 +45,6 @@ export async function setViewModeAction(
       })
       .where(eq(userPreferences.userId, userId));
 
-    revalidatePath("/repositories");
+    revalidatePath(parsed.scope === "repos" ? "/repositories" : "/stars");
   });
 }
