@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const ownerSchema = z.string().min(1).max(100).regex(/^[A-Za-z0-9._-]+$/);
 const repoSchema = z.string().min(1).max(100).regex(/^[A-Za-z0-9._-]+$/);
@@ -19,6 +20,12 @@ export async function createOutdatedIssueAction(formData: FormData) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error("Not authenticated");
   const userId = session.user.id;
+  await enforceRateLimit({
+    bucket: "gh:write",
+    identifier: userId,
+    max: 10,
+    windowSeconds: 60,
+  });
 
   const owner = ownerSchema.parse(formData.get("owner"));
   const repo = repoSchema.parse(formData.get("repo"));

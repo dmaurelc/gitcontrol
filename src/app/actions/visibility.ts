@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db/client";
 import { userPreferences } from "@/lib/db/schema";
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const orgLoginSchema = z.string().min(1).max(120).regex(/^[A-Za-z0-9-_.]+$/);
 const fullNameSchema = z
@@ -30,6 +31,12 @@ function revalidateVisibility() {
 export async function hideOrgAction(login: string): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const parsed = orgLoginSchema.parse(login);
     await db
       .update(userPreferences)
@@ -50,6 +57,12 @@ export async function hideOrgAction(login: string): Promise<ActionResult> {
 export async function unhideOrgAction(login: string): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const parsed = orgLoginSchema.parse(login);
     await db
       .update(userPreferences)
@@ -69,6 +82,12 @@ export async function unhideOrgAction(login: string): Promise<ActionResult> {
 export async function hideRepoAction(fullName: string): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const parsed = fullNameSchema.parse(fullName);
     await db
       .update(userPreferences)
@@ -91,6 +110,12 @@ export async function unhideRepoAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const parsed = fullNameSchema.parse(fullName);
     await db
       .update(userPreferences)

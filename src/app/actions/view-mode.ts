@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db/client";
 import { userPreferences } from "@/lib/db/schema";
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const viewModeSchema = z.object({
   scope: z.enum(["repos", "stars"]),
@@ -21,6 +22,12 @@ export async function setViewModeAction(
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) throw new Error("Not authenticated");
     const userId = session.user.id;
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const parsed = viewModeSchema.parse({ scope, mode });
 
     // Read-modify-write the filters blob in one statement. jsonb_set's

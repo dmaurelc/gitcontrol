@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 async function requireUserId() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -21,6 +22,13 @@ export async function reRunWorkflowAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    // Re-running workflows is expensive; tighter cap than gh:write.
+    await enforceRateLimit({
+      bucket: "gh:rerun",
+      identifier: userId,
+      max: 5,
+      windowSeconds: 60,
+    });
     const owner = ownerSchema.parse(formData.get("owner"));
     const repo = repoSchema.parse(formData.get("repo"));
     const runId = runIdSchema.parse(formData.get("run_id"));

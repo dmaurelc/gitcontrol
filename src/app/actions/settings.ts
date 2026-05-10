@@ -9,6 +9,7 @@ import { db } from "@/lib/db/client";
 import { userPreferences, account, user } from "@/lib/db/schema";
 import { invalidate } from "@/lib/github/cache";
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const themeSchema = z.enum(["light", "dark", "system"]);
 
@@ -23,6 +24,12 @@ export async function updateThemeAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const parsed = themeSchema.parse(theme);
     await db
       .update(userPreferences)
@@ -37,6 +44,12 @@ export async function pinRepoAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     await db
       .update(userPreferences)
       .set({
@@ -54,6 +67,12 @@ export async function unpinRepoAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "prefs:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     await db
       .update(userPreferences)
       .set({
@@ -72,6 +91,14 @@ export async function unpinRepoAction(
 
 export async function revokeAccessAction() {
   const userId = await requireUserId();
+  // Destructive: deletes user, sessions and prefs. Hard cap to slow accidental
+  // or scripted abuse — legitimate users only ever press it once.
+  await enforceRateLimit({
+    bucket: "account:destructive",
+    identifier: userId,
+    max: 3,
+    windowSeconds: 3600,
+  });
   // Wipe Octokit cache entries first.
   await invalidate(userId, "*");
   // Drop the GitHub account row (cascades nothing, just removes link + token).

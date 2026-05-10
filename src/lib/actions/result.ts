@@ -88,6 +88,20 @@ export async function runAction<T>(
         code: "validation",
       };
     }
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code?: string }).code === "rate_limited"
+    ) {
+      const message =
+        err instanceof Error ? err.message : "Demasiadas peticiones.";
+      return {
+        ok: false,
+        error: message,
+        code: "rate_limited",
+      };
+    }
     const msg =
       err instanceof Error ? err.message : "Error desconocido.";
     return { ok: false, error: msg, code: "unknown" };
