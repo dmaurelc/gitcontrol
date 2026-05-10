@@ -54,12 +54,15 @@ jobs:
           gh release create "${CURRENT}" "${ARGS[@]}"
 
       - name: Invalidate changelog cache
-        if: ${{ secrets.RELEASE_WEBHOOK_URL != '' && secrets.RELEASE_WEBHOOK_SECRET != '' }}
         env:
           RELEASE_WEBHOOK_URL: ${{ secrets.RELEASE_WEBHOOK_URL }}
           RELEASE_WEBHOOK_SECRET: ${{ secrets.RELEASE_WEBHOOK_SECRET }}
         run: |
           set -e
+          if [[ -z "${RELEASE_WEBHOOK_URL}" || -z "${RELEASE_WEBHOOK_SECRET}" ]]; then
+            echo "Webhook secrets not configured — skipping cache invalidation."
+            exit 0
+          fi
           # Wait briefly so Dokploy has time to redeploy with the new code
           # if this workflow was triggered by a tag push that also moved main.
           sleep 30
