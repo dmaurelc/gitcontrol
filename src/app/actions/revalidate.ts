@@ -15,6 +15,7 @@ const ALLOWED_PREFIXES = [
   "/notifications",
   "/activity",
   "/actions",
+  "/changelog",
 ];
 
 export async function revalidatePathAction(

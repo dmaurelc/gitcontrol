@@ -52,3 +52,18 @@ jobs:
             ARGS+=(--prerelease)
           fi
           gh release create "${CURRENT}" "${ARGS[@]}"
+
+      - name: Invalidate changelog cache
+        if: ${{ env.RELEASE_WEBHOOK_URL != '' && env.RELEASE_WEBHOOK_SECRET != '' }}
+        env:
+          RELEASE_WEBHOOK_URL: ${{ secrets.RELEASE_WEBHOOK_URL }}
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.RELEASE_WEBHOOK_SECRET }}
+        run: |
+          set -e
+          curl -sS -X POST "${RELEASE_WEBHOOK_URL}" \
+            -H "x-webhook-secret: ${RELEASE_WEBHOOK_SECRET}" \
+            -H "content-type: application/json" \
+            --max-time 10 \
+            --retry 2 \
+            --retry-delay 3 \
+            || echo "[release] webhook call failed (non-fatal)"

@@ -15,7 +15,7 @@ export const TTL = {
   readme: 1800,
   languages: 3600,
   tags: 600,
-  releases: 600,
+  releases: 60,
   contributors: 600,
   contents: 300,
   commitActivity: 3600,
@@ -125,6 +125,27 @@ export async function invalidate(userId: string, resource: string) {
   const redis = getRedis();
   const pattern =
     resource === "*" ? `gh:${userId}:*` : `gh:${userId}:${resource}:*`;
+  const stream = redis.scanStream({ match: pattern, count: 100 });
+  const pipeline = redis.pipeline();
+  let deleted = 0;
+  for await (const keys of stream as AsyncIterable<string[]>) {
+    for (const k of keys) {
+      pipeline.del(k);
+      deleted++;
+    }
+  }
+  if (deleted > 0) await pipeline.exec();
+  return deleted;
+}
+
+/**
+ * Cross-user invalidation for a single resource type. Useful when an
+ * upstream artifact changes globally (e.g. a new GitHub Release) and every
+ * cached copy across users should be wiped.
+ */
+export async function invalidateGlobal(resource: string) {
+  const redis = getRedis();
+  const pattern = `gh:*:${resource}:*`;
   const stream = redis.scanStream({ match: pattern, count: 100 });
   const pipeline = redis.pipeline();
   let deleted = 0;
