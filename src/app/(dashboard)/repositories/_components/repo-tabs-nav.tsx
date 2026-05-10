@@ -15,6 +15,7 @@ export function RepoTabsNav({
   const tabs = [
     { href: base, label: "Overview" },
     { href: `${base}/files`, label: "Files" },
+    { href: `${base}/commits`, label: "Commits" },
     { href: `${base}/issues`, label: "Issues" },
     { href: `${base}/pulls`, label: "Pull requests" },
     { href: `${base}/actions`, label: "Actions" },
