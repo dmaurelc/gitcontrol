@@ -339,6 +339,33 @@ export type RepoContributor = {
   contributions: number;
 };
 
+export type RepoBranchRef = {
+  name: string;
+  commit: { sha: string };
+  protected: boolean;
+};
+
+export type RepoCommit = {
+  sha: string;
+  html_url: string;
+  commit: {
+    author: { name: string | null; email: string | null; date: string | null } | null;
+    committer: { name: string | null; email: string | null; date: string | null } | null;
+    message: string;
+  };
+  author: {
+    login: string;
+    avatar_url: string;
+    html_url: string;
+  } | null;
+  committer: {
+    login: string;
+    avatar_url: string;
+    html_url: string;
+  } | null;
+  parents: { sha: string }[];
+};
+
 // ─── Repo contents ────────────────────────────────────────────────────────────
 
 export type RepoDirEntry = {
@@ -713,6 +740,74 @@ export const githubService = {
           throw mapGithubError(err);
         }
       },
+    });
+  },
+
+  /**
+   * Lists branches for a repo. Used to populate the commits-view branch
+   * selector. Cached short-lived since branches move with day-to-day work.
+   */
+  async listBranches(
+    userId: string,
+    owner: string,
+    repo: string,
+    perPage = 100,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, per_page: perPage };
+    return cachedFetch<RepoBranchRef[]>({
+      userId,
+      resource: "branches",
+      params,
+      ttlSeconds: TTL.branches,
+      fetcher: (etag) =>
+        etagFetch(rest.repos.listBranches as unknown as AnyEndpoint, params, etag) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: RepoBranchRef[]; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * Lists commits on a branch. Supports the standard GitHub filters:
+   * `sha` (branch/ref), `author` (login or email), `since`/`until`
+   * (ISO 8601). Paginated via `page` (1-indexed) + `per_page`.
+   */
+  async listCommits(
+    userId: string,
+    owner: string,
+    repo: string,
+    opts: {
+      sha?: string;
+      author?: string;
+      since?: string;
+      until?: string;
+      perPage?: number;
+      page?: number;
+    } = {},
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params: Record<string, unknown> = {
+      owner,
+      repo,
+      per_page: opts.perPage ?? 30,
+      page: opts.page ?? 1,
+    };
+    if (opts.sha) params.sha = opts.sha;
+    if (opts.author) params.author = opts.author;
+    if (opts.since) params.since = opts.since;
+    if (opts.until) params.until = opts.until;
+
+    return cachedFetch<RepoCommit[]>({
+      userId,
+      resource: "commits",
+      params,
+      ttlSeconds: TTL.commits,
+      fetcher: (etag) =>
+        etagFetch(rest.repos.listCommits as unknown as AnyEndpoint, params, etag) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: RepoCommit[]; etag?: string }
+        >,
     });
   },
 
