@@ -54,16 +54,29 @@ jobs:
           gh release create "${CURRENT}" "${ARGS[@]}"
 
       - name: Invalidate changelog cache
-        if: ${{ env.RELEASE_WEBHOOK_URL != '' && env.RELEASE_WEBHOOK_SECRET != '' }}
         env:
           RELEASE_WEBHOOK_URL: ${{ secrets.RELEASE_WEBHOOK_URL }}
           RELEASE_WEBHOOK_SECRET: ${{ secrets.RELEASE_WEBHOOK_SECRET }}
         run: |
           set -e
-          curl -sS -X POST "${RELEASE_WEBHOOK_URL}" \
+          if [[ -z "${RELEASE_WEBHOOK_URL}" || -z "${RELEASE_WEBHOOK_SECRET}" ]]; then
+            echo "Webhook secrets not configured — skipping cache invalidation."
+            exit 0
+          fi
+          # Wait briefly so Dokploy has time to redeploy with the new code
+          # if this workflow was triggered by a tag push that also moved main.
+          sleep 30
+          response=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" -X POST "${RELEASE_WEBHOOK_URL}" \
             -H "x-webhook-secret: ${RELEASE_WEBHOOK_SECRET}" \
             -H "content-type: application/json" \
-            --max-time 10 \
-            --retry 2 \
-            --retry-delay 3 \
-            || echo "[release] webhook call failed (non-fatal)"
+            --max-time 15 \
+            --retry 3 \
+            --retry-delay 10 \
+            --retry-all-errors \
+            || echo "HTTP_STATUS:000")
+          echo "Webhook response:"
+          echo "${response}"
+          status=$(echo "${response}" | sed -n 's/.*HTTP_STATUS:\([0-9]*\).*/\1/p')
+          if [[ "${status}" != "200" ]]; then
+            echo "::warning::Webhook returned HTTP ${status} (non-fatal)"
+          fi
