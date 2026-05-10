@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { account } from "@/lib/db/schema";
 import { getEnv } from "@/lib/env";
+import { getRedis } from "@/lib/redis/client";
 import { encryptToJson } from "./encryption";
 
 export const GITHUB_OAUTH_SCOPES = [
@@ -29,6 +30,38 @@ function createAuth() {
         clientId: env.GITHUB_CLIENT_ID,
         clientSecret: env.GITHUB_CLIENT_SECRET,
         scope: GITHUB_OAUTH_SCOPES,
+      },
+    },
+    // Redis-backed key/value store; Better Auth uses this for rate-limit
+    // counters (and any other secondary state) so limits survive restarts
+    // and shard correctly across containers behind Dokploy/Traefik.
+    secondaryStorage: {
+      get: async (key) => {
+        const raw = await getRedis().get(`auth_ss:${key}`);
+        return raw ?? null;
+      },
+      set: async (key, value, ttl) => {
+        const r = getRedis();
+        if (ttl && ttl > 0) {
+          await r.set(`auth_ss:${key}`, value, "EX", ttl);
+        } else {
+          await r.set(`auth_ss:${key}`, value);
+        }
+      },
+      delete: async (key) => {
+        await getRedis().del(`auth_ss:${key}`);
+      },
+    },
+    rateLimit: {
+      enabled: env.NODE_ENV === "production",
+      window: 60,
+      max: 100,
+      storage: "secondary-storage",
+      // Tighter limits on the OAuth surface to slow credential-stuffing
+      // and callback abuse without breaking the legitimate flow.
+      customRules: {
+        "/sign-in/social": { window: 60, max: 10 },
+        "/callback/github": { window: 60, max: 10 },
       },
     },
     databaseHooks: {

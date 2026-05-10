@@ -31,8 +31,20 @@ const BUILD_PLACEHOLDER: Env = {
   BETTER_AUTH_URL: "http://localhost:3000",
 };
 
+/**
+ * Build phase detection has to be airtight: if it returns true at runtime,
+ * we'd silently encrypt with an all-zero key. We require BOTH Next's own
+ * NEXT_PHASE marker and the absence of a server-runtime hint. `next start`
+ * sets NEXT_PHASE to "phase-production-server", and `next dev` to
+ * "phase-development-server", so the only situation in which we accept the
+ * placeholder is the actual `next build` step.
+ */
 function isBuildPhase(): boolean {
-  return process.env.NEXT_PHASE === "phase-production-build";
+  if (process.env.NEXT_PHASE !== "phase-production-build") return false;
+  // Defensive: if NODE_ENV is unset or anything other than "production",
+  // we're not in a real build — bail out so missing env still throws.
+  if (process.env.NODE_ENV !== "production") return false;
+  return true;
 }
 
 export function getEnv(): Env {
@@ -49,6 +61,19 @@ export function getEnv(): Env {
       z.treeifyError(parsed.error),
     );
     throw new Error("Invalid environment variables");
+  }
+  // Extra safety: in production, never accept the placeholder secrets even
+  // if they somehow made it into the real environment. This protects
+  // against a misconfigured Dokploy deploy that forgets to inject secrets.
+  if (parsed.data.NODE_ENV === "production") {
+    if (
+      parsed.data.TOKEN_ENCRYPTION_KEY === BUILD_PLACEHOLDER.TOKEN_ENCRYPTION_KEY ||
+      parsed.data.BETTER_AUTH_SECRET === BUILD_PLACEHOLDER.BETTER_AUTH_SECRET
+    ) {
+      throw new Error(
+        "Refusing to start: TOKEN_ENCRYPTION_KEY or BETTER_AUTH_SECRET still match the build placeholder. Inject real secrets.",
+      );
+    }
   }
   cached = parsed.data;
   return cached;

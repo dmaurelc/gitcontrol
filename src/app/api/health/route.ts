@@ -5,21 +5,29 @@ import { getRedis } from "@/lib/redis/client";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Public liveness probe. Returns booleans only — no driver error messages,
+ * hostnames, or version strings, so the endpoint cannot leak internal
+ * topology to anonymous callers (Dokploy/Traefik probe consumes only the
+ * status code anyway).
+ */
 export async function GET() {
-  const result = { db: "unknown", redis: "unknown" };
+  const result = { db: false, redis: false };
   try {
     await db.execute(sql`SELECT 1`);
-    result.db = "ok";
+    result.db = true;
   } catch (e) {
-    result.db = `error: ${(e as Error).message}`;
+    console.error("[health] db", (e as Error).message);
   }
   try {
-    const r = getRedis();
-    const pong = await r.ping();
-    result.redis = pong === "PONG" ? "ok" : `unexpected: ${pong}`;
+    const pong = await getRedis().ping();
+    result.redis = pong === "PONG";
   } catch (e) {
-    result.redis = `error: ${(e as Error).message}`;
+    console.error("[health] redis", (e as Error).message);
   }
-  const healthy = result.db === "ok" && result.redis === "ok";
-  return NextResponse.json(result, { status: healthy ? 200 : 503 });
+  const healthy = result.db && result.redis;
+  return NextResponse.json(
+    { status: healthy ? "ok" : "degraded", db: result.db, redis: result.redis },
+    { status: healthy ? 200 : 503 },
+  );
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 async function requireUserId() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -24,6 +25,12 @@ export async function commentPullRequestAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "gh:write",
+      identifier: userId,
+      max: 10,
+      windowSeconds: 60,
+    });
     const owner = ownerSchema.parse(formData.get("owner"));
     const repo = repoSchema.parse(formData.get("repo"));
     const number = numberSchema.parse(formData.get("number"));
@@ -41,6 +48,12 @@ export async function closePullRequestAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "gh:write",
+      identifier: userId,
+      max: 10,
+      windowSeconds: 60,
+    });
     const owner = ownerSchema.parse(formData.get("owner"));
     const repo = repoSchema.parse(formData.get("repo"));
     const number = numberSchema.parse(formData.get("number"));
@@ -56,6 +69,12 @@ export async function reopenPullRequestAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "gh:write",
+      identifier: userId,
+      max: 10,
+      windowSeconds: 60,
+    });
     const owner = ownerSchema.parse(formData.get("owner"));
     const repo = repoSchema.parse(formData.get("repo"));
     const number = numberSchema.parse(formData.get("number"));

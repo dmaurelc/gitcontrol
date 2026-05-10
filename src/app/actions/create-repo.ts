@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { GithubError } from "@/lib/github/errors";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const inputSchema = z.object({
   name: z
@@ -30,6 +31,17 @@ export async function createRepoAction(
 ): Promise<CreateRepoState> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { status: "error", message: "Not authenticated" };
+
+  try {
+    await enforceRateLimit({
+      bucket: "gh:create-repo",
+      identifier: session.user.id,
+      max: 5,
+      windowSeconds: 60,
+    });
+  } catch (err) {
+    return { status: "error", message: (err as Error).message };
+  }
 
   const parsed = inputSchema.safeParse({
     name: formData.get("name"),
