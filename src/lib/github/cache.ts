@@ -17,6 +17,8 @@ export const TTL = {
   tags: 600,
   releases: 60,
   contributors: 600,
+  commits: 60,
+  branches: 300,
   contents: 300,
   commitActivity: 3600,
   codeFrequency: 3600,
