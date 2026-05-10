@@ -19,6 +19,8 @@ import {
   reopenPullRequestAction,
   commentPullRequestAction,
 } from "@/app/actions/pulls";
+import { MergePrButton } from "./_components/merge-pr-button";
+import { MergeStatusPanel } from "./_components/merge-status-panel";
 
 function formatRelative(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -65,9 +67,10 @@ export default async function PullRequestDetailPage({
   const { owner, repo, number: numberStr } = await params;
   const pullNumber = parseInt(numberStr, 10);
 
-  const [prResult, commentsResult] = await Promise.allSettled([
+  const [prResult, commentsResult, reviewsResult] = await Promise.allSettled([
     githubService.getPullRequest(session.user.id, owner, repo, pullNumber),
     githubService.listPullRequestComments(session.user.id, owner, repo, pullNumber),
+    githubService.listPullRequestReviews(session.user.id, owner, repo, pullNumber),
   ]);
 
   if (prResult.status === "rejected") {
@@ -89,11 +92,35 @@ export default async function PullRequestDetailPage({
   const pr = prResult.value.data;
   const comments =
     commentsResult.status === "fulfilled" ? commentsResult.value.data : [];
+  const reviews =
+    reviewsResult.status === "fulfilled" ? reviewsResult.value : [];
 
   const status = getPrStatus(pr);
   const { label, variant } = statusConfig[status];
   const canChangeState = !pr.merged; // merged PRs cannot be reopened/closed
   const isOpen = pr.state === "open";
+
+  // Only call the checks API for open PRs — merged/closed PRs don't need it
+  // and the call would just spend rate limit. Same for the merge button.
+  const checks =
+    isOpen && !pr.merged
+      ? await githubService
+          .listCheckRuns(session.user.id, owner, repo, pr.head.sha)
+          .catch(() => [])
+      : [];
+
+  // GitHub returns mergeable_state values that block the merge button:
+  //   dirty   = conflicts
+  //   blocked = branch protection failed
+  //   draft   = PR is a draft
+  // Anything else (clean, unstable, has_hooks, behind, unknown) we let through;
+  // GitHub will reject the actual merge if it can't go through.
+  const blockedStates = new Set(["dirty", "blocked", "draft"]);
+  const canMerge =
+    isOpen &&
+    !pr.merged &&
+    pr.mergeable !== false &&
+    !blockedStates.has(pr.mergeable_state ?? "unknown");
 
   return (
     <div className="flex flex-col gap-6">
@@ -244,6 +271,28 @@ export default async function PullRequestDetailPage({
           />
         </CardContent>
       </Card>
+
+      {/* Merge panel — only for open, non-merged PRs */}
+      {isOpen && !pr.merged && (
+        <div className="flex flex-col gap-3">
+          <MergeStatusPanel
+            mergeable={pr.mergeable}
+            mergeableState={pr.mergeable_state}
+            checks={checks}
+            reviews={reviews}
+          />
+          <div className="flex items-center justify-end gap-2">
+            <MergePrButton
+              owner={owner}
+              repo={repo}
+              number={pullNumber}
+              headSha={pr.head.sha}
+              defaultTitle={pr.title}
+              disabled={!canMerge}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Close / Reopen (only for non-merged PRs) */}
       {canChangeState && (

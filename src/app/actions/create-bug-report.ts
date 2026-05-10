@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { UPSTREAM_OWNER, UPSTREAM_REPO } from "@/lib/github/upstream";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const schema = z.object({
   title: z.string().trim().min(5).max(256),
@@ -48,6 +49,17 @@ export async function createBugReportAction(
 ): Promise<BugReportActionResult> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { status: "error", message: "Not authenticated. Sign in again." };
+
+  try {
+    await enforceRateLimit({
+      bucket: "bug-report",
+      identifier: session.user.id,
+      max: 3,
+      windowSeconds: 300,
+    });
+  } catch (err) {
+    return { status: "error", message: (err as Error).message };
+  }
 
   const parsed = schema.safeParse({
     title: formData.get("title"),

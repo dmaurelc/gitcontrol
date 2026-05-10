@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
 import { runAction, type ActionResult } from "@/lib/actions/result";
+import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
 const threadIdSchema = z
   .string()
@@ -24,6 +25,12 @@ export async function markNotificationReadAction(
 ): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "notifications:write",
+      identifier: userId,
+      max: 30,
+      windowSeconds: 60,
+    });
     const raw = formData.get("threadId");
     const threadId = threadIdSchema.parse(typeof raw === "string" ? raw : "");
     await githubService.markNotificationRead(userId, threadId);
@@ -36,6 +43,12 @@ export async function markNotificationReadAction(
 export async function markAllNotificationsReadAction(): Promise<ActionResult> {
   return runAction(async () => {
     const userId = await requireUserId();
+    await enforceRateLimit({
+      bucket: "notifications:write",
+      identifier: userId,
+      max: 5,
+      windowSeconds: 60,
+    });
     await githubService.markAllNotificationsRead(userId);
   });
 }

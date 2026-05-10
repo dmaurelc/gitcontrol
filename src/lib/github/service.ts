@@ -154,6 +154,45 @@ export type PullRequest = {
   additions: number;
   deletions: number;
   changed_files: number;
+  // GitHub may return null while computing; UI must handle it.
+  mergeable?: boolean | null;
+  // dirty | clean | unstable | blocked | behind | unknown | draft | has_hooks
+  mergeable_state?: string;
+};
+
+export type MergeMethod = "merge" | "squash" | "rebase";
+
+export type CheckRunConclusion =
+  | "success"
+  | "failure"
+  | "neutral"
+  | "cancelled"
+  | "skipped"
+  | "timed_out"
+  | "action_required"
+  | "stale"
+  | null;
+
+export type CheckRunSummary = {
+  id: number;
+  name: string;
+  status: "queued" | "in_progress" | "completed";
+  conclusion: CheckRunConclusion;
+  html_url: string | null;
+  app: { name: string } | null;
+};
+
+export type PullRequestReview = {
+  id: number;
+  state:
+    | "APPROVED"
+    | "CHANGES_REQUESTED"
+    | "COMMENTED"
+    | "DISMISSED"
+    | "PENDING";
+  user: { login: string; avatar_url: string } | null;
+  submitted_at: string | null;
+  html_url: string;
 };
 
 // ─── Actions / Workflow Runs ─────────────────────────────────────────────────
@@ -1316,6 +1355,112 @@ export const githubService = {
       await invalidate(userId, "prs");
       return res.data;
     } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  /**
+   * Merges a pull request via the chosen method. GitHub returns 405 if not
+   * mergeable, 409 if SHA mismatch (someone pushed during review), 422 for
+   * branch protection or invalid commit messages — all bubble up via
+   * mapGithubError so the action layer can surface them to the user.
+   */
+  async mergePullRequest(
+    userId: string,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    opts: {
+      method: MergeMethod;
+      commitTitle?: string;
+      commitMessage?: string;
+      sha?: string;
+    },
+  ) {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.pulls.merge({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        merge_method: opts.method,
+        commit_title: opts.commitTitle,
+        commit_message: opts.commitMessage,
+        sha: opts.sha,
+      });
+      await invalidate(userId, "pr");
+      await invalidate(userId, "prs");
+      await invalidate(userId, "pr-comments");
+      return res.data;
+    } catch (err) {
+      throw mapGithubError(err);
+    }
+  },
+
+  /**
+   * Returns the check-run summary for a commit SHA (typically the PR's head).
+   * Skips caching: callers want the freshest CI state right before merging.
+   */
+  async listCheckRuns(
+    userId: string,
+    owner: string,
+    repo: string,
+    ref: string,
+  ): Promise<CheckRunSummary[]> {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.checks.listForRef({
+        owner,
+        repo,
+        ref,
+        per_page: 50,
+      });
+      const runs = res.data.check_runs as Array<{
+        id: number;
+        name: string;
+        status: "queued" | "in_progress" | "completed";
+        conclusion: CheckRunConclusion;
+        html_url: string | null;
+        app: { name: string } | null;
+      }>;
+      return runs.map((r) => ({
+        id: r.id,
+        name: r.name,
+        status: r.status,
+        conclusion: r.conclusion,
+        html_url: r.html_url,
+        app: r.app,
+      }));
+    } catch (err) {
+      const e = err as { status?: number };
+      // Empty list when checks API is unavailable for the ref.
+      if (e.status === 404 || e.status === 422) return [];
+      throw mapGithubError(err);
+    }
+  },
+
+  /**
+   * Lists reviews on a PR, used to surface APPROVED / CHANGES_REQUESTED
+   * before allowing a merge. No caching — UI needs the live state.
+   */
+  async listPullRequestReviews(
+    userId: string,
+    owner: string,
+    repo: string,
+    pullNumber: number,
+  ): Promise<PullRequestReview[]> {
+    const { rest } = await getGithubClients(userId);
+    try {
+      const res = await rest.pulls.listReviews({
+        owner,
+        repo,
+        pull_number: pullNumber,
+        per_page: 100,
+      });
+      return res.data as unknown as PullRequestReview[];
+    } catch (err) {
+      const e = err as { status?: number };
+      if (e.status === 404) return [];
       throw mapGithubError(err);
     }
   },
