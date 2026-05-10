@@ -2,11 +2,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { GitBranch } from "lucide-react";
 import { auth } from "@/lib/auth/auth";
-import { githubService } from "@/lib/github/service";
+import { githubService, type RepoDirEntry } from "@/lib/github/service";
 import { EmptyState } from "@/components/empty-state";
 import { FileBreadcrumbs } from "./_components/file-breadcrumbs";
-import { FileTree } from "./_components/file-tree";
+import { FileTreeAside } from "./_components/file-tree-aside";
 import { FilePreview } from "./_components/file-preview";
+import { DirListing } from "./_components/dir-listing";
 
 type SearchParams = { path?: string; ref?: string };
 
@@ -24,7 +25,6 @@ export default async function RepoFilesPage({
   const rawPath = sp.path?.replace(/^\/+|\/+$/g, "") ?? "";
   const ref = sp.ref;
 
-  // Default branch lookup; tolerate failure (private repos token can't see).
   let defaultBranch: string | undefined;
   try {
     const r = await githubService.getRepo(session.user.id, owner, repo);
@@ -32,20 +32,47 @@ export default async function RepoFilesPage({
   } catch {}
   const effectiveRef = ref ?? defaultBranch;
 
-  let body: Awaited<ReturnType<typeof githubService.getContent>>["data"] | null = null;
-  let error: string | null = null;
+  // Always fetch root entries for the tree aside.
+  let rootEntries: RepoDirEntry[] = [];
+  let rootError: string | null = null;
   try {
-    const res = await githubService.getContent(
+    const rootRes = await githubService.getContent(
       session.user.id,
       owner,
       repo,
-      rawPath,
+      "",
       effectiveRef,
     );
-    body = res.data;
+    if (rootRes.data.kind === "dir") {
+      rootEntries = rootRes.data.entries;
+    }
   } catch (err) {
-    const e = err as { message?: string; status?: number };
-    error = e.message ?? "Unable to load contents.";
+    const e = err as { message?: string };
+    rootError = e.message ?? "Unable to load repository.";
+  }
+
+  // Fetch selected node content (only if not at root).
+  let body: Awaited<ReturnType<typeof githubService.getContent>>["data"] | null =
+    rawPath === ""
+      ? rootError
+        ? null
+        : { kind: "dir", entries: rootEntries }
+      : null;
+  let error: string | null = rawPath === "" ? rootError : null;
+  if (rawPath !== "") {
+    try {
+      const res = await githubService.getContent(
+        session.user.id,
+        owner,
+        repo,
+        rawPath,
+        effectiveRef,
+      );
+      body = res.data;
+    } catch (err) {
+      const e = err as { message?: string };
+      error = e.message ?? "Unable to load contents.";
+    }
   }
 
   return (
@@ -60,28 +87,43 @@ export default async function RepoFilesPage({
         ) : null}
       </div>
 
-      {error ? (
-        <EmptyState
-          icon={GitBranch}
-          title="Couldn't load files"
-          description={error}
-        />
-      ) : body === null ? (
-        <EmptyState
-          icon={GitBranch}
-          title="Empty repository"
-          description="This repository has no files yet."
-        />
-      ) : body.kind === "dir" ? (
-        <FileTree
-          owner={owner}
-          repo={repo}
-          parentPath={rawPath}
-          entries={body.entries}
-        />
-      ) : (
-        <FilePreview file={body.file} />
-      )}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        {rootError && rootEntries.length === 0 ? null : (
+          <FileTreeAside
+            owner={owner}
+            repo={repo}
+            rootEntries={rootEntries}
+            selectedPath={rawPath}
+            refValue={effectiveRef}
+          />
+        )}
+
+        <div className="min-w-0 flex-1">
+          {error ? (
+            <EmptyState
+              icon={GitBranch}
+              title="Couldn't load files"
+              description={error}
+            />
+          ) : body === null ? (
+            <EmptyState
+              icon={GitBranch}
+              title="Empty repository"
+              description="This repository has no files yet."
+            />
+          ) : body.kind === "dir" ? (
+            <DirListing
+              owner={owner}
+              repo={repo}
+              parentPath={rawPath}
+              entries={body.entries}
+              refValue={effectiveRef}
+            />
+          ) : (
+            <FilePreview file={body.file} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
