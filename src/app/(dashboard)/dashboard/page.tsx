@@ -26,11 +26,30 @@ import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { ActivityFeed } from "@/components/activity-feed";
 import { ContributionsChart } from "@/components/contributions-chart";
+import { ContributionHeatmap } from "@/components/contribution-heatmap";
 import type { ContributionDay } from "@/lib/github/service";
 
-export default async function DashboardPage() {
+type DashboardSearchParams = {
+  contribYear?: string | string[];
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSearchParams>;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
+
+  const sp = await searchParams;
+  const rawYear = Array.isArray(sp.contribYear)
+    ? sp.contribYear[0]
+    : sp.contribYear;
+  const parsedYear = rawYear ? Number.parseInt(rawYear, 10) : NaN;
+  const contribYear =
+    Number.isInteger(parsedYear) && parsedYear >= 2008 && parsedYear <= 9999
+      ? parsedYear
+      : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,9 +64,24 @@ export default async function DashboardPage() {
         />
       </Suspense>
 
-      <Suspense fallback={<ContributionsSkeleton />}>
-        <ContributionsSection userId={session.user.id} />
-      </Suspense>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="xl:col-span-3 min-w-0">
+          <Suspense
+            key={contribYear ?? "rolling"}
+            fallback={<HeatmapSkeleton />}
+          >
+            <ContributionHeatmap
+              userId={session.user.id}
+              year={contribYear}
+            />
+          </Suspense>
+        </div>
+        <div className="xl:col-span-2">
+          <Suspense fallback={<ContributionsSkeleton />}>
+            <ContributionsSection userId={session.user.id} />
+          </Suspense>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -266,7 +300,7 @@ async function ContributionsSection({ userId }: { userId: string }) {
   const total = days.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <Card className="shadow-card">
+    <Card className="h-full shadow-card">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="space-y-0.5">
@@ -278,7 +312,7 @@ async function ContributionsSection({ userId }: { userId: string }) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent className="flex flex-1 items-center pb-4">
         <ContributionsChart data={days} />
       </CardContent>
     </Card>
@@ -294,6 +328,20 @@ function ContributionsSkeleton() {
       </CardHeader>
       <CardContent>
         <Skeleton className="h-32 w-full rounded" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function HeatmapSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-44 rounded" />
+        <Skeleton className="mt-1 h-3 w-24 rounded" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-30 w-full rounded" />
       </CardContent>
     </Card>
   );

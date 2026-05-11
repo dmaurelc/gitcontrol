@@ -2,6 +2,7 @@
 
 ## Context Links
 - [plan.md](plan.md)
+- **7e replaced by:** [Contribution Graph Plan (completed)](../260510-2321-contribution-graph-heatmap/plan.md) — heatmap shipped 2026-05-11, mounted on dashboard alongside the original 28-day chart. Sub-phase 7e below kept for historical context; no further work needed.
 
 ## Overview
 - **Priority**: P2

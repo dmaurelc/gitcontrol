@@ -1990,6 +1990,116 @@ export const githubService = {
       },
     });
   },
+
+  /**
+   * Returns contribution days for the GitHub-style heatmap grid.
+   * If `year` is omitted, returns the rolling last ~12 months. If provided,
+   * returns the calendar year clamped between the viewer's GitHub join date
+   * and today.
+   * Sourced from GraphQL contributionsCollection.contributionCalendar.
+   * TTL: 3600s. Resource key: "contributionsHeatmap".
+   */
+  async getContributionsHeatmap(
+    userId: string,
+    year?: number,
+  ): Promise<{ data: ContributionDay[]; total: number }> {
+    const { gql } = await getGithubClients(userId);
+    type CalendarResponse = {
+      viewer: {
+        contributionsCollection: {
+          contributionCalendar: {
+            totalContributions: number;
+            weeks: Array<{
+              contributionDays: Array<{
+                date: string;
+                contributionCount: number;
+              }>;
+            }>;
+          };
+        };
+      };
+    };
+
+    // Compute optional ISO range when year is given. GitHub's API restricts
+    // the window to <= 1 year, so we clamp to [jan1, min(dec31, today)].
+    let fromIso: string | undefined;
+    let toIso: string | undefined;
+    if (typeof year === "number") {
+      const now = new Date();
+      const jan1 = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+      const dec31 = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+      const upper = dec31.getTime() < now.getTime() ? dec31 : now;
+      fromIso = jan1.toISOString();
+      toIso = upper.toISOString();
+    }
+
+    const res = await cachedFetch<{ days: ContributionDay[]; total: number }>({
+      userId,
+      resource: "contributionsHeatmap",
+      params: year ? { year } : undefined,
+      ttlSeconds: TTL.contributionsHeatmap,
+      fetcher: async () => {
+        try {
+          const data = await gql<CalendarResponse>(
+            `query($from: DateTime, $to: DateTime) {
+              viewer {
+                contributionsCollection(from: $from, to: $to) {
+                  contributionCalendar {
+                    totalContributions
+                    weeks {
+                      contributionDays {
+                        date
+                        contributionCount
+                      }
+                    }
+                  }
+                }
+              }
+            }`,
+            { from: fromIso ?? null, to: toIso ?? null },
+          );
+          const cal = data.viewer.contributionsCollection.contributionCalendar;
+          const days = cal.weeks.flatMap((w) =>
+            w.contributionDays.map((d) => ({
+              date: d.date,
+              count: d.contributionCount,
+            })),
+          );
+          return {
+            notModified: false as const,
+            body: { days, total: cal.totalContributions },
+          };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
+    return { data: res.data.days, total: res.data.total };
+  },
+
+  /**
+   * Returns the year the viewer joined GitHub. Used to populate the year
+   * selector on the contribution heatmap. Cached with TTL.viewer.
+   */
+  async getViewerJoinYear(userId: string): Promise<number> {
+    const { gql } = await getGithubClients(userId);
+    type Resp = { viewer: { createdAt: string } };
+    const res = await cachedFetch<{ year: number }>({
+      userId,
+      resource: "viewerJoinYear",
+      ttlSeconds: TTL.viewer,
+      fetcher: async () => {
+        try {
+          const data = await gql<Resp>(`query { viewer { createdAt } }`);
+          const year = new Date(data.viewer.createdAt).getUTCFullYear();
+          return { notModified: false as const, body: { year } };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
+    return res.data.year;
+  },
 };
 
 export type GithubService = typeof githubService;
