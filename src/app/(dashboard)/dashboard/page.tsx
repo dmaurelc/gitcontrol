@@ -26,6 +26,7 @@ import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { ActivityFeed } from "@/components/activity-feed";
 import { ContributionsChart } from "@/components/contributions-chart";
+import { ContributionHeatmap } from "@/components/contribution-heatmap";
 import type { ContributionDay } from "@/lib/github/service";
 
 export default async function DashboardPage() {
@@ -43,6 +44,10 @@ export default async function DashboardPage() {
           userId={session.user.id}
           fallbackLogin={session.user.email}
         />
+      </Suspense>
+
+      <Suspense fallback={<HeatmapSkeleton />}>
+        <ContributionHeatmap userId={session.user.id} />
       </Suspense>
 
       <Suspense fallback={<ContributionsSkeleton />}>
@@ -294,6 +299,20 @@ function ContributionsSkeleton() {
       </CardHeader>
       <CardContent>
         <Skeleton className="h-32 w-full rounded" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function HeatmapSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-44 rounded" />
+        <Skeleton className="mt-1 h-3 w-24 rounded" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-30 w-full rounded" />
       </CardContent>
     </Card>
   );
