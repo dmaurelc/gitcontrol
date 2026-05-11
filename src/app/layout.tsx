@@ -17,7 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MaurelDev — GitHub Dashboard",
+  title: "GitControl — GitHub Dashboard",
   description: "Self-hosted dashboard for your GitHub account",
 };
 

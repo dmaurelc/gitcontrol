@@ -40,7 +40,7 @@ export default function LoginPage() {
           <Sparkles className="size-5" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <h1 className="text-3xl font-semibold tracking-tight">MaurelDev</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">GitControl</h1>
           <p className="text-sm text-muted-foreground">
             Self-hosted GitHub dashboard. Sign in to continue.
           </p>

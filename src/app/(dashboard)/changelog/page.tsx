@@ -6,7 +6,7 @@ import { UPSTREAM_OWNER, UPSTREAM_REPO } from "@/lib/github/upstream";
 import { ChangelogEmpty } from "./_components/changelog-empty";
 import { ReleaseCard, type ReleaseCardItem } from "./_components/release-card";
 
-export const metadata = { title: "Changelog — MaurelDev" };
+export const metadata = { title: "Changelog — GitControl" };
 
 const PER_PAGE = 20;
 
@@ -58,7 +58,7 @@ export default async function ChangelogPage() {
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Changelog</h1>
         <p className="text-sm text-muted-foreground">
-          Releases for MaurelDev. Sourced from GitHub Releases.
+          Releases for GitControl. Sourced from GitHub Releases.
         </p>
       </header>
 

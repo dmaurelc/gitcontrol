@@ -5,7 +5,7 @@
 ## Top-Level Layout
 
 ```
-maureldev/
+gitcontrol/
 ├── src/                       # App + lib code
 ├── drizzle/                   # SQL migrations (auto-generated)
 ├── scripts/                   # entrypoint.sh + migrate.mjs (runtime)

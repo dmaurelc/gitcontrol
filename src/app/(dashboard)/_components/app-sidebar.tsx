@@ -107,7 +107,7 @@ export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
         <div className="grid size-7 place-items-center rounded-md bg-linear-to-br from-chart-1 to-chart-4 text-primary-foreground shadow-soft">
           <Sparkles className="size-3.5" />
         </div>
-        <span className="text-sm font-semibold tracking-tight">MaurelDev</span>
+        <span className="text-sm font-semibold tracking-tight">GitControl</span>
       </Link>
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">
         {SECTIONS.map((section) => (
