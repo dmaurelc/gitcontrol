@@ -5,7 +5,7 @@
 
 ## Overview
 - **Priority**: P2
-- **Status**: in-progress
+- **Status**: done (2026-05-11)
 - Iteración UX dashboard + topbar/sidebar. Hace funcionales placeholders (activity feed, ⌘K, notifications) y agrega chart de contribuciones. Mueve ThemeToggle al topbar y reemplaza footer "v0.1 — self-hosted" del sidebar.
 
 ## Sub-phases (commits separados, una rama)

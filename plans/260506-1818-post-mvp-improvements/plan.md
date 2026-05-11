@@ -1,6 +1,7 @@
 ---
-status: in-progress
+status: completed
 created: 2026-05-06
+completed: 2026-05-11
 project: maureldev-post-mvp
 ---
 
@@ -18,7 +19,7 @@ Iteraciones tras shipping MVP a `https://dev.webkode.cl`. Cubre: filtros visibil
 | 4 | UI/UX redesign (sidebar, cards, tipografía) | done | [phase-04-ui-redesign.md](phase-04-ui-redesign.md) |
 | 5 | Issue/PR comments + create issue | done | [phase-05-issue-comments.md](phase-05-issue-comments.md) |
 | 6 | GitHub Actions runs viewer | done | [phase-06-actions-runs.md](phase-06-actions-runs.md) |
-| 7 | Dashboard polish (chart, activity, ⌘K, notifications, header/sidebar) | pending | [phase-07-dashboard-polish.md](phase-07-dashboard-polish.md) |
+| 7 | Dashboard polish (chart, activity, ⌘K, notifications, header/sidebar) | done | [phase-07-dashboard-polish.md](phase-07-dashboard-polish.md) |
 
 ## Out of scope (futuras fases)
 - GitHub App migration (rate limit 15k/h + repo selection nativa)
