@@ -15,7 +15,7 @@ export function ChangelogEmpty({ variant }: Props) {
           <Lock className="size-8 text-muted-foreground" />
           <p className="text-sm font-medium">No access to upstream repo</p>
           <p className="max-w-md text-sm text-muted-foreground">
-            The MaurelDev repo is private and your account is not a
+            The GitControl repo is private and your account is not a
             collaborator. Contact the maintainer to be added.
           </p>
         </CardContent>

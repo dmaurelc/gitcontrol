@@ -164,8 +164,8 @@ pnpm dev                                          # next dev on :3000
 ```
 
 `docker-compose.dev.yml` provisions:
-- Postgres 16 (`maureldev/maureldev_dev`) on host port `5433` to avoid colliding with system Postgres.
-- Redis 7 with `requirepass maureldev_dev`.
+- Postgres 16 (`gitcontrol/gitcontrol_dev`) on host port `5433` to avoid colliding with system Postgres.
+- Redis 7 with `requirepass gitcontrol_dev`.
 
 ## 9. Environment Variables (validated by `lib/env.ts`)
 

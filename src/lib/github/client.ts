@@ -4,7 +4,7 @@ import { graphql } from "@octokit/graphql";
 import { getGithubToken } from "@/lib/auth/get-github-token";
 import { UnauthorizedError } from "./errors";
 
-const userAgent = "MaurelDev/0.1 (+https://github.com/dmaurelc/maureldev)";
+const userAgent = "GitControl/0.1 (+https://github.com/dmaurelc/gitcontrol)";
 
 export type GithubClients = {
   rest: Octokit;

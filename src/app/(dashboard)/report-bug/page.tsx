@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BugReportForm } from "./_components/bug-report-form";
 import { UPSTREAM_OWNER, UPSTREAM_REPO } from "@/lib/github/upstream";
 
-export const metadata = { title: "Report a bug — MaurelDev" };
+export const metadata = { title: "Report a bug — GitControl" };
 
 export default async function ReportBugPage() {
   const session = await auth.api.getSession({ headers: await headers() });

@@ -1,6 +1,6 @@
 # Project Overview & PDR
 
-> Product Development Requirements for **MaurelDev** — a self-hosted, multi-user GitHub dashboard.
+> Product Development Requirements for **GitControl** — a self-hosted, multi-user GitHub dashboard.
 
 ## 1. Vision
 

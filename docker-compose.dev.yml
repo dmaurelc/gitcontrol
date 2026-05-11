@@ -1,32 +1,32 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: maureldev-postgres-dev
+    container_name: gitcontrol-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER: maureldev
-      POSTGRES_PASSWORD: maureldev_dev
-      POSTGRES_DB: maureldev
+      POSTGRES_USER: gitcontrol
+      POSTGRES_PASSWORD: gitcontrol_dev
+      POSTGRES_DB: gitcontrol
     ports:
       - "5433:5432"
     volumes:
-      - maureldev_pg_data:/var/lib/postgresql/data
+      - gitcontrol_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "maureldev"]
+      test: ["CMD", "pg_isready", "-U", "gitcontrol"]
       interval: 5s
       timeout: 3s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: maureldev-redis-dev
+    container_name: gitcontrol-redis-dev
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "maureldev_dev"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "gitcontrol_dev"]
     ports:
       - "6379:6379"
     volumes:
-      - maureldev_redis_data:/data
+      - gitcontrol_redis_data:/data
 
 volumes:
-  maureldev_pg_data:
-  maureldev_redis_data:
+  gitcontrol_pg_data:
+  gitcontrol_redis_data:

@@ -30,7 +30,7 @@ function buildBody(input: z.infer<typeof schema>): string {
   const actual = input.actual?.trim();
   if (actual) sections.push(`## Actual behavior\n\n${actual}`);
 
-  sections.push(`---\n_Reported via MaurelDev bug report form._`);
+  sections.push(`---\n_Reported via GitControl bug report form._`);
   return sections.join("\n\n");
 }
 
@@ -39,7 +39,7 @@ export type BugReportActionResult =
   | { status: "error"; message: string };
 
 /**
- * Creates an issue in the upstream maureldev repo using the logged-in user's
+ * Creates an issue in the upstream gitcontrol repo using the logged-in user's
  * GitHub OAuth token. Redirects to the new issue on success; returns a
  * structured error on failure so the client form can render it.
  */
@@ -103,7 +103,7 @@ export async function createBugReportAction(
     if (e.status === 404)
       return {
         status: "error",
-        message: "No access to the maureldev repo. Contact the maintainer to be added as a collaborator.",
+        message: "No access to the gitcontrol repo. Contact the maintainer to be added as a collaborator.",
       };
     return { status: "error", message: e.message ?? "Failed to create issue. Try again." };
   }

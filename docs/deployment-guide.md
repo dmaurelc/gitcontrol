@@ -94,8 +94,8 @@ For risky migrations:
 ```sh
 # One-time
 cp .env.example .env.local
-# Fill DATABASE_URL=postgres://maureldev:maureldev_dev@localhost:5433/maureldev
-#      REDIS_URL=redis://default:maureldev_dev@localhost:6379
+# Fill DATABASE_URL=postgres://gitcontrol:gitcontrol_dev@localhost:5433/gitcontrol
+#      REDIS_URL=redis://default:gitcontrol_dev@localhost:6379
 #      GITHUB_CLIENT_ID/SECRET (use a separate dev OAuth App)
 #      TOKEN_ENCRYPTION_KEY (openssl rand -hex 32)
 #      BETTER_AUTH_SECRET (openssl rand -base64 32)

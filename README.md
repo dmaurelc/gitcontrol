@@ -1,12 +1,12 @@
-# MaurelDev
+# GitControl
 
 Una alternativa personal y privada al dashboard de GitHub. Diseñado para desarrolladores que quieren una vista limpia, controles propios y datos en su propia infraestructura.
 
 ## ¿Qué es?
 
-MaurelDev es un **dashboard self-hosted** que reemplaza la UI estándar de GitHub. Te da una interfaz simplificada para gestionar tus repositorios, issues, pull requests, estrellas y proyectos — sin ruido innecesario.
+GitControl es un **dashboard self-hosted** que reemplaza la UI estándar de GitHub. Te da una interfaz simplificada para gestionar tus repositorios, issues, pull requests, estrellas y proyectos — sin ruido innecesario.
 
-En lugar de navegar por github.com (con todas sus secciones y notificaciones), abres tu propia instancia de MaurelDev en tu servidor, ves exactamente lo que necesitas, y mantienes control total de tus datos y credenciales de GitHub.
+En lugar de navegar por github.com (con todas sus secciones y notificaciones), abres tu propia instancia de GitControl en tu servidor, ves exactamente lo que necesitas, y mantienes control total de tus datos y credenciales de GitHub.
 
 ## ¿Para quién?
 
@@ -35,7 +35,7 @@ En lugar de navegar por github.com (con todas sus secciones y notificaciones), a
 
 ## Self-Hosted
 
-MaurelDev está diseñado para ejecutarse en tu propia infraestructura. No es un SaaS — desplegas una instancia, das acceso al equipo que necesite, y listo.
+GitControl está diseñado para ejecutarse en tu propia infraestructura. No es un SaaS — desplegas una instancia, das acceso al equipo que necesite, y listo.
 
 **Live demo** (si está disponible): `https://dev.webkode.cl`
 
