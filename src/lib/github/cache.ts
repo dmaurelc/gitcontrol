@@ -26,6 +26,7 @@ export const TTL = {
   repoHealth: 600,
   dependencyManifests: 1800,
   npmLatest: 3600,
+  contributionsHeatmap: 3600,
 } as const;
 
 export type CacheKind = keyof typeof TTL;
