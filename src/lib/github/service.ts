@@ -1990,6 +1990,72 @@ export const githubService = {
       },
     });
   },
+
+  /**
+   * Returns ~364 contribution days for the GitHub-style heatmap grid.
+   * Sourced from the same GraphQL contributionCalendar (no separate ingestion).
+   * TTL: 3600s. Resource key: "contributionsHeatmap".
+   */
+  async getContributionsHeatmap(
+    userId: string,
+  ): Promise<{ data: ContributionDay[]; total: number }> {
+    const { gql } = await getGithubClients(userId);
+    type CalendarResponse = {
+      viewer: {
+        contributionsCollection: {
+          contributionCalendar: {
+            totalContributions: number;
+            weeks: Array<{
+              contributionDays: Array<{
+                date: string;
+                contributionCount: number;
+              }>;
+            }>;
+          };
+        };
+      };
+    };
+    const res = await cachedFetch<{ days: ContributionDay[]; total: number }>({
+      userId,
+      resource: "contributionsHeatmap",
+      ttlSeconds: TTL.contributionsHeatmap,
+      fetcher: async () => {
+        try {
+          const data = await gql<CalendarResponse>(`
+            query {
+              viewer {
+                contributionsCollection {
+                  contributionCalendar {
+                    totalContributions
+                    weeks {
+                      contributionDays {
+                        date
+                        contributionCount
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          `);
+          const cal = data.viewer.contributionsCollection.contributionCalendar;
+          const days = cal.weeks.flatMap((w) =>
+            w.contributionDays.map((d) => ({
+              date: d.date,
+              count: d.contributionCount,
+            })),
+          );
+          return {
+            notModified: false as const,
+            body: { days, total: cal.totalContributions },
+          };
+        } catch (err) {
+          throw mapGithubError(err);
+        }
+      },
+    });
+    return { data: res.data.days, total: res.data.total };
+  },
 };
 
 export type GithubService = typeof githubService;
