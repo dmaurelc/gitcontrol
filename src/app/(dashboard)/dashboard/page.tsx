@@ -46,13 +46,18 @@ export default async function DashboardPage() {
         />
       </Suspense>
 
-      <Suspense fallback={<HeatmapSkeleton />}>
-        <ContributionHeatmap userId={session.user.id} />
-      </Suspense>
-
-      <Suspense fallback={<ContributionsSkeleton />}>
-        <ContributionsSection userId={session.user.id} />
-      </Suspense>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="xl:col-span-3">
+          <Suspense fallback={<HeatmapSkeleton />}>
+            <ContributionHeatmap userId={session.user.id} />
+          </Suspense>
+        </div>
+        <div className="xl:col-span-2">
+          <Suspense fallback={<ContributionsSkeleton />}>
+            <ContributionsSection userId={session.user.id} />
+          </Suspense>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -271,7 +276,7 @@ async function ContributionsSection({ userId }: { userId: string }) {
   const total = days.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <Card className="shadow-card">
+    <Card className="h-full shadow-card">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="space-y-0.5">
@@ -283,7 +288,7 @@ async function ContributionsSection({ userId }: { userId: string }) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent className="flex flex-1 items-center pb-4">
         <ContributionsChart data={days} />
       </CardContent>
     </Card>

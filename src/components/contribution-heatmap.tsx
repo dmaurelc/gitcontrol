@@ -21,7 +21,7 @@ export async function ContributionHeatmap({ userId }: Props) {
   }
 
   return (
-    <Card className="shadow-card">
+    <Card className="h-full shadow-card">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="space-y-0.5">
