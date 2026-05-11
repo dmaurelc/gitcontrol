@@ -29,9 +29,27 @@ import { ContributionsChart } from "@/components/contributions-chart";
 import { ContributionHeatmap } from "@/components/contribution-heatmap";
 import type { ContributionDay } from "@/lib/github/service";
 
-export default async function DashboardPage() {
+type DashboardSearchParams = {
+  contribYear?: string | string[];
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSearchParams>;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
+
+  const sp = await searchParams;
+  const rawYear = Array.isArray(sp.contribYear)
+    ? sp.contribYear[0]
+    : sp.contribYear;
+  const parsedYear = rawYear ? Number.parseInt(rawYear, 10) : NaN;
+  const contribYear =
+    Number.isInteger(parsedYear) && parsedYear >= 2008 && parsedYear <= 9999
+      ? parsedYear
+      : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,9 +65,15 @@ export default async function DashboardPage() {
       </Suspense>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-        <div className="xl:col-span-3">
-          <Suspense fallback={<HeatmapSkeleton />}>
-            <ContributionHeatmap userId={session.user.id} />
+        <div className="xl:col-span-3 min-w-0">
+          <Suspense
+            key={contribYear ?? "rolling"}
+            fallback={<HeatmapSkeleton />}
+          >
+            <ContributionHeatmap
+              userId={session.user.id}
+              year={contribYear}
+            />
           </Suspense>
         </div>
         <div className="xl:col-span-2">
