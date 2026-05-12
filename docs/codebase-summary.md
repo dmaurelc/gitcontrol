@@ -1,6 +1,6 @@
 # Codebase Summary
 
-> Snapshot of the repository as of 2026-05-08 — branch `develop`, post-Wave 5.
+> Snapshot of the repository as of 2026-05-12 — branch `main`, v0.9.2 shipped. GitControl (renamed from MaurelDev).
 
 ## Top-Level Layout
 
@@ -48,8 +48,7 @@ src/
 │   │   └── settings.ts        # theme, pin/unpin, revoke
 │   └── api/
 │       ├── auth/[...all]/     # Better Auth handler (catch-all)
-│       ├── health/            # DB + Redis ping (Dokploy probe)
-│       └── debug/             # tables/, viewer/ (dev-only inspectors)
+│       └── health/            # DB + Redis ping (Dokploy probe)
 ├── components/
 │   ├── theme-provider.tsx     # next-themes wrapper
 │   ├── theme-toggle.tsx       # Light/Dark/System dropdown
@@ -110,14 +109,16 @@ Migration files live in `drizzle/` and are applied at container start by `script
 |------|------|-------|
 | `/` | RSC | Redirects to `/dashboard` (or `/login`). |
 | `/login` | RSC + client | OAuth start. |
-| `/dashboard` | RSC | Metrics + recent repos with KPI links + dashboard tweaks. |
+| `/dashboard` | RSC | Metrics + recent repos with KPI links + contribution heatmap. |
 | `/repositories` | RSC | List + filters. Hidden pinned repos from listing. |
-| `/repositories/[owner]/[repo]` | RSC layout | Tabs nav (overview, issues, pulls, files, insights). |
+| `/repositories/[owner]/[repo]` | RSC layout | Tabs nav (overview, issues, pulls, files, insights, commits, dependencies). |
 | `/repositories/[owner]/[repo]/overview` | RSC | Repo detail with releases, tags, contributors sidebar. |
 | `/repositories/[owner]/[repo]/issues` | RSC | Repo issues. |
 | `/repositories/[owner]/[repo]/pulls` | RSC | Repo PRs. |
 | `/repositories/[owner]/[repo]/files` | RSC | File browser + preview. |
 | `/repositories/[owner]/[repo]/insights` | RSC | Commit activity, code frequency, traffic. |
+| `/repositories/[owner]/[repo]/commits` | RSC | Commit history with branch/author/date filters. |
+| `/repositories/[owner]/[repo]/dependencies` | RSC | Dep Graph + npm-latest with severity filter. |
 | `/issues` | RSC | Cross-repo aggregated issues view. |
 | `/pulls` | RSC | Cross-repo aggregated PRs view. |
 | `/activity` | RSC | Viewer events page with pagination. |
@@ -125,11 +126,12 @@ Migration files live in `drizzle/` and are applied at container start by `script
 | `/projects` | RSC | Projects v2 (GraphQL). |
 | `/packages` | RSC | GitHub Packages by type. |
 | `/notifications` | RSC | Notification inbox with mark-all-read. |
-| `/actions` | RSC | GitHub Actions runs viewer (phase 06). |
+| `/actions` | RSC | GitHub Actions runs viewer. |
+| `/changelog` | RSC | GitHub Release history (auto-published via workflow). |
+| `/report-bug` | RSC | Bug report form (issue auto-create). |
 | `/settings` | RSC | Tabs: Appearance, Account. |
 | `/api/auth/[...all]` | API | Better Auth catch-all. |
 | `/api/health` | API | `force-dynamic`. DB + Redis status. |
-| `/api/debug/{tables,viewer}` | API | Dev-only inspectors (post-MVP phase 3 will remove from prod). |
 
 ## Git Workflow
 
@@ -142,11 +144,21 @@ See [`docs/git-workflow.md`](./git-workflow.md). Default branch `main`. Feature 
 - `plans/260507-1253-repo-detail-expansion/` — Files tab, Insights tab, Releases/Tags/Contributors aside (merged).
 - `plans/260508-1124-wave-5-sprint/` — view-mode toggle, sync-status badge, Devicon stack, repo health, Cmd+K org index, dependency tracker (all merged).
 
-## Wave 5 Additions
+## Post-MVP Features (Shipped)
 
+**Wave 1–4**: visibility filters, stars filters, Actions runs viewer, repo detail expansion (files/insights/releases/tags/contributors), dashboard polish, UI redesign, comments, error handling.
+
+**Wave 5 (2026-05-08)**: 
 - `app/(dashboard)/repositories/[owner]/[repo]/dependencies/` — Dep Graph + npm-latest tab, severity filter, auto-issue dialog.
 - `lib/github/dependencies.ts`, `lib/registries/npm-registry.ts`, `lib/dependencies/{compute-outdated,build-issue-body}.ts` — dep tracker plumbing.
 - `lib/github/health-score.ts` + `components/repo-health-badge.tsx` — repo health pill (quick + full orchestrator).
 - `lib/github/freshness.ts` + `components/sync-status-badge.tsx` — cache freshness pill.
 - `components/{devicon-badge,devicon-stack}.tsx` + `lib/github/language-devicon-map.ts` — language stack icons.
 - `components/view-mode-toggle.tsx` + `app/actions/view-mode.ts` — grid/list toggle persisted in jsonb.
+
+**Wave 6 (Contribution Graph + Commits)**:
+- `lib/github/service.ts:getContributionsHeatmap()` — GitHub API aggregation for 365-day heatmap.
+- `components/contribution-heatmap*.tsx` — SVG heatmap + year selector.
+- `app/(dashboard)/repositories/[owner]/[repo]/commits/` — commit history with filters.
+- `app/(dashboard)/dashboard/` — heatmap mounted in 60/40 grid with 28-day chart.
+- Changelog page (`/changelog`) auto-generated from GitHub Release workflow.

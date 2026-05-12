@@ -1,18 +1,18 @@
 # Project Roadmap
 
-> Living document. Updated 2026-05-08.
+> Living document. Updated 2026-05-12.
 
 ## Status Snapshot
 
-- **MVP (phases 1-7)**: ✅ shipped to `develop`. Commit `74358d0`.
-- **Post-MVP Wave 1 (visibility filters, stars filters, Actions runs viewer, debug cleanup)**: ✅ shipped.
-- **Post-MVP Wave 2 — Repo Detail Expansion**: ✅ shipped. Commit `dc3b804` (PR #37).
-- **Post-MVP Wave 3 — Dashboard & Activity**: ✅ shipped.
-- **Post-MVP Wave 4 — UI/UX Redesign + Comments**: ✅ shipped (PRs #23, #26).
-- **UX hardening (typed errors, toasts, empty states)**: ✅ `dfdf097`.
-- **Post-MVP Wave 5 — Power-user UX + Dependency Tracker**: ✅ shipped to `develop` 2026-05-08 (PRs #46, #48, #50, #51, #52, #53).
-- **Production deploy**: live at `https://dev.webkode.cl` (Dokploy).
-- **Active phase**: release Wave 5 to `main`, then backlog grooming.
+- **MVP (phases 1-7)**: ✅ shipped. Commit `74358d0`.
+- **Post-MVP Wave 1**: ✅ shipped. Visibility + stars filters, Actions viewer, debug cleanup.
+- **Post-MVP Wave 2**: ✅ shipped. Repo detail expansion (files, insights, releases, tags, contributors).
+- **Post-MVP Wave 3**: ✅ shipped. Dashboard polish, activity, notifications, cross-repo views.
+- **Post-MVP Wave 4**: ✅ shipped. Full UI/UX redesign, comments, issue/PR detail.
+- **Post-MVP Wave 5**: ✅ shipped (2026-05-08). Power-user UX (view toggle, sync badge, devicons, health, Cmd+K, dependency tracker).
+- **Post-MVP Wave 6**: ✅ shipped (2026-05-12). Contribution heatmap, commit history, changelog page.
+- **Version**: v0.9.2. Live at `https://dev.webkode.cl` (Dokploy).
+- **Active phase**: backlog grooming. Next: GitHub App migration, rate-limit banner, saved searches.
 
 ## Completed Milestones
 
@@ -89,20 +89,33 @@ Supporting docs/infra:
 - #47 git-workflow sync-back doc
 - #49 mid-sprint progress update
 
+## Completed Post-MVP (Wave 6) — Contribution Graph & Commits
+
+Commits delivered 2026-05-11 to 2026-05-12 (PR #73, #72, related commits 85a564a–b195320).
+
+| # | Phase | Notes | Status | Commit |
+|---|-------|-------|--------|--------|
+| 1 | Contribution heatmap SVG component | 365-day grid, year selector | ✅ | `7c87d2e` |
+| 2 | GitHub API aggregation (getContributionsHeatmap) | REST endpoint integration | ✅ | `b195320` |
+| 3 | Dashboard layout (heatmap + 28-day chart) | 60/40 grid pairing | ✅ | `6d1d7a0` |
+| 4 | Commit history view with filters | branch, author, date selectors | ✅ | `56efb9d` |
+| 5 | Changelog page (Release workflow) | auto-generated from GitHub Releases | ✅ | deployed |
+| — | Styling alignment (chart-1 token) | design consistency | ✅ | `c1a1deb` |
+
 ## In Progress
 
 _No active phase. Pick next item from backlog._
 
 ## Backlog (Not Yet Planned)
 
-- **GitHub App migration** — replaces OAuth App. Benefits: 15k req/h vs 5k, per-repo scope selection, no need for `repo` blanket scope. Cost: full re-onboarding of existing users.
-- **Notifications inbox** — `/notifications` view backed by GitHub's notifications API.
-- **Cmd+K issues + PRs** — extend index beyond repos.
-- **Telemetry/observability** — structured logging + Prometheus metrics endpoint.
-- **Rate-limit banner** — surface `RateLimitError` with `retryAfterSeconds` to the user instead of swallowing.
+- **GitHub App migration** — replaces OAuth App. 15k req/h vs 5k, per-repo scope, no blanket `repo`. Full re-onboarding required.
+- **Rate-limit banner** — surface `RateLimitError` with `retryAfterSeconds` instead of silent swallow.
+- **Cmd+K issues + PRs** — extend index beyond repos (currently org repo index only).
 - **Saved searches** — persist common filter combos in `user_preferences.filters`.
-- **Multi-language outdated tracking** — extend dep tracker beyond npm to PyPI / Go / Maven.
-- **Repo health breakdown panel** — surface the full `getRepoHealth` orchestrator on repo overview.
+- **Multi-language outdated tracking** — extend dep tracker beyond npm (PyPI, Go, Maven).
+- **Repo health breakdown panel** — full `getRepoHealth` orchestrator on repo overview.
+- **Telemetry/observability** — structured logging + Prometheus metrics endpoint.
+- **Mobile sidebar sheet** — hamburger nav for mobile < md breakpoint.
 
 ## Non-Goals
 
