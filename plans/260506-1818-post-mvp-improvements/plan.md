@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-05-06
-project: maureldev-post-mvp
+project: gitcontrol-post-mvp
 ---
 
 # Post-MVP Improvements — Plan

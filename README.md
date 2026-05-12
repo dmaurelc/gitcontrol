@@ -1,56 +1,46 @@
 # GitControl
 
-Una alternativa personal y privada al dashboard de GitHub. Diseñado para desarrolladores que quieren una vista limpia, controles propios y datos en su propia infraestructura.
+A self-hosted, private alternative to the GitHub dashboard. Built for developers who want a clean view, their own controls, and their data on their own infrastructure.
 
-## ¿Qué es?
+## What it is
 
-GitControl es un **dashboard self-hosted** que reemplaza la UI estándar de GitHub. Te da una interfaz simplificada para gestionar tus repositorios, issues, pull requests, estrellas y proyectos — sin ruido innecesario.
+GitControl is a **self-hosted dashboard** that replaces GitHub's default UI. It gives you a streamlined interface to manage your repositories, issues, pull requests, stars, and projects — without the noise.
 
-En lugar de navegar por github.com (con todas sus secciones y notificaciones), abres tu propia instancia de GitControl en tu servidor, ves exactamente lo que necesitas, y mantienes control total de tus datos y credenciales de GitHub.
+Instead of navigating github.com (with all its sections and notifications), you open your own GitControl instance on your server, see exactly what you need, and keep full control of your data and GitHub credentials.
 
-## ¿Para quién?
+## Who it's for
 
-- **Desarrolladores solo**: Si usas varias cuentas (personal + organizaciones) y cansas de cambiar entre contextos en GitHub.
-- **Pequeños equipos**: Quieres un dashboard compartido sin pagar por GitHub Enterprise, controlando dónde corren los servidores.
-- **Usuarios avanzados**: Prefieres filtros propios, vistas personalizadas y datos en tu infraestructura sobre las características por defecto de GitHub.
+- **Solo developers** juggling multiple accounts (personal + organizations) tired of context-switching on GitHub
+- **Small teams** that want a shared dashboard without paying for GitHub Enterprise, hosted on their own servers
+- **Power users** who prefer custom filters, personalized views, and data on their own infrastructure
 
-## ¿Qué resuelve?
+## Key features
 
-| Problema | Solución |
-|----------|----------|
-| Ruido en la UI de GitHub | Interfaz minimalista solo con lo que necesitas |
-| Múltiples cuentas es tedioso | Cambio rápido entre tu cuenta personal y tus organizaciones |
-| Datos y tokens en servidores ajenos | Self-hosted en tu VPS, completo control |
-| Sin filtros o vistas personalizadas | Fija repos favoritos, personaliza el tema, adapta lo que ves |
+- **Secure auth**: GitHub OAuth + encrypted tokens stored on your server
+- **Dashboard overview**: quick metrics (repos, stars, open PRs, issues)
+- **Repository manager**: list, search, filter by language, pin favorites, create new
+- **Repo details**: issues and pull requests per repository
+- **Stars, Projects, Packages**: access to GitHub Stars, Projects v2, and Packages
+- **Multi-context**: switch between your personal account and organizations without leaving the app
+- **Privacy first**: all data and credentials live on your server
 
-## Funcionalidades Principales
+## Self-hosted
 
-- **Autenticación segura**: OAuth con GitHub + tus tokens cifrados en tu servidor
-- **Dashboard overview**: métricas rápidas (repos, estrellas, PRs abiertos, issues)
-- **Gestor de repositorios**: lista, busca, filtra por lenguaje, fija favoritos, crea nuevos
-- **Detalles de repo**: issues y pull requests por repositorio
-- **Estrellas, Proyectos, Paquetes**: acceso a GitHub Stars, Projects v2 y GitHub Packages
-- **Multi-contexto**: cambia entre tu cuenta personal y tus organizaciones sin salir de la app
-- **Privacidad**: todos tus datos y credenciales viven en tu servidor
+GitControl is designed to run on your own infrastructure. It's not a SaaS — you deploy an instance, give access to whoever needs it, and that's it.
 
-## Self-Hosted
+**Live demo**: [https://dev.webkode.cl](https://dev.webkode.cl)
 
-GitControl está diseñado para ejecutarse en tu propia infraestructura. No es un SaaS — desplegas una instancia, das acceso al equipo que necesite, y listo.
+## Status
 
-**Live demo** (si está disponible): `https://dev.webkode.cl`
+**MVP shipped** (May 2026). Core features working. Post-MVP improvements ongoing.
 
-## Estado del Proyecto
+## Documentation
 
-**MVP completado** (mayo 2026): todas las funcionalidades core funcionan. Mejoras post-MVP en curso (filtros avanzados, rediseño UI, comentarios en issues/PRs).
+- [Project overview](./docs/project-overview-pdr.md)
+- [Deployment guide](./docs/deployment-guide.md)
+- [Codebase structure](./docs/codebase-summary.md)
+- [System architecture](./docs/system-architecture.md)
 
-## Próximos Pasos
+## License
 
-Para desarrolladores:
-- **Detalles técnicos**: ver [docs/project-overview-pdr.md](./docs/project-overview-pdr.md)
-- **Guía de deploy**: [docs/deployment-guide.md](./docs/deployment-guide.md)
-- **Estructura de código**: [docs/codebase-summary.md](./docs/codebase-summary.md)
-- **Arquitectura del sistema**: [docs/system-architecture.md](./docs/system-architecture.md)
-
-## Licencia
-
-Privado. Solo para self-hosting — no es SaaS.
+Private. Self-hosting only — not a SaaS.
