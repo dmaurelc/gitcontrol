@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOutAction } from "@/app/actions/auth";
+import { SignOutMenuItem } from "@/components/sign-out-menu-item";
 
 type SidebarUserCardProps = {
   name: string;
@@ -57,13 +57,7 @@ export function SidebarUserCard({ name, email, image, login }: SidebarUserCardPr
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <form action={signOutAction}>
-          <DropdownMenuItem asChild>
-            <button type="submit" className="w-full text-left text-destructive focus:text-destructive">
-              Sign out
-            </button>
-          </DropdownMenuItem>
-        </form>
+        <SignOutMenuItem className="text-destructive focus:text-destructive" />
       </DropdownMenuContent>
     </DropdownMenu>
   );

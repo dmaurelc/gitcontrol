@@ -2,12 +2,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOutAction } from "@/app/actions/auth";
+import { SignOutMenuItem } from "@/components/sign-out-menu-item";
 import { OrgSwitcher } from "./org-switcher";
 import { MobileSidebar } from "./mobile-sidebar";
 import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
@@ -104,13 +103,7 @@ export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps)
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <form action={signOutAction}>
-                <DropdownMenuItem asChild>
-                  <button type="submit" className="w-full text-left">
-                    Sign out
-                  </button>
-                </DropdownMenuItem>
-              </form>
+              <SignOutMenuItem />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
