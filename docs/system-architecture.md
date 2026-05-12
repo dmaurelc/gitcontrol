@@ -1,6 +1,6 @@
 # System Architecture
 
-> How the pieces fit together. Updated 2026-05-06.
+> How the pieces fit together. Updated 2026-05-12. GitControl v0.9.2.
 
 ## 1. High-Level Topology
 
@@ -118,6 +118,12 @@ gh:{userId}:{resource}:{sha256(JSON.stringify(params)).slice(0,16)}
 | projects | 300s |
 | readme | 1800s |
 | languages | 3600s |
+| releases | 1800s |
+| tags | 1800s |
+| contributors | 3600s |
+| commits | 120s |
+| heatmap | 3600s |
+| dependencies | 600s |
 
 ### Invalidation
 
