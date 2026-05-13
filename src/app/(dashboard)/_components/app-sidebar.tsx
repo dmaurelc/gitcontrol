@@ -8,7 +8,6 @@ import {
   KanbanSquare,
   Package,
   Settings,
-  Sparkles,
   GitPullRequest,
   CircleAlert,
   Activity,
@@ -17,6 +16,7 @@ import {
   Newspaper,
 } from "lucide-react";
 import { GithubIcon } from "@/components/icons/github-icon";
+import { NodeMark } from "@/components/icons/node-mark";
 import { cn } from "@/lib/utils";
 import { SidebarUserCard } from "@/components/sidebar-user-card";
 
@@ -104,9 +104,7 @@ export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
         onClick={onNavigate}
         className="flex h-14 items-center gap-2 border-b border-sidebar-border px-5 transition-colors hover:bg-sidebar-accent/40"
       >
-        <div className="grid size-7 place-items-center rounded-md bg-linear-to-br from-chart-1 to-chart-4 text-primary-foreground shadow-soft">
-          <Sparkles className="size-3.5" />
-        </div>
+        <NodeMark className="size-6 text-primary" />
         <span className="text-sm font-semibold tracking-tight">GitControl</span>
       </Link>
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">

@@ -2,6 +2,7 @@ type Props = {
   className?: string;
 };
 
+// Layered Stack mark — ultra thin (1.0 stroke), top nodes
 export function NodeMark({ className }: Props) {
   return (
     <svg
@@ -9,17 +10,17 @@ export function NodeMark({ className }: Props) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="square"
-      strokeLinejoin="miter"
+      strokeWidth="1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <circle cx="6" cy="6" r="2.5" />
-      <circle cx="18" cy="6" r="2.5" />
-      <circle cx="12" cy="18" r="2.5" />
-      <path d="M7.8 7.8 L11.2 16.2" />
-      <path d="M16.2 7.8 L12.8 16.2" />
-      <path d="M8 6 L16 6" />
+      <path d="M12 4 L20 8 L12 12 L4 8 Z" />
+      <path d="M4 12 L12 16 L20 12" />
+      <path d="M4 16 L12 20 L20 16" />
+      <circle cx="12" cy="4" r="1" fill="currentColor" />
+      <circle cx="20" cy="8" r="1" fill="currentColor" />
+      <circle cx="4" cy="8" r="1" fill="currentColor" />
     </svg>
   );
 }
