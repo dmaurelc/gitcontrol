@@ -70,12 +70,13 @@ Fases 01-04 secuenciales (lectura). Fase 05 al final (edición tiene riesgo escr
 
 ## Service modularization policy
 
-Ya 2105 LOC. Cada fase que toca `service.ts` debe extraer módulo:
+Ya 2105 LOC. **Decisión revisada:**
 
-- Phase 03 (reads commit): mover métodos commit-related existentes + nuevos a `src/lib/github/service-reads-commit.ts`. Re-export desde `service.ts`.
-- Phase 05 (writes): nuevo archivo `src/lib/github/service-write.ts` (ya planeado).
-- Target final `service.ts` <1500 LOC.
-- Pattern re-export: `export * from "./service-reads-commit"` mantiene imports existentes funcionando.
+- `service.ts` exporta objeto `githubService` con todos métodos. Split por re-export `export *` NO funciona para objetos — rompería `githubService.X` calls.
+- Phase 03: agregar 3 nuevos métodos al objeto en `service.ts` (incremental). No modularizar todavía.
+- Phase 05 (writes): nuevo archivo `service-write.ts` exportando **objeto separado** `githubServiceWrite` (no mezcla con reads).
+- Modularización profunda de `service.ts` queda como **tarea futura post-feature** (refactor independiente). Requiere split objeto en sub-objetos o pattern composición.
+- Aceptable target temporal: `service.ts` <2400 LOC tras phase 03.
 
 ## Success criteria
 

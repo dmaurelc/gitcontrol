@@ -366,6 +366,65 @@ export type RepoCommit = {
   parents: { sha: string }[];
 };
 
+// ─── Commit detail (single commit with files + stats) ────────────────────────
+
+export type RepoCommitFile = {
+  sha: string | null;
+  filename: string;
+  status:
+    | "added"
+    | "removed"
+    | "modified"
+    | "renamed"
+    | "copied"
+    | "changed"
+    | "unchanged";
+  additions: number;
+  deletions: number;
+  changes: number;
+  blob_url?: string;
+  raw_url?: string;
+  patch?: string;
+  previous_filename?: string;
+};
+
+export type RepoCommitDetail = RepoCommit & {
+  stats?: { additions: number; deletions: number; total: number };
+  files?: RepoCommitFile[];
+};
+
+// ─── Check runs for explorer (richer than CheckRunSummary) ───────────────────
+
+export type ExplorerCheckRun = {
+  id: number;
+  name: string;
+  status: "queued" | "in_progress" | "completed" | string;
+  conclusion: CheckRunConclusion;
+  started_at: string | null;
+  completed_at: string | null;
+  html_url: string | null;
+  details_url?: string | null;
+  app?: { slug: string; name: string } | null;
+};
+
+export type CheckRunsResponse = {
+  total_count: number;
+  check_runs: ExplorerCheckRun[];
+};
+
+// ─── PRs associated with a commit ────────────────────────────────────────────
+
+export type CommitAssociatedPr = {
+  number: number;
+  title: string;
+  state: "open" | "closed";
+  merged_at: string | null;
+  html_url: string;
+  user: { login: string; avatar_url: string } | null;
+  head: { ref: string; sha: string };
+  base: { ref: string };
+};
+
 // ─── Repo contents ────────────────────────────────────────────────────────────
 
 export type RepoDirEntry = {
@@ -2099,6 +2158,96 @@ export const githubService = {
       },
     });
     return res.data.year;
+  },
+
+  /**
+   * Single commit detail including changed files (with unified-diff `patch`)
+   * and aggregated additions/deletions stats. SHAs are immutable so this is
+   * cached aggressively (TTL.commitDetail = 1d).
+   */
+  async getCommitDetail(
+    userId: string,
+    owner: string,
+    repo: string,
+    ref: string,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, ref };
+    return cachedFetch<RepoCommitDetail>({
+      userId,
+      resource: "commitDetail",
+      params,
+      ttlSeconds: TTL.commitDetail,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.repos.getCommit as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: RepoCommitDetail; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * Check-run summary for a commit/branch/tag ref. Used to render CI status
+   * (success/failure/neutral) in the explorer's right panel.
+   */
+  async listChecksForRef(
+    userId: string,
+    owner: string,
+    repo: string,
+    ref: string,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, ref, per_page: 100 };
+    return cachedFetch<CheckRunsResponse>({
+      userId,
+      resource: "checks",
+      params,
+      ttlSeconds: TTL.checks,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.checks.listForRef as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: CheckRunsResponse; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * Returns PRs whose head matches a given commit SHA. Used to surface the
+   * "Open in PR" affordance in the right panel when the user selects a commit
+   * that already belongs to a pull request.
+   */
+  async listPullsAssociatedWithCommit(
+    userId: string,
+    owner: string,
+    repo: string,
+    commitSha: string,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, commit_sha: commitSha, per_page: 10 };
+    return cachedFetch<CommitAssociatedPr[]>({
+      userId,
+      resource: "pullsForCommit",
+      params,
+      ttlSeconds: TTL.pullsForCommit,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.repos
+            .listPullRequestsAssociatedWithCommit as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: CommitAssociatedPr[]; etag?: string }
+        >,
+    });
   },
 };
 

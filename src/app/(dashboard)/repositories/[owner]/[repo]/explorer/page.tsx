@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { auth } from "@/lib/auth/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   getUserPreferences,
   readRepoDetailViewMode,
@@ -19,6 +21,9 @@ import {
 import { LeftPanel } from "./_components/left-panel";
 import { CommitsPanel } from "./_components/commits-panel";
 import { RightPanel } from "./_components/right-panel";
+import { CommitDetail } from "./_components/commit-detail";
+
+const SHA_REGEX = /^[a-f0-9]{7,40}$/;
 
 type SearchParams = {
   branch?: string;
@@ -92,6 +97,9 @@ export default async function RepoExplorerPage({
 
   const hasMore = commits.length === COMMITS_PER_PAGE;
 
+  const commitSha = sp.commit?.trim();
+  const validSha = commitSha && SHA_REGEX.test(commitSha) ? commitSha : "";
+
   return (
     <>
       <ExplorerMobileFallback />
@@ -112,7 +120,29 @@ export default async function RepoExplorerPage({
             hasMore={hasMore}
           />
         }
-        right={<RightPanel />}
+        right={
+          <RightPanel hasCommit={Boolean(validSha)}>
+            {validSha ? (
+              <Suspense
+                key={validSha}
+                fallback={
+                  <div className="flex flex-col gap-2 p-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="mt-4 h-32 w-full" />
+                  </div>
+                }
+              >
+                <CommitDetail
+                  userId={userId}
+                  owner={owner}
+                  repo={repo}
+                  sha={validSha}
+                />
+              </Suspense>
+            ) : null}
+          </RightPanel>
+        }
       />
     </>
   );
