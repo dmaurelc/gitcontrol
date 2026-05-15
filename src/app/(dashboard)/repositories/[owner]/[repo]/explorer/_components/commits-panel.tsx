@@ -12,9 +12,16 @@ type Props = {
   branchName: string;
   error: string | null;
   hasMore: boolean;
+  toolbar?: React.ReactNode;
 };
 
-export function CommitsPanel({ commits, branchName, error, hasMore }: Props) {
+export function CommitsPanel({
+  commits,
+  branchName,
+  error,
+  hasMore,
+  toolbar,
+}: Props) {
   const { page, setPage } = useExplorerState();
 
   return (
@@ -30,6 +37,7 @@ export function CommitsPanel({ commits, branchName, error, hasMore }: Props) {
           ) : null}
         </h2>
       </header>
+      {toolbar}
       <div className="flex-1 overflow-y-auto p-1.5">
         {error ? (
           <div className="p-4 text-xs text-destructive">{error}</div>

@@ -23,6 +23,7 @@ import { RightPanel } from "./_components/right-panel";
 import { CommitDetail } from "./_components/commit-detail";
 import { CommitDetailSkeleton } from "./_components/panel-skeletons";
 import { ExplorerKeyboardNav } from "./_components/explorer-keyboard-nav";
+import { ExplorerEditToolbar } from "./_components/explorer-edit-toolbar";
 
 const SHA_REGEX = /^[a-f0-9]{7,40}$/;
 
@@ -120,6 +121,25 @@ export default async function RepoExplorerPage({
             branchName={effectiveBranch ?? ""}
             error={commitsError}
             hasMore={hasMore}
+            toolbar={
+              effectiveBranch ? (
+                <ExplorerEditToolbar
+                  owner={owner}
+                  repo={repo}
+                  branches={branches}
+                  defaultBranch={defaultBranch}
+                  currentBranch={effectiveBranch}
+                  hasCommitsAhead={
+                    Boolean(defaultBranch) &&
+                    effectiveBranch !== defaultBranch &&
+                    commits.length > 0
+                  }
+                  defaultPrTitle={
+                    commits[0]?.commit.message.split("\n")[0] ?? undefined
+                  }
+                />
+              ) : null
+            }
           />
         }
         right={
