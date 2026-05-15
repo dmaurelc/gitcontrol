@@ -6,6 +6,10 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { auth } from "@/lib/auth/auth";
 import { githubService } from "@/lib/github/service";
+import {
+  getUserPreferences,
+  readRepoDetailViewMode,
+} from "@/lib/preferences/get-user-preferences";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RepoAsideTags } from "./_components/repo-aside-tags";
@@ -20,6 +24,11 @@ export default async function RepoOverviewPage({
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
   const { owner, repo } = await params;
+
+  const prefs = await getUserPreferences(session.user.id);
+  if (readRepoDetailViewMode(prefs.filters) === "explorer") {
+    redirect(`/repositories/${owner}/${repo}/explorer`);
+  }
 
   let readme: string | null = null;
   try {

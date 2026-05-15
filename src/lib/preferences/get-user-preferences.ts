@@ -6,8 +6,16 @@ import { userPreferences } from "@/lib/db/schema";
 export type ViewMode = "grid" | "list";
 export type ViewModeScope = "repos" | "stars";
 
+export type RepoDetailViewMode = "tabs" | "explorer";
+
+export type ViewModeMap = {
+  repos?: ViewMode;
+  stars?: ViewMode;
+  repoDetail?: RepoDetailViewMode;
+};
+
 export type PreferenceFilters = {
-  viewMode?: Partial<Record<ViewModeScope, ViewMode>>;
+  viewMode?: ViewModeMap;
   // Future filter keys live here. Keep typed when added.
   [key: string]: unknown;
 };
@@ -23,6 +31,7 @@ export type UserPreferences = {
 };
 
 export const DEFAULT_VIEW_MODE: ViewMode = "grid";
+export const DEFAULT_REPO_DETAIL_VIEW_MODE: RepoDetailViewMode = "tabs";
 
 export function readViewMode(
   filters: PreferenceFilters,
@@ -30,6 +39,13 @@ export function readViewMode(
 ): ViewMode {
   const v = filters.viewMode?.[scope];
   return v === "list" || v === "grid" ? v : DEFAULT_VIEW_MODE;
+}
+
+export function readRepoDetailViewMode(
+  filters: PreferenceFilters,
+): RepoDetailViewMode {
+  const v = filters.viewMode?.repoDetail;
+  return v === "explorer" || v === "tabs" ? v : DEFAULT_REPO_DETAIL_VIEW_MODE;
 }
 
 const DEFAULTS: Omit<UserPreferences, "userId"> = {

@@ -9,10 +9,20 @@ import { userPreferences } from "@/lib/db/schema";
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
-const viewModeSchema = z.object({
-  scope: z.enum(["repos", "stars"]),
-  mode: z.enum(["grid", "list"]),
-});
+const viewModeSchema = z.discriminatedUnion("scope", [
+  z.object({
+    scope: z.literal("repos"),
+    mode: z.enum(["grid", "list"]),
+  }),
+  z.object({
+    scope: z.literal("stars"),
+    mode: z.enum(["grid", "list"]),
+  }),
+  z.object({
+    scope: z.literal("repoDetail"),
+    mode: z.enum(["tabs", "explorer"]),
+  }),
+]);
 
 export async function setViewModeAction(
   scope: string,
@@ -52,6 +62,12 @@ export async function setViewModeAction(
       })
       .where(eq(userPreferences.userId, userId));
 
-    revalidatePath(parsed.scope === "repos" ? "/repositories" : "/stars");
+    const revalidateTarget =
+      parsed.scope === "repos"
+        ? "/repositories"
+        : parsed.scope === "stars"
+          ? "/stars"
+          : "/repositories";
+    revalidatePath(revalidateTarget);
   });
 }

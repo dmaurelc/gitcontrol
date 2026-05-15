@@ -16,6 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/empty-state";
 import { RepoTabsNav } from "../../_components/repo-tabs-nav";
+import {
+  getUserPreferences,
+  readRepoDetailViewMode,
+} from "@/lib/preferences/get-user-preferences";
+import { RepoViewModeSwitcher } from "./_components/repo-view-mode-switcher";
 
 export default async function RepoLayout({
   children,
@@ -27,6 +32,9 @@ export default async function RepoLayout({
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
   const { owner, repo } = await params;
+
+  const prefs = await getUserPreferences(session.user.id);
+  const viewMode = readRepoDetailViewMode(prefs.filters);
 
   let header: {
     fullName: string;
@@ -108,6 +116,11 @@ export default async function RepoLayout({
           >
             View on GitHub <ExternalLink className="size-3" />
           </a>
+          <RepoViewModeSwitcher
+            owner={owner}
+            repo={repo}
+            current={viewMode}
+          />
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground tabular-nums">
           <span className="flex items-center gap-1">
@@ -124,7 +137,7 @@ export default async function RepoLayout({
           </span>
         </div>
       </div>
-      <RepoTabsNav owner={owner} repo={repo} />
+      {viewMode === "tabs" ? <RepoTabsNav owner={owner} repo={repo} /> : null}
       <div>{children}</div>
     </div>
   );
