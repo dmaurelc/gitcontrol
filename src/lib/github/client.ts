@@ -23,8 +23,9 @@ export async function getGithubClients(userId: string): Promise<GithubClients> {
   // Octokit logs non-2xx responses via console.error which surfaces as a red
   // overlay in Next dev. We handle 304/403/404/410/422 as expected control-flow
   // (cache hits, missing scopes, private/deleted repos, deleted issues) and
-  // silence them. Genuine unexpected statuses still bubble to console.error.
-  const SILENT_STATUS = /\b(?:304|403|404|410|422)\b/;
+  // 5xx as transient GitHub-side failures already caught downstream with
+  // graceful fallbacks. Genuine unexpected statuses still bubble.
+  const SILENT_STATUS = /\b(?:304|403|404|410|422|500|502|503|504)\b/;
   const noopLog = {
     debug: () => {},
     info: () => {},
