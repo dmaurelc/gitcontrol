@@ -162,7 +162,13 @@ export function EditFileDialog({
           Edit file
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex h-[80vh] max-h-[85vh] flex-col sm:max-w-2xl">
+      <DialogContent
+        className={
+          loadedSha
+            ? "flex h-[80vh] max-h-[85vh] flex-col sm:max-w-2xl"
+            : "flex max-h-[85vh] flex-col sm:max-w-2xl"
+        }
+      >
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader>
             <DialogTitle>Edit file on {currentBranch}</DialogTitle>
