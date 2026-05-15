@@ -52,14 +52,22 @@ export function BranchesList({ branches, defaultBranch }: Props) {
                   className={cn(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
                     active
-                      ? "bg-accent text-accent-foreground"
+                      ? "bg-primary/10 text-primary"
                       : "hover:bg-accent/50",
                   )}
                 >
-                  <GitBranch className="size-3.5 shrink-0 text-muted-foreground" />
+                  <GitBranch
+                    className={cn(
+                      "size-3.5 shrink-0",
+                      active ? "text-primary" : "text-muted-foreground",
+                    )}
+                  />
                   <span className="truncate font-mono">{b.name}</span>
                   {b.name === defaultBranch ? (
-                    <Badge variant="outline" className="ml-auto h-4 px-1 text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="ml-auto h-4 border-primary/30 bg-primary/10 px-1 text-[10px] text-primary"
+                    >
                       default
                     </Badge>
                   ) : null}

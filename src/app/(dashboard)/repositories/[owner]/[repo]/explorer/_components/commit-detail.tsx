@@ -111,7 +111,7 @@ export async function CommitDetail({ userId, owner, repo, sha }: Props) {
                 href={commit.html_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-0.5 hover:text-foreground"
+                className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80"
               >
                 <code className="font-mono">{commit.sha.slice(0, 7)}</code>
                 <ExternalLink className="size-2.5" />

@@ -48,11 +48,19 @@ export function RepoViewModeSwitcher({ owner, repo, current }: Props) {
       aria-label="Repository view mode"
       className="hidden md:flex"
     >
-      <ToggleGroupItem value="tabs" aria-label="Tabs view">
+      <ToggleGroupItem
+        value="tabs"
+        aria-label="Tabs view"
+        className="data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+      >
         <LayoutPanelLeft className="size-4" />
         <span className="ml-1.5 hidden lg:inline">Tabs</span>
       </ToggleGroupItem>
-      <ToggleGroupItem value="explorer" aria-label="Explorer view">
+      <ToggleGroupItem
+        value="explorer"
+        aria-label="Explorer view"
+        className="data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+      >
         <Columns3 className="size-4" />
         <span className="ml-1.5 hidden lg:inline">Explorer</span>
       </ToggleGroupItem>

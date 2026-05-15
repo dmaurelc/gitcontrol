@@ -21,10 +21,10 @@ export function CommitsPanel({ commits, branchName, error, hasMore }: Props) {
     <div className="flex h-full flex-col">
       <header className="border-b px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <GitCommit className="size-3.5" />
+          <GitCommit className="size-3.5 text-primary" />
           Commits
           {branchName ? (
-            <span className="font-mono text-[10px] text-muted-foreground/80">
+            <span className="font-mono text-[10px] normal-case tracking-normal text-primary/80">
               · {branchName}
             </span>
           ) : null}

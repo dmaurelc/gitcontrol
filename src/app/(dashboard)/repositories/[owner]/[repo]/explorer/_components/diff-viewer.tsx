@@ -35,7 +35,7 @@ export function DiffViewer({ patch, className, maxLines = 500 }: Props) {
       <pre className="px-2 py-1">
         {lines.map((line, i) => {
           let className = "block whitespace-pre";
-          if (line.startsWith("@@")) className += " text-sky-500";
+          if (line.startsWith("@@")) className += " text-primary";
           else if (line.startsWith("+") && !line.startsWith("+++"))
             className += " bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
           else if (line.startsWith("-") && !line.startsWith("---"))

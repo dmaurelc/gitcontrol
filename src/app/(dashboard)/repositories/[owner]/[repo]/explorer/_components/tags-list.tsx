@@ -30,13 +30,18 @@ export function TagsList({ tags }: Props) {
               className={cn(
                 "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
                 active
-                  ? "bg-accent text-accent-foreground"
+                  ? "bg-primary/10 text-primary"
                   : "hover:bg-accent/50",
               )}
             >
-              <Tag className="size-3.5 shrink-0 text-muted-foreground" />
+              <Tag
+                className={cn(
+                  "size-3.5 shrink-0",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
+              />
               <span className="truncate font-mono">{t.name}</span>
-              <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+              <span className="ml-auto font-mono text-[10px] text-primary/80">
                 {t.commit.sha.slice(0, 7)}
               </span>
             </button>

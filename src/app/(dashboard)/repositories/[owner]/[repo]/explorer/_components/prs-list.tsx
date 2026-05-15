@@ -36,14 +36,18 @@ export function PrsList({ prs }: Props) {
               onClick={() => setBranch(pr.head.ref)}
               className={cn(
                 "flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left text-xs transition-colors",
-                active ? "bg-accent text-accent-foreground" : "hover:bg-accent/50",
+                active ? "bg-primary/10 text-primary" : "hover:bg-accent/50",
               )}
             >
               <div className="flex items-center gap-2">
                 <Icon
                   className={cn(
                     "size-3.5 shrink-0",
-                    pr.draft ? "text-muted-foreground" : "text-emerald-500",
+                    pr.draft
+                      ? "text-muted-foreground"
+                      : active
+                        ? "text-primary"
+                        : "text-emerald-500",
                   )}
                 />
                 <span className="truncate font-medium">{pr.title}</span>
