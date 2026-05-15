@@ -26,12 +26,12 @@ export function CommitsPanel({
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b px-4 py-2.5">
-        <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <GitCommit className="size-3.5 text-primary" />
+      <header className="border-b px-4 py-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <GitCommit className="size-4 text-primary" />
           Commits
           {branchName ? (
-            <span className="font-mono text-[10px] normal-case tracking-normal text-primary/80">
+            <span className="font-mono text-xs normal-case tracking-normal text-primary/80">
               · {branchName}
             </span>
           ) : null}
@@ -52,7 +52,7 @@ export function CommitsPanel({
             }
           />
         ) : (
-          <ul className="flex flex-col gap-0.5">
+          <ul className="flex flex-col gap-1">
             {commits.map((c) => (
               <li key={c.sha}>
                 <CommitItem commit={c} />
@@ -62,13 +62,13 @@ export function CommitsPanel({
         )}
       </div>
       {commits.length > 0 ? (
-        <footer className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
+        <footer className="flex items-center justify-between border-t px-4 py-2.5 text-sm text-muted-foreground">
           <span>Page {page}</span>
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             <Button
               variant="outline"
               size="sm"
-              className="h-7 px-2 text-xs"
+              className="h-8 px-3 text-sm"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
             >
@@ -77,7 +77,7 @@ export function CommitsPanel({
             <Button
               variant="outline"
               size="sm"
-              className="h-7 px-2 text-xs"
+              className="h-8 px-3 text-sm"
               disabled={!hasMore}
               onClick={() => setPage(page + 1)}
             >

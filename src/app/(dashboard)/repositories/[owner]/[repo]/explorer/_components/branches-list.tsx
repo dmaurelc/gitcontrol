@@ -27,18 +27,18 @@ export function BranchesList({ branches, defaultBranch }: Props) {
   return (
     <div className="flex h-full flex-col">
       <div className="relative px-3 pt-3 pb-2">
-        <Search className="pointer-events-none absolute left-5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Filter branches"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-8 pl-7 text-xs"
+          className="h-9 pl-8 text-sm"
           aria-label="Filter branches"
         />
       </div>
       <ul className="flex-1 overflow-y-auto px-1 pb-2">
         {filtered.length === 0 ? (
-          <li className="px-3 py-4 text-xs text-muted-foreground">
+          <li className="px-3 py-4 text-sm text-muted-foreground">
             No branches match.
           </li>
         ) : (
@@ -50,7 +50,7 @@ export function BranchesList({ branches, defaultBranch }: Props) {
                   type="button"
                   onClick={() => setBranch(b.name)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
+                    "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors",
                     active
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-accent/50",
@@ -58,7 +58,7 @@ export function BranchesList({ branches, defaultBranch }: Props) {
                 >
                   <GitBranch
                     className={cn(
-                      "size-3.5 shrink-0",
+                      "size-4 shrink-0",
                       active ? "text-primary" : "text-muted-foreground",
                     )}
                   />

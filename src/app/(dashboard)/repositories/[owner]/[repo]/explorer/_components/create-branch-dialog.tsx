@@ -84,9 +84,9 @@ export function CreateBranchDialog({
         <Button
           size="sm"
           variant="outline"
-          className="h-7 w-full justify-start gap-1.5 text-xs"
+          className="h-8 w-full justify-start gap-2 text-sm"
         >
-          <GitBranchPlus className="size-3.5 text-primary" />
+          <GitBranchPlus className="size-4 text-primary" />
           New branch
         </Button>
       </DialogTrigger>

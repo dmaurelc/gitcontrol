@@ -156,9 +156,9 @@ export function EditFileDialog({
         <Button
           size="sm"
           variant="outline"
-          className="h-7 gap-1.5 text-xs"
+          className="h-8 gap-2 text-sm"
         >
-          <FileEdit className="size-3.5 text-primary" />
+          <FileEdit className="size-4 text-primary" />
           Edit file
         </Button>
       </DialogTrigger>

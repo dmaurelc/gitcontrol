@@ -35,14 +35,14 @@ export function PrsList({ prs }: Props) {
               type="button"
               onClick={() => setBranch(pr.head.ref)}
               className={cn(
-                "flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left text-xs transition-colors",
+                "flex w-full flex-col gap-1.5 rounded-md px-3 py-2.5 text-left text-sm transition-colors",
                 active ? "bg-primary/10 text-primary" : "hover:bg-accent/50",
               )}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Icon
                   className={cn(
-                    "size-3.5 shrink-0",
+                    "size-4 shrink-0",
                     pr.draft
                       ? "text-muted-foreground"
                       : active
@@ -52,11 +52,11 @@ export function PrsList({ prs }: Props) {
                 />
                 <span className="truncate font-medium">{pr.title}</span>
               </div>
-              <div className="flex items-center gap-1.5 pl-5 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-2 pl-6 text-xs text-muted-foreground">
                 {pr.user ? (
-                  <Avatar className="size-3.5">
+                  <Avatar className="size-4">
                     <AvatarImage src={pr.user.avatar_url} alt={pr.user.login} />
-                    <AvatarFallback className="text-[8px]">
+                    <AvatarFallback className="text-[9px]">
                       {pr.user.login.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

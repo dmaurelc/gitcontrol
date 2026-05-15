@@ -25,13 +25,13 @@ export function LeftPanel({ branches, prs, tags, defaultBranch }: Props) {
       className="flex h-full flex-col"
     >
       <TabsList className="mx-3 mt-3 grid grid-cols-3">
-        <TabsTrigger value="branches" className="text-xs">
+        <TabsTrigger value="branches" className="text-sm">
           Branches
         </TabsTrigger>
-        <TabsTrigger value="prs" className="text-xs">
+        <TabsTrigger value="prs" className="text-sm">
           PRs
         </TabsTrigger>
-        <TabsTrigger value="tags" className="text-xs">
+        <TabsTrigger value="tags" className="text-sm">
           Tags
         </TabsTrigger>
       </TabsList>

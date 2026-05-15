@@ -14,7 +14,7 @@ export function TagsList({ tags }: Props) {
 
   if (tags.length === 0) {
     return (
-      <p className="px-3 py-6 text-xs text-muted-foreground">No tags yet.</p>
+      <p className="px-3 py-6 text-sm text-muted-foreground">No tags yet.</p>
     );
   }
 
@@ -28,7 +28,7 @@ export function TagsList({ tags }: Props) {
               type="button"
               onClick={() => setCommit(t.commit.sha)}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
+                "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors",
                 active
                   ? "bg-primary/10 text-primary"
                   : "hover:bg-accent/50",
@@ -36,12 +36,12 @@ export function TagsList({ tags }: Props) {
             >
               <Tag
                 className={cn(
-                  "size-3.5 shrink-0",
+                  "size-4 shrink-0",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               />
               <span className="truncate font-mono">{t.name}</span>
-              <span className="ml-auto font-mono text-[10px] text-primary/80">
+              <span className="ml-auto font-mono text-xs text-primary/80">
                 {t.commit.sha.slice(0, 7)}
               </span>
             </button>

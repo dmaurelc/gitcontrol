@@ -93,17 +93,17 @@ export async function CommitDetail({ userId, owner, repo, sha }: Props) {
     <div className="flex h-full flex-col overflow-hidden">
       <header className="border-b p-4">
         <div className="flex items-start gap-3">
-          <Avatar className="size-7">
+          <Avatar className="size-8">
             {avatarUrl ? (
               <AvatarImage src={avatarUrl} alt={authorName} />
             ) : null}
-            <AvatarFallback className="text-[10px]">
+            <AvatarFallback className="text-sm">
               {authorName.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold leading-tight">{firstLine}</h2>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <h2 className="text-base font-semibold leading-tight">{firstLine}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
               {authorName}
               {authorDate ? ` · ${relativeTime(authorDate)}` : ""}
               {" · "}
@@ -128,13 +128,13 @@ export async function CommitDetail({ userId, owner, repo, sha }: Props) {
 
       <Tabs defaultValue="files" className="flex flex-1 flex-col overflow-hidden">
         <TabsList className="mx-3 mt-3 grid grid-cols-3">
-          <TabsTrigger value="files" className="text-xs">
+          <TabsTrigger value="files" className="text-sm">
             Files ({files.length})
           </TabsTrigger>
-          <TabsTrigger value="checks" className="text-xs">
+          <TabsTrigger value="checks" className="text-sm">
             Checks ({checks.total_count})
           </TabsTrigger>
-          <TabsTrigger value="pr" className="text-xs" disabled={prs.length === 0}>
+          <TabsTrigger value="pr" className="text-sm" disabled={prs.length === 0}>
             {prs.length > 0 ? `PR #${prs[0].number}` : "PR"}
           </TabsTrigger>
         </TabsList>

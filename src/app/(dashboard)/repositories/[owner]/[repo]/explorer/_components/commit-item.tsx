@@ -35,30 +35,30 @@ export function CommitItem({ commit }: Props) {
       type="button"
       onClick={() => setCommit(commit.sha)}
       className={cn(
-        "flex w-full items-start gap-2 rounded-md border border-transparent px-3 py-2 text-left text-xs transition-colors",
+        "flex w-full items-start gap-3 rounded-md border border-transparent px-3 py-2.5 text-left text-sm transition-colors",
         active
           ? "border-primary/40 bg-primary/5"
           : "hover:bg-accent/50",
       )}
     >
-      <Avatar className="mt-0.5 size-5 shrink-0">
+      <Avatar className="mt-0.5 size-6 shrink-0">
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={authorLogin} />
         ) : null}
-        <AvatarFallback className="text-[9px]">
+        <AvatarFallback className="text-[10px]">
           {(authorLogin || "?").slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{firstLine}</p>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {authorLogin}
           {relativeDate ? ` · ${relativeDate}` : ""}
         </p>
       </div>
       <code
         className={cn(
-          "mt-0.5 text-[10px] font-mono",
+          "mt-0.5 text-xs font-mono",
           active ? "text-primary" : "text-primary/70",
         )}
       >

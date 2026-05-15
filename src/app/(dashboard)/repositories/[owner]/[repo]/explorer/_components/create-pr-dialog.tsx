@@ -88,10 +88,10 @@ export function CreatePrDialog({
         <Button
           size="sm"
           variant="default"
-          className="h-7 gap-1.5 text-xs"
+          className="h-8 gap-2 text-sm"
           disabled={headBranch === defaultBranch}
         >
-          <GitPullRequestArrow className="size-3.5" />
+          <GitPullRequestArrow className="size-4" />
           Create PR
         </Button>
       </DialogTrigger>
