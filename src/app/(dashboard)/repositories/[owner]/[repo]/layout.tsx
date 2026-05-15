@@ -16,6 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/empty-state";
 import { RepoTabsNav } from "../../_components/repo-tabs-nav";
+import {
+  getUserPreferences,
+  readRepoDetailViewMode,
+} from "@/lib/preferences/get-user-preferences";
+import { RepoViewModeSwitcher } from "./_components/repo-view-mode-switcher";
 
 export default async function RepoLayout({
   children,
@@ -27,6 +32,9 @@ export default async function RepoLayout({
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
   const { owner, repo } = await params;
+
+  const prefs = await getUserPreferences(session.user.id);
+  const viewMode = readRepoDetailViewMode(prefs.filters);
 
   let header: {
     fullName: string;
@@ -83,31 +91,38 @@ export default async function RepoLayout({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-semibold tracking-tight">
-              {header.fullName}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-2xl font-semibold tracking-tight">
+                {header.fullName}
+              </h1>
+              <Badge variant="outline" className="gap-1">
+                {header.isPrivate ? (
+                  <Lock className="size-3" />
+                ) : (
+                  <Globe className="size-3" />
+                )}
+                {header.isPrivate ? "Private" : "Public"}
+              </Badge>
+              <a
+                href={header.htmlUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                View on GitHub <ExternalLink className="size-3" />
+              </a>
+            </div>
             {header.description ? (
               <p className="line-clamp-2 text-sm text-muted-foreground">
                 {header.description}
               </p>
             ) : null}
           </div>
-          <Badge variant="outline" className="gap-1">
-            {header.isPrivate ? (
-              <Lock className="size-3" />
-            ) : (
-              <Globe className="size-3" />
-            )}
-            {header.isPrivate ? "Private" : "Public"}
-          </Badge>
-          <a
-            href={header.htmlUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            View on GitHub <ExternalLink className="size-3" />
-          </a>
+          <RepoViewModeSwitcher
+            owner={owner}
+            repo={repo}
+            current={viewMode}
+          />
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground tabular-nums">
           <span className="flex items-center gap-1">
@@ -124,7 +139,7 @@ export default async function RepoLayout({
           </span>
         </div>
       </div>
-      <RepoTabsNav owner={owner} repo={repo} />
+      {viewMode === "tabs" ? <RepoTabsNav owner={owner} repo={repo} /> : null}
       <div>{children}</div>
     </div>
   );
