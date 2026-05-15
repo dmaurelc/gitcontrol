@@ -91,31 +91,33 @@ export default async function RepoLayout({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-semibold tracking-tight">
-              {header.fullName}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-2xl font-semibold tracking-tight">
+                {header.fullName}
+              </h1>
+              <Badge variant="outline" className="gap-1">
+                {header.isPrivate ? (
+                  <Lock className="size-3" />
+                ) : (
+                  <Globe className="size-3" />
+                )}
+                {header.isPrivate ? "Private" : "Public"}
+              </Badge>
+              <a
+                href={header.htmlUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                View on GitHub <ExternalLink className="size-3" />
+              </a>
+            </div>
             {header.description ? (
               <p className="line-clamp-2 text-sm text-muted-foreground">
                 {header.description}
               </p>
             ) : null}
           </div>
-          <Badge variant="outline" className="gap-1">
-            {header.isPrivate ? (
-              <Lock className="size-3" />
-            ) : (
-              <Globe className="size-3" />
-            )}
-            {header.isPrivate ? "Private" : "Public"}
-          </Badge>
-          <a
-            href={header.htmlUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            View on GitHub <ExternalLink className="size-3" />
-          </a>
           <RepoViewModeSwitcher
             owner={owner}
             repo={repo}
