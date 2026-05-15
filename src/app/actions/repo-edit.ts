@@ -161,6 +161,33 @@ export async function createPrAction(
   });
 }
 
+// ─── Helper: list files on a branch (autocomplete) ─────────────────────────
+
+const listBranchFilesSchema = z.object({
+  owner: z.string().min(1),
+  repo: z.string().min(1),
+  branch: z.string().min(1),
+});
+
+export async function listBranchFilesAction(
+  input: z.infer<typeof listBranchFilesSchema>,
+): Promise<ActionResult<{ paths: string[]; truncated: boolean }>> {
+  return runAction(async () => {
+    const userId = await requireUser();
+    const parsed = listBranchFilesSchema.parse(input);
+    const res = await githubService.getBranchTree(
+      userId,
+      parsed.owner,
+      parsed.repo,
+      parsed.branch,
+    );
+    const paths = res.data.tree
+      .filter((e) => e.type === "blob")
+      .map((e) => e.path);
+    return { paths, truncated: res.data.truncated };
+  });
+}
+
 // ─── Helper: read file content (raw text) ──────────────────────────────────
 
 const readFileSchema = z.object({

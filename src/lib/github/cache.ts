@@ -30,6 +30,7 @@ export const TTL = {
   commitDetail: 86400,
   checks: 60,
   pullsForCommit: 120,
+  branchTree: 300,
 } as const;
 
 export type CacheKind = keyof typeof TTL;

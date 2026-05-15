@@ -28,6 +28,7 @@ import {
 } from "@/app/actions/repo-edit";
 import type { RepoBranchRef } from "@/lib/github/service";
 import { CodeEditor } from "./code-editor";
+import { FilePathPicker } from "./file-path-picker";
 import { useExplorerState } from "./use-explorer-state";
 
 const BRANCH_NAME_REGEX = /^(?!\/)(?!.*\/$)(?!.*\.\.)[a-zA-Z0-9._/-]+$/;
@@ -161,22 +162,24 @@ export function EditFileDialog({
           Edit file
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader>
             <DialogTitle>Edit file on {currentBranch}</DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
             <div className="flex gap-2">
-              <Input
-                placeholder="src/path/to/file.ts"
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-                disabled={loadedSha !== null}
-                pattern={PATH_REGEX.source}
-                required
-              />
+              <div className="flex-1">
+                <FilePathPicker
+                  owner={owner}
+                  repo={repo}
+                  branch={currentBranch}
+                  value={path}
+                  onChange={setPath}
+                  disabled={loadedSha !== null}
+                />
+              </div>
               {loadedSha === null ? (
                 <Button
                   type="button"
@@ -204,7 +207,7 @@ export function EditFileDialog({
 
             {loadedSha ? (
               <>
-                <div className="h-72 overflow-hidden rounded-md border">
+                <div className="h-64 overflow-hidden rounded-md border">
                   <CodeEditor
                     value={content}
                     onChange={setContent}

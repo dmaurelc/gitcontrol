@@ -412,6 +412,22 @@ export type CheckRunsResponse = {
   check_runs: ExplorerCheckRun[];
 };
 
+// ─── Branch file tree (recursive listing) ───────────────────────────────────
+
+export type BranchTreeEntry = {
+  path: string;
+  mode: string;
+  type: "blob" | "tree" | "commit" | string;
+  sha: string;
+  size?: number;
+};
+
+export type BranchTreeResponse = {
+  sha: string;
+  truncated: boolean;
+  tree: BranchTreeEntry[];
+};
+
 // ─── PRs associated with a commit ────────────────────────────────────────────
 
 export type CommitAssociatedPr = {
@@ -2246,6 +2262,37 @@ export const githubService = {
         ) as Promise<
           | { notModified: true }
           | { notModified: false; body: CommitAssociatedPr[]; etag?: string }
+        >,
+    });
+  },
+
+  /**
+   * Recursive tree listing of a branch/ref. Used by the edit-file dialog to
+   * autocomplete paths the user types. GitHub returns blobs + subtrees up to
+   * 100k entries; we pass `recursive=1`. If GitHub flags `truncated` we still
+   * use what we got — autocomplete is best-effort.
+   */
+  async getBranchTree(
+    userId: string,
+    owner: string,
+    repo: string,
+    branch: string,
+  ) {
+    const { rest } = await getGithubClients(userId);
+    const params = { owner, repo, tree_sha: branch, recursive: "1" };
+    return cachedFetch<BranchTreeResponse>({
+      userId,
+      resource: "branchTree",
+      params,
+      ttlSeconds: TTL.branchTree,
+      fetcher: (etag) =>
+        etagFetch(
+          rest.git.getTree as unknown as AnyEndpoint,
+          params,
+          etag,
+        ) as Promise<
+          | { notModified: true }
+          | { notModified: false; body: BranchTreeResponse; etag?: string }
         >,
     });
   },
