@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, FileEdit, FileMinus, FilePlus2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  FileEdit,
+  FileMinus,
+  FilePlus2,
+} from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { RepoCommitFile } from "@/lib/github/service";
 import { DiffViewer } from "./diff-viewer";
@@ -26,6 +35,7 @@ function statusColor(status: RepoCommitFile["status"]) {
 
 export function FileDiffItem({ file, defaultOpen = false }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  const [copied, setCopied] = useState(false);
   const isBinary = file.patch === undefined && file.status !== "renamed";
 
   const renderStatusIcon = () => {
@@ -33,25 +43,52 @@ export function FileDiffItem({ file, defaultOpen = false }: Props) {
     return <Icon className={cn("size-3.5 shrink-0", statusColor(file.status))} />;
   };
 
+  async function copyPath(e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(file.filename);
+      setCopied(true);
+      toast.success("Path copied");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Clipboard unavailable");
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-md border">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/50"
-      >
-        {open ? (
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-        )}
-        {renderStatusIcon()}
-        <span className="truncate font-mono">
-          {file.previous_filename && file.previous_filename !== file.filename
-            ? `${file.previous_filename} → ${file.filename}`
-            : file.filename}
-        </span>
-        <span className="ml-auto flex shrink-0 items-center gap-1 text-[10px]">
+      <div className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-xs">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left transition-colors hover:opacity-80"
+        >
+          {open ? (
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+          )}
+          {renderStatusIcon()}
+          <span className="truncate font-mono">
+            {file.previous_filename && file.previous_filename !== file.filename
+              ? `${file.previous_filename} → ${file.filename}`
+              : file.filename}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={copyPath}
+          title="Copy path"
+          aria-label="Copy path"
+          className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-primary"
+        >
+          {copied ? (
+            <Check className="size-3 text-emerald-500" />
+          ) : (
+            <Copy className="size-3" />
+          )}
+        </button>
+        <span className="flex shrink-0 items-center gap-1 text-[10px]">
           {file.additions > 0 ? (
             <span className="text-emerald-500">+{file.additions}</span>
           ) : null}
@@ -59,7 +96,7 @@ export function FileDiffItem({ file, defaultOpen = false }: Props) {
             <span className="text-red-500">-{file.deletions}</span>
           ) : null}
         </span>
-      </button>
+      </div>
       {open ? (
         isBinary ? (
           <p className="px-3 py-2 text-xs italic text-muted-foreground">

@@ -168,43 +168,43 @@ export function EditFileDialog({
             <DialogTitle>Edit file on {currentBranch}</DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <FilePathPicker
-                  owner={owner}
-                  repo={repo}
-                  branch={currentBranch}
-                  value={path}
-                  onChange={setPath}
-                  disabled={loadedSha !== null}
-                />
-              </div>
-              {loadedSha === null ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={loadFile}
-                  disabled={loading || !path}
-                >
-                  {loading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    "Load"
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={reset}
-                >
-                  Change file
-                </Button>
-              )}
+          <div className="relative z-10 mt-4 flex gap-2">
+            <div className="flex-1">
+              <FilePathPicker
+                owner={owner}
+                repo={repo}
+                branch={currentBranch}
+                value={path}
+                onChange={setPath}
+                disabled={loadedSha !== null}
+              />
             </div>
+            {loadedSha === null ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={loadFile}
+                disabled={loading || !path}
+              >
+                {loading ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  "Load"
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={reset}
+              >
+                Change file
+              </Button>
+            )}
+          </div>
 
+          <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
             {loadedSha ? (
               <>
                 <div className="h-64 overflow-hidden rounded-md border">
