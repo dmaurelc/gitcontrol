@@ -62,7 +62,7 @@ export default async function PullRequestDetailPage({
   params: Promise<{ owner: string; repo: string; number: string }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   const { owner, repo, number: numberStr } = await params;
   const pullNumber = parseInt(numberStr, 10);

@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   // Best-effort: load viewer + orgs for context switcher. If GitHub fails we
   // still render the shell with the user's session info.

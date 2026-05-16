@@ -73,7 +73,7 @@ export default async function StarsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page ?? "1"));
   const perPage = clampPerPage(sp.perPage);

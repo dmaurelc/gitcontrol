@@ -30,7 +30,7 @@ export default async function RepoLayout({
   params: Promise<{ owner: string; repo: string }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const { owner, repo } = await params;
 
   const prefs = await getUserPreferences(session.user.id);

@@ -39,7 +39,7 @@ export default async function DashboardPage({
   searchParams: Promise<DashboardSearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   const sp = await searchParams;
   const rawYear = Array.isArray(sp.contribYear)

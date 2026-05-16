@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/empty-state";
 
 export default async function ProjectsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   let nodes: Array<{
     id: string;

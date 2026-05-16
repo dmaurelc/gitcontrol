@@ -31,7 +31,7 @@ export default async function RepoCommitsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const userId = session.user.id;
   const { owner, repo } = await params;
   const sp = await searchParams;

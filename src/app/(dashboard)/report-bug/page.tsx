@@ -9,7 +9,7 @@ export const metadata = { title: "Report a bug — GitControl" };
 
 export default async function ReportBugPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">

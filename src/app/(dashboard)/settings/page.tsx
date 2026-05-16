@@ -17,7 +17,7 @@ import { VisibilityTab } from "./_components/visibility-tab";
 
 export default async function SettingsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   return (
     <div className="flex flex-col gap-6">

@@ -37,7 +37,7 @@ export default async function RepositoriesPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const sp = await searchParams;
   const prefs = await getUserPreferences(session.user.id);
   const viewMode = readViewMode(prefs.filters, "repos");

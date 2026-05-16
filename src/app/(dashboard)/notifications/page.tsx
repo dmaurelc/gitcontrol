@@ -17,7 +17,7 @@ export default async function NotificationsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const sp = await searchParams;
   const showRead = sp.showRead === "1";
 

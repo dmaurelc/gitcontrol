@@ -27,7 +27,7 @@ export default async function PackagesPage({
   searchParams: Promise<{ type?: PkgType }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const sp = await searchParams;
   const type: PkgType = (TYPES as readonly string[]).includes(sp.type ?? "")
     ? (sp.type as PkgType)

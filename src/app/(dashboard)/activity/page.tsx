@@ -18,7 +18,7 @@ export default async function ActivityPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const sp = await searchParams;
   const perPage = clampPerPage(sp.perPage);
   // GitHub events API caps at 300 events total (10 pages × 30). With dynamic

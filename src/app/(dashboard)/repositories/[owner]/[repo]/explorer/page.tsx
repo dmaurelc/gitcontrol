@@ -44,7 +44,7 @@ export default async function RepoExplorerPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   const prefs = await getUserPreferences(session.user.id);
   if (readRepoDetailViewMode(prefs.filters) === "tabs") {

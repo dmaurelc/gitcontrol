@@ -26,7 +26,7 @@ export default async function IssuesPage({
   searchParams: Promise<SearchParams>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
   const sp = await searchParams;
   const state = sp.state ?? "open";
   const scope = sp.scope ?? "author";

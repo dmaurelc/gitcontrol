@@ -52,7 +52,7 @@ export default async function RunDetailPage({
   params: Promise<{ owner: string; repo: string; run_id: string }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) redirect("/");
 
   const { owner, repo, run_id } = await params;
   const runId = parseInt(run_id, 10);

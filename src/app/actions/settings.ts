@@ -108,5 +108,5 @@ export async function revokeAccessAction() {
   // Drop the user row entirely (cascade removes session, prefs, accounts).
   await db.delete(user).where(eq(user.id, userId));
   await auth.api.signOut({ headers: await headers() });
-  redirect("/login");
+  redirect("/");
 }
