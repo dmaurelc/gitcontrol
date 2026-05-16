@@ -21,6 +21,32 @@ type AuthInstance = ReturnType<typeof createAuth>;
 
 function createAuth() {
   const env = getEnv();
+  const redis = getRedis();
+
+  // When Redis is available we wire Better Auth's secondary storage to it
+  // so rate-limit counters survive restarts and shard across containers
+  // (Dokploy/Traefik prod). On Vercel staging (CACHE_ENABLED=false) we
+  // omit secondaryStorage entirely; Better Auth falls back to in-memory
+  // rate limiting, acceptable for a small tester pool.
+  const secondaryStorage = redis
+    ? {
+        get: async (key: string) => {
+          const raw = await redis.get(`auth_ss:${key}`);
+          return raw ?? null;
+        },
+        set: async (key: string, value: string, ttl?: number) => {
+          if (ttl && ttl > 0) {
+            await redis.set(`auth_ss:${key}`, value, "EX", ttl);
+          } else {
+            await redis.set(`auth_ss:${key}`, value);
+          }
+        },
+        delete: async (key: string) => {
+          await redis.del(`auth_ss:${key}`);
+        },
+      }
+    : undefined;
+
   return betterAuth({
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
@@ -32,31 +58,14 @@ function createAuth() {
         scope: GITHUB_OAUTH_SCOPES,
       },
     },
-    // Redis-backed key/value store; Better Auth uses this for rate-limit
-    // counters (and any other secondary state) so limits survive restarts
-    // and shard correctly across containers behind Dokploy/Traefik.
-    secondaryStorage: {
-      get: async (key) => {
-        const raw = await getRedis().get(`auth_ss:${key}`);
-        return raw ?? null;
-      },
-      set: async (key, value, ttl) => {
-        const r = getRedis();
-        if (ttl && ttl > 0) {
-          await r.set(`auth_ss:${key}`, value, "EX", ttl);
-        } else {
-          await r.set(`auth_ss:${key}`, value);
-        }
-      },
-      delete: async (key) => {
-        await getRedis().del(`auth_ss:${key}`);
-      },
-    },
+    ...(secondaryStorage ? { secondaryStorage } : {}),
     rateLimit: {
       enabled: env.NODE_ENV === "production",
       window: 60,
       max: 100,
-      storage: "secondary-storage",
+      // Use secondary-storage when Redis is wired, else fall back to
+      // Better Auth's default in-memory store.
+      ...(secondaryStorage ? { storage: "secondary-storage" as const } : {}),
       // Tighter limits on the OAuth surface to slow credential-stuffing
       // and callback abuse without breaking the legitimate flow.
       customRules: {

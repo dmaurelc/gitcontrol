@@ -1,17 +1,34 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
-  GITHUB_CLIENT_ID: z.string().min(1),
-  GITHUB_CLIENT_SECRET: z.string().min(1),
-  TOKEN_ENCRYPTION_KEY: z
-    .string()
-    .min(64, "TOKEN_ENCRYPTION_KEY must be 64 hex chars (32 bytes)"),
-  BETTER_AUTH_SECRET: z.string().min(32),
-  BETTER_AUTH_URL: z.string().url(),
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("development"),
+    DATABASE_URL: z.string().url(),
+    // Selects the Drizzle/PostgreSQL driver. "node-postgres" (default) is
+    // used by Docker/Dokploy and local dev; "neon" uses the serverless
+    // websocket driver for Vercel deploys against Neon.
+    DB_DRIVER: z.enum(["node-postgres", "neon"]).default("node-postgres"),
+    // REDIS_URL is only required when CACHE_ENABLED=true (default). On
+    // Vercel staging with CACHE_ENABLED=false, Redis is omitted entirely.
+    REDIS_URL: z.string().url().optional(),
+    CACHE_ENABLED: z
+      .union([z.literal("true"), z.literal("false")])
+      .default("true")
+      .transform((v) => v === "true"),
+    GITHUB_CLIENT_ID: z.string().min(1),
+    GITHUB_CLIENT_SECRET: z.string().min(1),
+    TOKEN_ENCRYPTION_KEY: z
+      .string()
+      .min(64, "TOKEN_ENCRYPTION_KEY must be 64 hex chars (32 bytes)"),
+    BETTER_AUTH_SECRET: z.string().min(32),
+    BETTER_AUTH_URL: z.string().url(),
+  })
+  .refine((data) => !data.CACHE_ENABLED || !!data.REDIS_URL, {
+    message: "REDIS_URL is required when CACHE_ENABLED=true",
+    path: ["REDIS_URL"],
+  });
 
 export type Env = z.infer<typeof envSchema>;
 
@@ -23,7 +40,9 @@ let cached: Env | null = null;
 const BUILD_PLACEHOLDER: Env = {
   NODE_ENV: "production",
   DATABASE_URL: "postgres://build:build@localhost:5432/build",
-  REDIS_URL: "redis://localhost:6379",
+  DB_DRIVER: "node-postgres",
+  REDIS_URL: undefined,
+  CACHE_ENABLED: false,
   GITHUB_CLIENT_ID: "build",
   GITHUB_CLIENT_SECRET: "build",
   TOKEN_ENCRYPTION_KEY: "0".repeat(64),

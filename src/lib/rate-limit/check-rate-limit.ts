@@ -25,6 +25,11 @@ export async function checkRateLimit(opts: {
 
   const key = `rl:${opts.bucket}:${opts.identifier}`;
   const r = getRedis();
+  // Cache disabled (Vercel staging): skip rate-limiting. Acceptable risk
+  // for a tester-only environment with known users.
+  if (!r) {
+    return { ok: true, remaining: opts.max };
+  }
   const count = await r.incr(key);
   if (count === 1) {
     await r.expire(key, opts.windowSeconds);

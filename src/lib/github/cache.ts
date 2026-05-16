@@ -84,6 +84,24 @@ export async function cachedFetch<T>(opts: {
 }): Promise<FetchResult<T>> {
   const redis = getRedis();
   const key = buildKey(opts.userId, opts.resource, opts.params);
+
+  // Cache disabled (Vercel staging): pass through directly to GitHub. The
+  // fetcher receives no etag (undefined) so it always issues a fresh
+  // request; "notModified" can never happen without a prior cache entry.
+  if (!redis) {
+    const result = await opts.fetcher(undefined);
+    if (result.notModified) {
+      throw new Error("cachedFetch received notModified without prior cache");
+    }
+    return {
+      data: result.body,
+      etag: result.etag,
+      fromCache: false,
+      fetchedAt: Math.floor(Date.now() / 1000),
+      ttlSeconds: opts.ttlSeconds,
+    };
+  }
+
   const cachedRaw = await redis.get(key);
   const cached = cachedRaw
     ? (JSON.parse(cachedRaw) as CachedEnvelope<T>)
@@ -130,6 +148,7 @@ export async function cachedFetch<T>(opts: {
  */
 export async function invalidate(userId: string, resource: string) {
   const redis = getRedis();
+  if (!redis) return 0;
   const pattern =
     resource === "*" ? `gh:${userId}:*` : `gh:${userId}:${resource}:*`;
   const stream = redis.scanStream({ match: pattern, count: 100 });
@@ -152,6 +171,7 @@ export async function invalidate(userId: string, resource: string) {
  */
 export async function invalidateGlobal(resource: string) {
   const redis = getRedis();
+  if (!redis) return 0;
   const pattern = `gh:*:${resource}:*`;
   const stream = redis.scanStream({ match: pattern, count: 100 });
   const pipeline = redis.pipeline();

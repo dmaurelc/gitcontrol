@@ -19,11 +19,13 @@ export async function getReleaseCommitDate(
   const redis = getRedis();
   const key = `release:commitdate:${owner}/${repo}:${tag}`;
 
-  try {
-    const cached = await redis.get(key);
-    if (cached) return cached;
-  } catch {
-    // ignore
+  if (redis) {
+    try {
+      const cached = await redis.get(key);
+      if (cached) return cached;
+    } catch {
+      // ignore
+    }
   }
 
   const { rest } = await getGithubClients(userId);
@@ -37,7 +39,7 @@ export async function getReleaseCommitDate(
     }
     const commit = await rest.git.getCommit({ owner, repo, commit_sha: sha });
     const date = commit.data.committer?.date ?? commit.data.author?.date ?? null;
-    if (date) {
+    if (date && redis) {
       try {
         await redis.set(key, date, "EX", TTL_SECONDS);
       } catch {
