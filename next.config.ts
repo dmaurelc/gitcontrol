@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
+// `output: "standalone"` is required by Dokploy's Docker image (server.js
+// entry) but breaks Vercel routing because Vercel manages its own output
+// format. Disable when running under Vercel build.
 const nextConfig: NextConfig = {
-  output: "standalone",
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
