@@ -12,22 +12,33 @@ export const dynamic = "force-dynamic";
  * status code anyway).
  */
 export async function GET() {
-  const result = { db: false, redis: false };
+  let dbOk = false;
+  // Redis status is "disabled" when CACHE_ENABLED=false, "ok" on PONG,
+  // false on error. Treated as healthy unless explicitly broken.
+  let redisStatus: "ok" | "disabled" | false = false;
+
   try {
     await db.execute(sql`SELECT 1`);
-    result.db = true;
+    dbOk = true;
   } catch (e) {
     console.error("[health] db", (e as Error).message);
   }
-  try {
-    const pong = await getRedis().ping();
-    result.redis = pong === "PONG";
-  } catch (e) {
-    console.error("[health] redis", (e as Error).message);
+
+  const redis = getRedis();
+  if (redis === null) {
+    redisStatus = "disabled";
+  } else {
+    try {
+      const pong = await redis.ping();
+      if (pong === "PONG") redisStatus = "ok";
+    } catch (e) {
+      console.error("[health] redis", (e as Error).message);
+    }
   }
-  const healthy = result.db && result.redis;
+
+  const healthy = dbOk && redisStatus !== false;
   return NextResponse.json(
-    { status: healthy ? "ok" : "degraded", db: result.db, redis: result.redis },
+    { status: healthy ? "ok" : "degraded", db: dbOk, redis: redisStatus },
     { status: healthy ? 200 : 503 },
   );
 }

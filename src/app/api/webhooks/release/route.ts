@@ -39,15 +39,17 @@ export async function POST(request: Request) {
 
   try {
     const redis = getRedis();
-    const stream = redis.scanStream({ match: "release:commitdate:*", count: 100 });
-    const pipeline = redis.pipeline();
-    for await (const keys of stream as AsyncIterable<string[]>) {
-      for (const k of keys) {
-        pipeline.del(k);
-        commitDatesDeleted++;
+    if (redis) {
+      const stream = redis.scanStream({ match: "release:commitdate:*", count: 100 });
+      const pipeline = redis.pipeline();
+      for await (const keys of stream as AsyncIterable<string[]>) {
+        for (const k of keys) {
+          pipeline.del(k);
+          commitDatesDeleted++;
+        }
       }
+      if (commitDatesDeleted > 0) await pipeline.exec();
     }
-    if (commitDatesDeleted > 0) await pipeline.exec();
   } catch (e) {
     console.error("[webhook/release] invalidate commitdates", (e as Error).message);
   }
