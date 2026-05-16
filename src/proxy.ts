@@ -24,8 +24,10 @@ export async function proxy(req: NextRequest) {
 
   const sessionCookie = getSessionCookie(req);
   if (!sessionCookie) {
+    // Canonical signed-out URL is "/". The legacy "/login" path still
+    // 308-redirects here, so existing bookmarks keep working.
     const url = req.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/";
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }

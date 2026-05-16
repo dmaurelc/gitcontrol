@@ -1,73 +1,8 @@
-"use client";
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { GithubIcon } from "@/components/icons/github-icon";
-import { NodeMark } from "@/components/icons/node-mark";
-import { VercelIcon } from "@/components/icons/vercel-icon";
-import { NeonIcon } from "@/components/icons/neon-icon";
-import { ClaudeIcon } from "@/components/icons/claude-icon";
-import { signIn } from "@/lib/auth/auth-client";
+import { redirect } from "next/navigation";
 
-export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-
-  async function handleSignIn() {
-    setLoading(true);
-    await signIn.social({ provider: "github", callbackURL: "/dashboard" });
-  }
-
-  return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center gap-8 overflow-hidden bg-background p-6">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]"
-      >
-        <div className="absolute left-1/2 top-1/2 size-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-br from-chart-1/20 via-chart-4/10 to-chart-2/20 blur-3xl" />
-      </div>
-      <div className="flex flex-col items-center gap-4 text-center">
-        <span
-          aria-hidden
-          className="grid size-14 place-items-center text-primary"
-        >
-          <NodeMark className="size-14" />
-        </span>
-        <div className="flex flex-col items-center gap-1">
-          <h1 className="text-3xl font-semibold tracking-tight">GitControl</h1>
-          <p className="text-sm text-muted-foreground">
-            Self-hosted GitHub dashboard. Sign in to continue.
-          </p>
-        </div>
-      </div>
-      <Button
-        onClick={handleSignIn}
-        disabled={loading}
-        size="lg"
-        className="min-w-56 shadow-card"
-      >
-        {loading ? <Loader2 className="animate-spin" /> : <GithubIcon />}
-        Sign in with GitHub
-      </Button>
-      <p className="text-[11px] text-muted-foreground/70">
-        Read-only access. We never push to your repos.
-      </p>
-      <div className="absolute bottom-6 flex flex-col items-center gap-3 text-muted-foreground/80">
-        <p className="text-xs">Implementado con</p>
-        <div className="flex items-center gap-6 text-sm">
-          <span className="inline-flex items-center gap-2">
-            <VercelIcon className="size-3.5" />
-            Vercel
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <NeonIcon className="size-4" />
-            Neon
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <ClaudeIcon className="size-4" />
-            Claude
-          </span>
-        </div>
-      </div>
-    </main>
-  );
+// Backward-compatible redirect: the proxy.ts middleware (and any legacy
+// links) still target "/login", but the canonical URL is now "/". A 308
+// keeps the original method so OAuth callbacks survive unscathed.
+export default function LoginRedirect() {
+  redirect("/");
 }
