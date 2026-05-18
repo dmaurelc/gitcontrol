@@ -5,7 +5,15 @@
   "installCommand": "pnpm install",
   "git": {
     "deploymentEnabled": {
-      "main": true
+      "main": true,
+      "develop": false,
+      "staging": false,
+      "feature/*": false,
+      "fix/*": false,
+      "hotfix/*": false,
+      "docs/*": false,
+      "chore/*": false,
+      "release/*": false
     }
   }
 }
