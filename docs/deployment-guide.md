@@ -1,131 +1,147 @@
 # Deployment Guide
 
-> How to ship this app from a cold VPS to a working URL. Target: Dokploy on a single VPS.
+> Ship GitControl from zero to a working URL. Target stack: **Vercel + Neon Postgres**. Free tiers are enough for personal use.
 
 ## 1. Prerequisites
 
-- VPS with Docker + Dokploy installed.
-- Domain name pointing at the VPS (e.g. `dev.webkode.cl`).
+- A [Vercel](https://vercel.com) account (Hobby plan is fine).
+- A [Neon](https://neon.tech) account (free tier is fine).
+- A fork of this repo on GitHub (so Vercel can wire up auto-deploys).
 - A GitHub OAuth App registered at <https://github.com/settings/developers>:
+  - **Homepage URL**: `https://<your-domain>` (use the `*.vercel.app` URL Vercel hands you).
   - **Authorization callback URL**: `https://<your-domain>/api/auth/callback/github`
-  - **Homepage URL**: `https://<your-domain>`
 - Two secrets generated locally:
   ```sh
-  openssl rand -hex 32          # → TOKEN_ENCRYPTION_KEY (64 chars)
-  openssl rand -base64 32       # → BETTER_AUTH_SECRET (≥32 chars)
+  openssl rand -hex 32          # → TOKEN_ENCRYPTION_KEY (64 hex chars)
+  openssl rand -base64 32       # → BETTER_AUTH_SECRET   (≥32 chars)
   ```
 
-## 2. Provision Services in Dokploy
+## 2. Provision Neon
 
-Create a project, then add three services in this order:
+1. Create a new Neon project. Region close to your Vercel region (e.g. `aws-us-east-1`).
+2. From the project dashboard grab **two** connection strings:
+   - **Pooled** — used at runtime. Looks like `postgres://USER:PASS@ep-xxx-pooler.<region>.aws.neon.tech/neondb?sslmode=require`.
+   - **Unpooled** — used by migrations. Same URL without `-pooler`.
+3. No schema setup needed — Drizzle migrations run automatically on every Vercel build (see `scripts/migrate.mjs`).
 
-### 2.1 Postgres 16
+## 3. Import the Project on Vercel
 
-- Image: `postgres:16-alpine` (or Dokploy's managed Postgres template).
-- Persist `/var/lib/postgresql/data` to a Dokploy volume.
-- Note the connection string. Format: `postgres://USER:PASS@HOST:5432/DBNAME`.
+1. **Add New → Project → Import** your forked repo.
+2. Framework preset: **Next.js** (auto-detected, also pinned in `vercel.json`).
+3. Build command: leave default — `vercel.json` overrides to `pnpm vercel-build` (runs migrations then `next build`).
+4. Install command: `pnpm install`.
+5. Don't deploy yet — finish env vars first (step 4).
 
-### 2.2 Redis 7
+## 4. Environment Variables
 
-- Image: `redis:7-alpine`.
-- Set a password via `requirepass` in command args.
-- Note the URL. Format: `redis://default:PASS@HOST:6379`.
-
-### 2.3 App (this repo)
-
-- Source: GitHub → this repo, branch `develop` (or `main` once promoted).
-- Build type: Dockerfile.
-- Port: `3000`.
-- Health check path: `/api/health`.
-
-## 3. Environment Variables
-
-Set these in the Dokploy app's environment panel. Anything missing will abort the request at runtime (validated by `lib/env.ts`):
+Set these in **Project Settings → Environment Variables** (Production + Preview). Validated by `lib/env.ts`; anything missing aborts the request at runtime.
 
 | Var | Value |
 |-----|-------|
 | `NODE_ENV` | `production` |
-| `DATABASE_URL` | Postgres URL from step 2.1 |
-| `REDIS_URL` | Redis URL from step 2.2 |
+| `DB_DRIVER` | `neon` |
+| `DATABASE_URL` | Neon **pooled** URL (runtime queries) |
+| `MIGRATION_DATABASE_URL` | Neon **unpooled** URL (DDL during build) |
+| `CACHE_ENABLED` | `false` (Vercel deploys skip Redis by default) |
 | `GITHUB_CLIENT_ID` | from your OAuth App |
 | `GITHUB_CLIENT_SECRET` | from your OAuth App |
-| `TOKEN_ENCRYPTION_KEY` | 64-char hex from step 1 |
+| `TOKEN_ENCRYPTION_KEY` | 64-hex from step 1 |
 | `BETTER_AUTH_SECRET` | base64 from step 1 |
-| `BETTER_AUTH_URL` | `https://<your-domain>` |
+| `BETTER_AUTH_URL` | `https://<your-vercel-url>` |
 
-`NEXT_TELEMETRY_DISABLED=1` is set by the Dockerfile.
+> The pooled URL is required for serverless invocations — `@neondatabase/serverless` uses websocket pooling so TCP pools don't persist between function calls. The unpooled URL is needed only for migrations because Neon's pooler doesn't allow some DDL operations.
 
-## 4. Deploy
+### Optional (release workflow)
 
-1. In Dokploy, trigger a build. The multi-stage Dockerfile produces a runner image around 200-300 MB.
-2. Wait for the deploy to settle. The container's entrypoint runs `scripts/migrate.mjs` first, then starts `node server.js`. Check logs for:
+| Var | Purpose |
+|-----|---------|
+| `RELEASE_WEBHOOK_URL` | Invalidates `/changelog` cache when a GitHub Release is published |
+| `RELEASE_WEBHOOK_SECRET` | Shared secret for the webhook |
+
+## 5. Deploy
+
+1. Click **Deploy** in Vercel.
+2. The build runs `pnpm vercel-build` → `node scripts/migrate.mjs` (applies Drizzle migrations against Neon) → `next build`.
+3. Watch the build log for:
    ```
-   [entrypoint] running migrations...
-   [migrate] running migrations...
+   [migrate] running migrations (driver=neon)...
    [migrate] done
-   [entrypoint] starting server...
    ```
-3. Probe `https://<your-domain>/api/health`. Expect `{"db":"ok","redis":"ok"}` with status 200.
-4. Open `https://<your-domain>/login` and complete the OAuth flow.
+4. Once green, probe `https://<your-vercel-url>/api/health`. Expect `{"db":"ok"}` with status 200.
+5. Open `https://<your-vercel-url>/` and complete the OAuth flow.
 
-## 5. Initial Checks After First Sign-In
+`vercel.json` restricts auto-deploys to the `main` branch (`git.deploymentEnabled.main: true`). Other branches won't deploy unless you change that.
 
-1. **Token encryption**: from a Postgres shell run
+## 6. Initial Checks After First Sign-In
+
+1. **Token encryption**: from the Neon SQL editor run
    ```sql
-   SELECT id, "providerId", "accessToken" IS NULL AS plaintext_cleared, "encryptedAccessToken" IS NOT NULL AS has_encrypted FROM account;
+   SELECT id, "providerId",
+          "accessToken" IS NULL              AS plaintext_cleared,
+          "encryptedAccessToken" IS NOT NULL AS has_encrypted
+   FROM account;
    ```
-   Both flags should be `true`. If `accessToken` still has a value, the post-create hook didn't fire — check app logs and re-verify `lib/auth/auth.ts:databaseHooks`.
-2. **Redis isolation**: `redis-cli --pass <PASS> KEYS 'gh:*'` should show keys prefixed `gh:<userId>:...`. Never bare `gh::...`.
-3. **Health endpoint** at `/api/health` returns 200.
+   Both flags should be `true`. If `accessToken` still has a value, the post-create hook didn't fire — check the function logs and re-verify `lib/auth/auth.ts:databaseHooks`.
+2. **Health endpoint** at `/api/health` returns 200.
 
-## 6. Updating
+## 7. Updating
 
-Push to `develop` (or whichever branch the Dokploy app tracks). Dokploy rebuilds the image and restarts the container. Migrations run automatically on each restart and are idempotent.
+Push to `main` (or merge a PR into it). Vercel rebuilds and runs migrations automatically. Migrations are idempotent — `drizzle-orm` tracks applied entries in `__drizzle_migrations`.
 
 For risky migrations:
 
 1. Generate locally: `pnpm db:generate`.
-2. Inspect `drizzle/<n>_<name>.sql` and the `drizzle/meta/` snapshot.
-3. Test against a disposable DB: `pnpm db:push` against the dev compose stack.
+2. Inspect `drizzle/<n>_<name>.sql` and `drizzle/meta/`.
+3. Test against a Neon branch: `pnpm db:push` with the branch URL.
 4. Commit + push.
 
-## 7. Local Development Flow
+## 8. Local Development
 
 ```sh
 # One-time
 cp .env.example .env.local
-# Fill DATABASE_URL=postgres://gitcontrol:gitcontrol_dev@localhost:5433/gitcontrol
-#      REDIS_URL=redis://default:gitcontrol_dev@localhost:6379
+# Fill DATABASE_URL=<neon dev branch URL or local Postgres>
+#      DB_DRIVER=neon   (or node-postgres if running local Postgres)
+#      CACHE_ENABLED=false
 #      GITHUB_CLIENT_ID/SECRET (use a separate dev OAuth App)
 #      TOKEN_ENCRYPTION_KEY (openssl rand -hex 32)
 #      BETTER_AUTH_SECRET (openssl rand -base64 32)
 #      BETTER_AUTH_URL=http://localhost:3000
 
-docker compose -f docker-compose.dev.yml up -d
 pnpm install
 pnpm db:push          # syncs schema without producing migration files
 pnpm dev              # http://localhost:3000
 ```
 
-To inspect the DB: `pnpm db:studio` (drizzle-kit web UI).
+Inspect the DB: `pnpm db:studio` (drizzle-kit web UI).
 
-## 8. Common Failure Modes
+> Tip: use a **Neon branch** for dev. It's a copy-on-write fork of your prod database — zero-cost, isolated, deletable when done.
+
+## 9. Common Failure Modes
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| OAuth callback returns "Invalid environment variables" | One of the env vars is unset/malformed at runtime | Cross-check Dokploy env panel against `lib/env.ts` schema. |
+| OAuth callback returns "Invalid environment variables" | One env var is unset/malformed at runtime | Cross-check Vercel env panel against `lib/env.ts` schema. Redeploy after edits. |
 | Sign-in succeeds but dashboard shows zeros | Token wasn't encrypted (or decrypt fails — wrong key) | Verify `TOKEN_ENCRYPTION_KEY` matches what was used at sign-in time. Rotating the key invalidates all stored tokens. |
-| Pages crash with `Failed to fetch viewer` | GitHub 401 — token revoked externally | User goes to Settings → Account → Revoke access, then signs in again. |
-| Health endpoint returns 503 | DB or Redis unreachable | Check Dokploy service status. Restart if needed. |
-| Octokit logs spam during dev | Custom logger silences 304s; another path may be logging raw errors | Inspect `lib/github/client.ts:noopLog`. Don't suppress legitimate errors. |
+| Pages crash with `Failed to fetch viewer` | GitHub 401 — token revoked externally | User: Settings → Account → Revoke access, then sign in again. |
+| `/api/health` returns 503 | Neon unreachable / connection string wrong | Check `DATABASE_URL`. If the Neon project was paused, the first request wakes it (cold start ~300ms). |
+| Build fails at `[migrate]` step | `MIGRATION_DATABASE_URL` missing or pointing at the pooler | Use the **unpooled** Neon URL for migrations. |
 
-## 9. Backups (Recommended, Not Built-In)
+## 10. Backups & Branching
 
-- **Postgres**: schedule daily `pg_dump` via Dokploy's task runner or a sidecar cron.
-- **Redis**: AOF is enabled in `docker-compose.dev.yml`'s example; ensure your prod Redis service does the same. Cache loss is recoverable (just slower first request per resource).
+- **Backups**: Neon retains point-in-time recovery on the free tier (7 days). For longer retention upgrade the Neon plan or schedule a `pg_dump` via Vercel Cron.
+- **Branching**: Neon's copy-on-write branches double as instant backups — branch off `main` before risky migrations, swap if anything goes wrong.
 
-## 10. Rotating Secrets
+## 11. Rotating Secrets
 
-- **`TOKEN_ENCRYPTION_KEY`**: rotating invalidates every stored encrypted token. All users will need to revoke + re-authorize. No automated migration today.
+- **`TOKEN_ENCRYPTION_KEY`**: rotating invalidates every stored encrypted token. All users will need to revoke + re-authorize. No automated migration.
 - **`BETTER_AUTH_SECRET`**: rotating invalidates active sessions. Users must sign in again.
-- **GitHub OAuth secret**: rotate via the OAuth App settings. Update Dokploy env. Existing tokens remain valid (they were issued with the old secret but only the secret is needed for the OAuth handshake itself).
+- **GitHub OAuth secret**: rotate in the OAuth App settings → update Vercel env → redeploy. Existing user tokens remain valid (the secret is only needed for the OAuth handshake itself).
+
+## 12. Custom Domain (Optional)
+
+1. Vercel **Project → Settings → Domains** → add your domain.
+2. Point the DNS record per Vercel's instructions.
+3. Update **`BETTER_AUTH_URL`** to the new domain.
+4. Update the GitHub OAuth App's callback URL + homepage URL to the new domain.
+5. Redeploy.

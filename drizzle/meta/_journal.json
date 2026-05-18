@@ -22,6 +22,13 @@
       "when": 1778108779853,
       "tag": "0002_mean_blockbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779073409417,
+      "tag": "0003_light_payback",
+      "breakpoints": true
     }
   ]
 }

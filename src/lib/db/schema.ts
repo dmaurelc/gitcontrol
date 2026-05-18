@@ -93,7 +93,7 @@ export const userPreferences = pgTable("user_preferences", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
-  theme: text("theme").notNull().default("system"),
+  theme: text("theme").notNull().default("dark"),
   defaultView: text("default_view").notNull().default("dashboard"),
   pinnedRepos: jsonb("pinned_repos").$type<string[]>().notNull().default([]),
   hiddenOrgs: jsonb("hidden_orgs").$type<string[]>().notNull().default([]),
