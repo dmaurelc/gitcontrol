@@ -1,6 +1,6 @@
 # Project Roadmap
 
-> Living document. Updated 2026-05-12.
+> Living document. Updated 2026-05-17.
 
 ## Status Snapshot
 
@@ -11,7 +11,9 @@
 - **Post-MVP Wave 4**: ✅ shipped. Full UI/UX redesign, comments, issue/PR detail.
 - **Post-MVP Wave 5**: ✅ shipped (2026-05-08). Power-user UX (view toggle, sync badge, devicons, health, Cmd+K, dependency tracker).
 - **Post-MVP Wave 6**: ✅ shipped (2026-05-12). Contribution heatmap, commit history, changelog page.
-- **Version**: v0.9.2. Live at `https://dev.webkode.cl` (Dokploy).
+- **Post-MVP Wave 7**: ✅ shipped (2026-05-15). In-app PR merge, repo code explorer, landing page redesign, SEO/OG.
+- **Post-MVP Wave 8**: ✅ shipped (2026-05-17). Vercel + Neon as primary deploy target (dual DB driver, optional Redis, automated migrations in build).
+- **Version**: v0.11.0. Live at `https://gitcontrol-dev.vercel.app` (Vercel + Neon).
 - **Active phase**: backlog grooming. Next: GitHub App migration, rate-limit banner, saved searches.
 
 ## Completed Milestones
@@ -20,7 +22,7 @@
 
 | # | Phase | PR / Commit | Status |
 |---|-------|-------------|--------|
-| 1 | Setup base (Next 16, DB, Redis, Drizzle, Dokploy scaffolding) | (initial) | ✅ |
+| 1 | Setup base (Next 16, DB, Redis, Drizzle, Docker scaffolding) | (initial) | ✅ |
 | 2 | Auth (Better Auth + GitHub OAuth + AES-256-GCM token encryption) | (phase-02) | ✅ |
 | 3 | GitHubService (Octokit + Redis cache + ETags) | (phase-03) | ✅ |
 | 4 | Overview + Org switcher | #4 `eed166d` | ✅ |
@@ -102,6 +104,31 @@ Commits delivered 2026-05-11 to 2026-05-12 (PR #73, #72, related commits 85a564a
 | 5 | Changelog page (Release workflow) | auto-generated from GitHub Releases | ✅ | deployed |
 | — | Styling alignment (chart-1 token) | design consistency | ✅ | `c1a1deb` |
 
+## Completed Post-MVP (Wave 7) — In-app Merge + Code Explorer + Landing
+
+Commits delivered 2026-05-10 to 2026-05-15.
+
+| # | Phase | Notes | Status |
+|---|-------|-------|--------|
+| 1 | In-app PR merge | Merge PRs without leaving the app | ✅ |
+| 2 | Repo code explorer | Split-view explorer alternative to tabbed repo detail | ✅ |
+| 3 | Landing page redesign | New landing for signed-out visitors | ✅ |
+| 4 | SEO + OG metadata | Site-wide metadata, robots, sitemap, OG image with GitControl branding | ✅ |
+| 5 | Auth redirect cleanup | Signed-out users land directly on `/` | ✅ |
+
+## Completed Post-MVP (Wave 8) — Vercel + Neon Migration
+
+Branch `staging` → merged to `main` (v0.11.0).
+
+| # | Phase | Notes | Status |
+|---|-------|-------|--------|
+| 1 | Vercel project + Neon provisioning | `vercel.json`, env schema updates | ✅ |
+| 2 | Dual DB driver (`node-postgres` + `@neondatabase/serverless`) | Selected by `DB_DRIVER` env | ✅ |
+| 3 | Optional Redis cache via `CACHE_ENABLED` flag | Off by default on Vercel — zero infra | ✅ |
+| 4 | Migrations in `pnpm vercel-build` | Runs against `MIGRATION_DATABASE_URL` (Neon unpooled) | ✅ |
+| 5 | Deploy gated to `main` only | `vercel.json:git.deploymentEnabled.main` | ✅ |
+| 6 | Docs rewrite (Vercel + Neon only) | README, deployment-guide, architecture, roadmap | ✅ |
+
 ## In Progress
 
 _No active phase. Pick next item from backlog._
@@ -127,12 +154,12 @@ _No active phase. Pick next item from backlog._
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| OAuth rate limit exhaustion (5k/h) | medium | high | ETag caching today; GitHub App migration long-term. |
-| Projects v2 GraphQL has no ETag | medium | low | Pure TTL cache (300s) — accept slight staleness. |
-| Redis outage = page crash | low | high | Health endpoint flips to 503; Dokploy can restart. HA out of scope. |
+| OAuth rate limit exhaustion (5k/h) | medium | high | ETag caching today (when Redis on); GitHub App migration long-term. |
+| Projects v2 GraphQL has no ETag | medium | low | Pure TTL cache (300s) when enabled — accept slight staleness. |
+| Neon cold start | low | low | ~300ms first request after idle; paid tier eliminates it. |
 | Token leak via `/api/debug/*` in prod | — | — | ✅ resolved — debug routes removed. |
 
 ## Cadence
 
 - One post-MVP phase per iteration. Keep PRs scoped per phase file.
-- Update this roadmap (and `project-changelog.md` once it exists) at the close of each phase.
+- Update this roadmap at the close of each phase. The in-app `/changelog` page is auto-published from GitHub Releases via `.github/workflows/release.yml`.

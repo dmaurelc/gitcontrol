@@ -1,14 +1,14 @@
 # System Architecture
 
-> How the pieces fit together. Updated 2026-05-12. GitControl v0.9.2.
+> How the pieces fit together. Updated 2026-05-17. GitControl v0.11.0.
 
 ## 1. High-Level Topology
 
 ```
 ┌─────────────┐    HTTPS    ┌──────────────────────────────────┐
-│   Browser   │◀───────────▶│  Next.js 16 (standalone, port 3000)│
+│   Browser   │◀───────────▶│  Vercel — Next.js 16 (Fluid)     │
 └─────────────┘             │  • RSC pages + server actions    │
-                            │  • Edge middleware (auth guard)  │
+                            │  • Middleware (auth guard)       │
                             │  • API routes (auth, health)     │
                             └──────┬──────────────┬────────────┘
                                    │              │
@@ -16,30 +16,33 @@
                           adapter   │              │ REST + GraphQL
                                    ▼              ▼
                             ┌────────────┐  ┌────────────┐
-                            │ Postgres 16│  │ github.com │
-                            │ (Drizzle)  │  └─────┬──────┘
-                            └────────────┘        │
-                                                  │ ETag-aware
+                            │  Neon DB   │  │ github.com │
+                            │ (Postgres) │  └─────┬──────┘
+                            └────────────┘        │ ETag-aware
+                                                  │
                                    ┌──────────────┘
                                    ▼
-                            ┌────────────┐
-                            │  Redis 7   │
-                            │ (ioredis)  │
-                            └────────────┘
+                            ┌─────────────────────────┐
+                            │  Optional Redis cache   │
+                            │  (CACHE_ENABLED=true)   │
+                            │  off by default on      │
+                            │  Vercel                 │
+                            └─────────────────────────┘
 ```
 
-All four containers run on a Dokploy-managed VPS. Postgres + Redis are Dokploy-managed services; the Next app is built from this repo's `Dockerfile`.
+The Next app runs on Vercel (Fluid Compute, Node.js runtime). Postgres is hosted on Neon (websocket pool via `@neondatabase/serverless`). Redis is optional — gated by `CACHE_ENABLED` and disabled by default on Vercel deploys.
 
 ## 2. Request Flow — Authenticated Page
 
 1. Browser hits `/dashboard`.
-2. **Edge middleware** (`src/middleware.ts`) checks the Better Auth session cookie. No cookie → 302 to `/login?from=/dashboard`.
+2. **Middleware** (`src/middleware.ts`) checks the Better Auth session cookie. No cookie → 302 to `/login?from=/dashboard`.
 3. **Dashboard layout** (`app/(dashboard)/layout.tsx`, RSC) calls `auth.api.getSession({ headers: await headers() })`. No session → `redirect("/login")`.
 4. Layout calls `githubService.getViewer(userId)` and `listOrgs(userId)` in parallel. Each call:
-   - **Cache lookup**: `cachedFetch` reads `gh:{userId}:viewer:{paramHash}` from Redis.
+   - **Cache lookup** (if `CACHE_ENABLED=true`): `cachedFetch` reads `gh:{userId}:viewer:{paramHash}` from Redis.
    - **ETag revalidation**: if a cached envelope exists, sends `If-None-Match: <etag>` to GitHub.
    - GitHub returns `304 Not Modified` → `cachedFetch` returns cached body, refreshes Redis TTL only.
    - GitHub returns `200` → `cachedFetch` writes new envelope `{ body, etag, fetchedAt }` to Redis with the resource's TTL.
+   - **Cache off**: `cachedFetch` becomes a pass-through to the fetcher (no Redis read/write).
 5. Layout resolves `getActiveContext(userId, viewerLogin)` — reads `active_ctx` cookie, validates it against the user's actual org list (defends against stale cookies after a user leaves an org).
 6. Page-level RSCs (`Metrics`, `RecentRepos`) render inside `<Suspense>`. Each fetches via the same cached path.
 7. Server-rendered HTML streams to the browser.
@@ -49,7 +52,7 @@ All four containers run on a Dokploy-managed VPS. Postgres + Redis are Dokploy-m
 1. `/login` → button calls `signIn.social({ provider: "github", callbackURL: "/dashboard" })` (better-auth client).
 2. Better Auth redirects to `https://github.com/login/oauth/authorize?...` with `OAUTH_SCOPES = [read:user, user:email, repo, read:org, read:packages, read:project]`.
 3. GitHub redirects to `/api/auth/callback/github` (handled by Better Auth's catch-all `app/api/auth/[...all]/route.ts`).
-4. Better Auth's Drizzle adapter writes a row to `account` with the plaintext `accessToken` (this is unavoidable — it's how the adapter works).
+4. Better Auth's Drizzle adapter writes a row to `account` with the plaintext `accessToken` (unavoidable — it's how the adapter works).
 5. **`databaseHooks.account.create.after`** fires synchronously after the insert: encrypts the token via `encryptToJson(...)` and writes `{ encryptedAccessToken, accessToken: null }`. Plaintext column is now empty.
 6. Session row written → cookie set → user redirected to `/dashboard`.
 
@@ -76,10 +79,12 @@ For OAuth refresh, `databaseHooks.account.update.after` mirrors the encryption s
                 ┌──────────────────────────────┐
                 │ cachedFetch<T>               │
                 │ (lib/github/cache.ts)        │
-                │  • Redis GET                 │
-                │  • Calls fetcher with ETag   │
-                │  • 304 → return cached       │
-                │  • 200 → write envelope      │
+                │  • CACHE_ENABLED=false →     │
+                │      pass-through            │
+                │  • CACHE_ENABLED=true →      │
+                │      Redis GET, call fetcher │
+                │      with ETag, 304 → cached │
+                │      200 → write envelope    │
                 └──────────┬───────────────────┘
                            │
                            ▼
@@ -130,6 +135,7 @@ gh:{userId}:{resource}:{sha256(JSON.stringify(params)).slice(0,16)}
 - `invalidate(userId, resource)` uses `redis.scanStream({ match: pattern })` and pipelines `DEL` calls. No blocking `KEYS`.
 - `resource = "*"` wipes all entries for the user (used by `revokeAccessAction`).
 - After `createRepo`, only the `repos` namespace is invalidated.
+- When `CACHE_ENABLED=false`, `invalidate` is a no-op.
 
 ## 6. Multi-User Isolation
 
@@ -138,54 +144,56 @@ gh:{userId}:{resource}:{sha256(JSON.stringify(params)).slice(0,16)}
 - **GitHub clients**: `getGithubClients(userId)` builds a per-call Octokit instance bound to that user's token. No cross-tenant token leakage possible.
 - **Active context cookie**: scoped to the browser session. Validated against the user's orgs every page render.
 
-## 7. Build & Runtime
+## 7. Build & Runtime (Vercel)
 
-### Build (Docker multi-stage, see `Dockerfile`)
+### Build pipeline (`vercel.json` → `pnpm vercel-build`)
 
-1. **deps**: `pnpm install --frozen-lockfile`.
-2. **builder**: `pnpm build` (Next.js → standalone output). `NEXT_PHASE=phase-production-build` triggers env placeholder fallback in `lib/env.ts:42-46`, so missing real env vars don't crash page-data collection.
-3. **migrator**: separate stage that creates a self-contained `npm` tree with `drizzle-orm@0.45.2` + `pg@8.20.0` + `migrate.mjs`. Lives in `/app/migrator` so Node's ESM resolver finds those packages without bundling.
-4. **runner**: assembles `.next/standalone` + `public` + static + drizzle migrations + migrator. Runs as non-root `nextjs:1001`. CMD: `sh scripts/entrypoint.sh`.
+1. `pnpm install` (install command).
+2. `node scripts/migrate.mjs` — runs Drizzle migrations against `MIGRATION_DATABASE_URL` (Neon **unpooled**). Driver is selected by `DB_DRIVER` (`neon` on Vercel, `node-postgres` locally).
+3. `next build` — produces standard Next output (not standalone — Vercel handles bundling).
+4. `vercel.json:git.deploymentEnabled.main = true` restricts auto-deploys to the `main` branch.
 
-### Runtime startup (`scripts/entrypoint.sh`)
+### Runtime
 
-```sh
-1. cd /app/migrator && MIGRATIONS_FOLDER=/app/drizzle node migrate.mjs
-2. exec node server.js   # Next standalone server on :3000
-```
-
-Migrations run on every container start. They are idempotent (drizzle-orm tracks applied migrations in a `__drizzle_migrations` table).
+- Next.js runs on Vercel **Fluid Compute** with the Node.js runtime. No edge runtime in use.
+- DB access uses `@neondatabase/serverless` (websocket pool, drop-in compatible with `pg.Pool`). Reused across invocations when the function instance is reused.
+- Migrations re-run on every build; they're idempotent thanks to drizzle-orm's `__drizzle_migrations` tracking table.
+- `lib/env.ts` returns build-phase placeholders during `next build` so page-data collection never crashes on missing real env vars.
 
 ### Health probe
 
-`/api/health` (force-dynamic) executes `SELECT 1` against Postgres + `PING` against Redis. Returns 200 only when both succeed; 503 otherwise. Wired to Dokploy's HTTP health check.
+`/api/health` (force-dynamic) executes `SELECT 1` against Postgres. Returns 200 on success; 503 on failure. Wire any uptime monitor here.
 
 ## 8. Local Development
 
 ```sh
-docker compose -f docker-compose.dev.yml up -d   # Postgres :5433, Redis :6379
+# .env.local — fill in
 pnpm install
-pnpm db:push                                      # apply schema
-pnpm dev                                          # next dev on :3000
+pnpm db:push          # apply schema directly (no migration files)
+pnpm dev              # next dev on :3000
 ```
 
-`docker-compose.dev.yml` provisions:
-- Postgres 16 (`gitcontrol/gitcontrol_dev`) on host port `5433` to avoid colliding with system Postgres.
-- Redis 7 with `requirepass gitcontrol_dev`.
+Two supported local DB setups:
+- **Neon dev branch** (recommended): zero local infra, just `DB_DRIVER=neon` + Neon branch URL.
+- **Local Postgres**: any Postgres 16 instance (Docker, Homebrew, etc.), `DB_DRIVER=node-postgres`.
 
 ## 9. Environment Variables (validated by `lib/env.ts`)
 
-| Var | Purpose |
-|-----|---------|
-| `NODE_ENV` | development/production/test |
-| `DATABASE_URL` | Postgres connection string |
-| `REDIS_URL` | Redis connection string |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | OAuth App credentials |
-| `TOKEN_ENCRYPTION_KEY` | 64-char hex (32 bytes). Generate: `openssl rand -hex 32` |
-| `BETTER_AUTH_SECRET` | Min 32 chars. Generate: `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | Public base URL (used for OAuth callback) |
+| Var | Required | Purpose |
+|-----|----------|---------|
+| `NODE_ENV` | yes | development/production/test |
+| `DATABASE_URL` | yes | Postgres connection string (Neon pooled URL on Vercel) |
+| `DB_DRIVER` | yes | `neon` (Vercel) or `node-postgres` (local) |
+| `MIGRATION_DATABASE_URL` | build-time only | Neon **unpooled** URL — used by `scripts/migrate.mjs` |
+| `CACHE_ENABLED` | no | `true` to enable Redis envelope cache; defaults to `true` but Vercel deploys set `false` |
+| `REDIS_URL` | only if cache on | Redis connection string |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | yes | OAuth App credentials |
+| `TOKEN_ENCRYPTION_KEY` | yes | 64-char hex (32 bytes). Generate: `openssl rand -hex 32` |
+| `BETTER_AUTH_SECRET` | yes | Min 32 chars. Generate: `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | yes | Public base URL (used for OAuth callback) |
+| `RELEASE_WEBHOOK_URL` / `RELEASE_WEBHOOK_SECRET` | optional | Used by `.github/workflows/release.yml` to invalidate `/changelog` cache |
 
-During `next build`, missing values fall back to placeholders so build-time page-data collection never throws. At runtime, the schema is enforced and a missing var aborts the request.
+During `next build`, missing values fall back to placeholders so build-time page-data collection never throws. At runtime the schema is enforced and a missing var aborts the request.
 
 ## 10. Failure Modes & Mitigations
 
@@ -193,12 +201,13 @@ During `next build`, missing values fall back to placeholders so build-time page
 |---------|----------|------------|
 | GitHub 401 (token revoked outside our app) | `UnauthorizedError` thrown from service | Page renders empty state. User must re-link via Settings → revoke + sign in again. |
 | GitHub 403 with `x-ratelimit-remaining: 0` | `RateLimitError` with `retryAfterSeconds` | Currently surfaces as empty UI. Future: dedicated banner. |
-| Redis down | `getRedis()` logs error; `cachedFetch` throws on `get` | Health endpoint flips to 503. Pages crash. Acceptable for self-hosted single-VPS deploy; HA out of scope. |
-| Postgres down | DB calls throw | Health endpoint flips to 503. Same as above. |
+| Redis down (when cache enabled) | `cachedFetch` falls back to direct fetcher (still serves user, just no cache) | Health endpoint only checks DB — Redis is optional. |
+| Postgres / Neon down | DB calls throw | Health endpoint flips to 503. Vercel surface the failure; users see error boundary. |
+| Neon cold start | First request after idle ~300ms slower | Acceptable for personal use. Paid Neon tier eliminates idle. |
 | OAuth race on first request | Plaintext token still present, encrypted column null | `getGithubToken` falls back to `accessToken` plaintext until the hook completes (next request will see encrypted form). |
 
 ## 11. Out-of-Scope Concerns
 
-- Horizontal scaling (assumes single Next instance — Redis-based session would be needed otherwise; Better Auth defaults to DB sessions which already work).
+- Horizontal scaling (Vercel handles instance count; DB is the bottleneck, mitigated by Neon's serverless model).
 - Multi-region deployment.
 - GitHub App migration (would replace OAuth App + bump rate limit to 15k/h, allow per-repo scope selection). Tracked in post-MVP backlog.
