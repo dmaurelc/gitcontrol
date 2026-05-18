@@ -1,45 +1,40 @@
 # GitControl
 
-A self-hosted, private alternative to the GitHub dashboard. Built for developers who want a clean view, their own controls, and their data on their own infrastructure.
+A self-hosted, private alternative to the GitHub dashboard. A clean, faster view of your repos, issues, PRs, stars and projects — running on your own Vercel + Neon stack.
 
-## What it is
+**Live demo:** [https://gitcontrol-dev.vercel.app](https://gitcontrol-dev.vercel.app)
 
-GitControl is a **self-hosted dashboard** that replaces GitHub's default UI. It gives you a streamlined interface to manage your repositories, issues, pull requests, stars, and projects — without the noise.
+## Highlights
 
-Instead of navigating github.com (with all its sections and notifications), you open your own GitControl instance on your server, see exactly what you need, and keep full control of your data and GitHub credentials.
+- **GitHub OAuth** with AES-256-GCM encrypted tokens at rest
+- **Multi-context** — switch between your personal account and any organization without leaving the app
+- **Dashboard** — quick metrics, 365-day contribution heatmap, 28-day activity, recent repos
+- **Repositories** — list, search, filter by language/visibility, pin favorites, create new
+- **Repo detail tabs** — overview, issues, pulls, files (browser + preview), insights, commits, dependencies
+- **Cross-repo views** — aggregated issues and PRs across every repo you can see
+- **Stars, Projects v2, Packages, Actions, Notifications** — first-class pages, not buried in menus
+- **In-app PR merge**, comments, bug-report form, auto-generated changelog
+- **Privacy first** — your data and OAuth credentials live in your own Vercel + Neon project
 
-## Who it's for
+## Tech stack
 
-- **Solo developers** juggling multiple accounts (personal + organizations) tired of context-switching on GitHub
-- **Small teams** that want a shared dashboard without paying for GitHub Enterprise, hosted on their own servers
-- **Power users** who prefer custom filters, personalized views, and data on their own infrastructure
+Next.js 16 (App Router) · TypeScript · Tailwind v4 + shadcn/ui · Better Auth · Drizzle ORM · Postgres (Neon) · Octokit REST + GraphQL · pnpm.
 
-## Key features
+## Deploy your own
 
-- **Secure auth**: GitHub OAuth + encrypted tokens stored on your server
-- **Dashboard overview**: quick metrics (repos, stars, open PRs, issues)
-- **Repository manager**: list, search, filter by language, pin favorites, create new
-- **Repo details**: issues and pull requests per repository
-- **Stars, Projects, Packages**: access to GitHub Stars, Projects v2, and Packages
-- **Multi-context**: switch between your personal account and organizations without leaving the app
-- **Privacy first**: all data and credentials live on your server
-
-## Self-hosted
-
-GitControl is designed to run on your own infrastructure. It's not a SaaS — you deploy an instance, give access to whoever needs it, and that's it.
-
-**Live demo**: [https://dev.webkode.cl](https://dev.webkode.cl)
-
-## Status
-
-**MVP shipped** (May 2026). Core features working. Post-MVP improvements ongoing.
+GitControl runs on **Vercel + Neon** (free tiers are enough for personal use). See [docs/deployment-guide.md](./docs/deployment-guide.md) for the full walkthrough.
 
 ## Documentation
 
 - [Project overview](./docs/project-overview-pdr.md)
 - [Deployment guide](./docs/deployment-guide.md)
-- [Codebase structure](./docs/codebase-summary.md)
 - [System architecture](./docs/system-architecture.md)
+- [Codebase structure](./docs/codebase-summary.md)
+- [Git workflow](./docs/git-workflow.md)
+
+## Status
+
+**v0.11.0 shipped** (May 2026). Core features stable, post-MVP improvements ongoing.
 
 ## License
 

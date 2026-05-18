@@ -11,7 +11,7 @@ import { invalidate } from "@/lib/github/cache";
 import { runAction, type ActionResult } from "@/lib/actions/result";
 import { enforceRateLimit } from "@/lib/rate-limit/check-rate-limit";
 
-const themeSchema = z.enum(["light", "dark", "system"]);
+const themeSchema = z.enum(["light", "dark"]);
 
 async function requireUserId() {
   const session = await auth.api.getSession({ headers: await headers() });

@@ -32,7 +32,7 @@ fix/z                       ────────●
 2. Commit + push to `feature/<slug>`.
 3. Open PR `feature/<slug>` → `develop`. Merge when reviewed.
 4. When release is ready, open PR `develop` → `main`. Merge.
-5. Dokploy redeploys on push to `develop` (staging) or `main` (production), per environment config.
+5. Vercel auto-deploys on push to `main` only (`vercel.json:git.deploymentEnabled.main`). Other branches won't trigger a deploy — open a Preview deployment manually via the Vercel dashboard if you need one.
 
 ## Naming conventions
 

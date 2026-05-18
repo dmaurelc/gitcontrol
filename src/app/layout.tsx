@@ -101,12 +101,12 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}
-          <Toaster position="bottom-right" richColors closeButton theme="system" />
+          <Toaster position="bottom-right" richColors closeButton theme="dark" />
         </ThemeProvider>
       </body>
     </html>
