@@ -2,14 +2,13 @@
 import { useSyncExternalStore, useTransition } from "react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateThemeAction } from "@/app/actions/settings";
 
 const OPTIONS = [
   { value: "light", label: "Light", Icon: Sun },
   { value: "dark", label: "Dark", Icon: Moon },
-  { value: "system", label: "System", Icon: Monitor },
 ] as const;
 
 const subscribe = () => () => {};

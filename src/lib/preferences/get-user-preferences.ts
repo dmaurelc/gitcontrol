@@ -22,7 +22,7 @@ export type PreferenceFilters = {
 
 export type UserPreferences = {
   userId: string;
-  theme: "light" | "dark" | "system";
+  theme: "light" | "dark";
   defaultView: "dashboard" | "repositories" | "stars";
   pinnedRepos: string[];
   hiddenOrgs: string[];
@@ -49,7 +49,7 @@ export function readRepoDetailViewMode(
 }
 
 const DEFAULTS: Omit<UserPreferences, "userId"> = {
-  theme: "system",
+  theme: "dark",
   defaultView: "dashboard",
   pinnedRepos: [],
   hiddenOrgs: [],
@@ -72,7 +72,7 @@ export async function getUserPreferences(
   if (rows[0]) {
     return {
       userId,
-      theme: (rows[0].theme as UserPreferences["theme"]) ?? DEFAULTS.theme,
+      theme: rows[0].theme === "light" ? "light" : "dark",
       defaultView:
         (rows[0].defaultView as UserPreferences["defaultView"]) ??
         DEFAULTS.defaultView,
