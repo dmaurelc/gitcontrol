@@ -10,8 +10,8 @@
   --card-foreground: oklch(0.2069 0.0098 285.5081);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2069 0.0098 285.5081);
-  --primary: oklch(0.8974 0.1487 115.6236);
-  --primary-foreground: oklch(0.2069 0.0098 285.5081);
+  --primary: oklch(0.3092 0 0);
+  --primary-foreground: oklch(0.9851 0 0);
   --secondary: oklch(0.9197 0.004 286.3202);
   --secondary-foreground: oklch(0.2103 0.0059 285.8852);
   --muted: oklch(0.9674 0.0013 286.3752);
@@ -22,20 +22,20 @@
   --destructive-foreground: oklch(0.9851 0 0);
   --border: oklch(0.9197 0.004 286.3202);
   --input: oklch(0.9851 0 0);
-  --ring: oklch(0.2103 0.0059 285.8852);
-  --chart-1: oklch(0.8974 0.1487 115.6236);
-  --chart-2: oklch(0.6879 0.1363 125.268);
-  --chart-3: oklch(0.6692 0.1517 135.3822);
-  --chart-4: oklch(0.779 0.1643 145.1458);
-  --chart-5: oklch(0.7411 0.1604 155.0073);
+  --ring: oklch(0.3092 0 0);
+  --chart-1: oklch(0.2069 0.0098 285.5081);
+  --chart-2: oklch(0.3092 0 0);
+  --chart-3: oklch(0.4386 0 0);
+  --chart-4: oklch(0.5517 0.0138 285.9385);
+  --chart-5: oklch(0.7118 0.0129 286.0665);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.2103 0.0059 285.8852);
-  --sidebar-primary: oklch(0.8974 0.1487 115.6236);
-  --sidebar-primary-foreground: oklch(0.2069 0.0098 285.5081);
+  --sidebar-primary: oklch(0.3092 0 0);
+  --sidebar-primary-foreground: oklch(0.9851 0 0);
   --sidebar-accent: oklch(0.9674 0.0013 286.3752);
   --sidebar-accent-foreground: oklch(0.2103 0.0059 285.8852);
   --sidebar-border: oklch(0.9197 0.004 286.3202);
-  --sidebar-ring: oklch(0.2103 0.0059 285.8852);
+  --sidebar-ring: oklch(0.3092 0 0);
   --font-sans: Chakra Petch, ui-sans-serif, sans-serif, system-ui;
   --font-serif: "Georgia", serif;
   --font-mono: IBM Plex Mono, ui-monospace, monospace;
@@ -200,7 +200,20 @@
 }
 
 /* Landing page decorative gradients */
-:root,
+:root {
+  --gradient-aurora: linear-gradient(
+    135deg,
+    oklch(0.7118 0.0129 286.0665) 0%,
+    oklch(0.4386 0 0) 60%,
+    oklch(0.2069 0.0098 285.5081) 100%
+  );
+  --gradient-code-glow: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in oklch, oklch(0.3092 0 0) 15%, transparent) 0%,
+    transparent 100%
+  );
+}
+
 .dark {
   --gradient-aurora: linear-gradient(
     135deg,
