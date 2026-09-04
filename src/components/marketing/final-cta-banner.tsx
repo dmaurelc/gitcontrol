@@ -1,10 +1,15 @@
 import { GithubSignInButton } from "@/components/marketing/github-sign-in-button";
+import { DashboardCtaButton } from "@/components/marketing/dashboard-cta-button";
 import { FadeInOnView } from "@/components/marketing/motion-primitives";
 
 // Split-stat banner: marketing copy on the left, OAuth checklist + GitHub
 // sign-in button on the right. Corner crosses tie it back to the landing
 // frame; hairline center divider gives the two halves equal weight.
-export function FinalCtaBanner() {
+export function FinalCtaBanner({
+  isAuthenticated = false,
+}: {
+  isAuthenticated?: boolean;
+}) {
   return (
     <section className="py-24">
       <FadeInOnView className="relative border border-border bg-card">
@@ -42,7 +47,11 @@ export function FinalCtaBanner() {
                 <span>Self-hosted</span>
               </li>
             </ul>
-            <GithubSignInButton size="lg" />
+            {isAuthenticated ? (
+              <DashboardCtaButton size="lg" />
+            ) : (
+              <GithubSignInButton size="lg" />
+            )}
           </div>
         </div>
       </FadeInOnView>

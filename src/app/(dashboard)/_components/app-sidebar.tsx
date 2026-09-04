@@ -100,8 +100,9 @@ export function AppSidebar({ className, onNavigate, user }: AppSidebarProps) {
       )}
     >
       <Link
-        href="/dashboard"
+        href="/"
         onClick={onNavigate}
+        aria-label="GitControl — back to landing"
         className="flex h-14 items-center gap-2 border-b border-sidebar-border px-5 transition-colors hover:bg-sidebar-accent/40"
       >
         <NodeMark className="size-6 text-primary" />

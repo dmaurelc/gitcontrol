@@ -8,14 +8,20 @@ import { LandingFrame, FrameDivider } from "@/components/marketing/landing-frame
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { SecurityPrivacySection } from "@/components/marketing/security-privacy-section";
+import { ThemeLabPanel } from "@/components/marketing/theme-lab-panel";
 
-export default function LandingPage() {
+export default function LandingPage({
+  isAuthenticated = false,
+}: {
+  isAuthenticated?: boolean;
+}) {
   return (
     <div className="overflow-x-clip bg-background">
-      <MarketingNav />
+      <ThemeLabPanel />
+      <MarketingNav isAuthenticated={isAuthenticated} />
       <LandingFrame className="max-w-8xl">
         <main>
-          <HeroSection />
+          <HeroSection isAuthenticated={isAuthenticated} />
           <FrameDivider />
           <CapabilitiesTabs />
           <FrameDivider />
@@ -27,7 +33,7 @@ export default function LandingPage() {
           <FrameDivider />
           <FaqList />
           <FrameDivider />
-          <FinalCtaBanner />
+          <FinalCtaBanner isAuthenticated={isAuthenticated} />
         </main>
       </LandingFrame>
       <MarketingFooter />

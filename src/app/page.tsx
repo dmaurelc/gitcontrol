@@ -1,15 +1,11 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
-import { LoginScreen } from "@/components/auth/login-screen";
+import LandingPage from "@/components/marketing/landing-page";
 
-// Root route now serves the login screen directly so the canonical URL
-// for unauthenticated users is "/" rather than "/login". The /login path
-// still exists for backward compatibility and renders the same component.
-// Marketing landing remains available at
-// src/components/marketing/landing-page.tsx if it needs to be restored.
+// Root route is the public marketing landing for everyone. Signed-in visitors
+// see it too — the CTAs switch to "Go to dashboard" instead of sign-in — so
+// they can always come back here from the app.
 export default async function Home() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (session) redirect("/dashboard");
-  return <LoginScreen />;
+  return <LandingPage isAuthenticated={!!session} />;
 }

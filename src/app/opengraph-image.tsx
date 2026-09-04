@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 // Site-wide social card. 1200x630 PNG generated at request time.
-// Brand: primary lime #D9F26B on near-black #0B0F0A, matching the
+// Brand: primary emerald #00FFB3 on near-black #0B0F0A, matching the
 // app's globals.css. Logo paths mirror src/app/icon.svg so the card,
 // favicon, and apple-touch-icon stay visually consistent.
 export const runtime = "nodejs";
@@ -9,9 +9,9 @@ export const alt = "GitControl — Self-hosted GitHub Dashboard";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const PRIMARY = "#D9F26B";
+const PRIMARY = "#00FFB3";
 const BACKGROUND = "#0B0F0A";
-const MUTED = "#7A8B6E";
+const MUTED = "#768D80";
 
 export default function OpengraphImage() {
   return new ImageResponse(
@@ -27,7 +27,7 @@ export default function OpengraphImage() {
           padding: "80px",
           backgroundColor: BACKGROUND,
           backgroundImage:
-            "radial-gradient(circle at 85% 15%, rgba(217, 242, 107, 0.12) 0%, transparent 55%)",
+            "radial-gradient(circle at 85% 15%, rgba(0, 255, 179, 0.12) 0%, transparent 55%)",
           color: PRIMARY,
           fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif",
         }}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { NodeMark } from "@/components/icons/node-mark";
 import { GithubSignInButton } from "@/components/marketing/github-sign-in-button";
+import { DashboardCtaButton } from "@/components/marketing/dashboard-cta-button";
 
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
@@ -22,7 +23,11 @@ function Wordmark() {
   );
 }
 
-export function MarketingNav() {
+export function MarketingNav({
+  isAuthenticated = false,
+}: {
+  isAuthenticated?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -48,7 +53,11 @@ export function MarketingNav() {
           </nav>
 
           <div className="hidden lg:block">
-            <GithubSignInButton size="sm" label="Sign in" />
+            {isAuthenticated ? (
+              <DashboardCtaButton size="sm" label="Dashboard" />
+            ) : (
+              <GithubSignInButton size="sm" label="Sign in" />
+            )}
           </div>
 
           <button
@@ -92,7 +101,11 @@ export function MarketingNav() {
             ))}
           </nav>
           <div className="border-t border-border px-6 py-6">
-            <GithubSignInButton size="lg" />
+            {isAuthenticated ? (
+              <DashboardCtaButton size="lg" className="w-full" />
+            ) : (
+              <GithubSignInButton size="lg" />
+            )}
           </div>
         </div>
       )}

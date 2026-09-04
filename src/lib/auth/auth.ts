@@ -44,6 +44,21 @@ function createAuth() {
         delete: async (key: string) => {
           await redis.del(`auth_ss:${key}`);
         },
+        // Required since better-auth 1.7: atomic read-and-delete for
+        // one-shot cached values (e.g. verification hydration).
+        getAndDelete: async (key: string) => {
+          const raw = await redis.getdel(`auth_ss:${key}`);
+          return raw ?? null;
+        },
+        // Required since better-auth 1.7: atomic counter for
+        // secondary-storage rate limiting. Set the TTL only on first
+        // increment so the window starts when the key is created.
+        increment: async (key: string, ttl?: number) => {
+          const k = `auth_ss:${key}`;
+          const count = await redis.incr(k);
+          if (count === 1 && ttl && ttl > 0) await redis.expire(k, ttl);
+          return count;
+        },
       }
     : undefined;
 

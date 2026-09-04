@@ -9,7 +9,6 @@ import {
 import { SignOutMenuItem } from "@/components/sign-out-menu-item";
 import { OrgSwitcher } from "./org-switcher";
 import { MobileSidebar } from "./mobile-sidebar";
-import { ThemeToggleIcon } from "@/components/theme-toggle-icon";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { CommandPaletteServer } from "@/components/command-palette-server";
 import { githubService } from "@/lib/github/service";
@@ -66,7 +65,6 @@ export async function Topbar({ user, userId, orgs, activeContext }: TopbarProps)
 
           <div className="hidden md:flex md:items-center md:gap-1">
             <NotificationsBell initialNotifications={notifications} />
-            <ThemeToggleIcon />
           </div>
 
           <DropdownMenu>
