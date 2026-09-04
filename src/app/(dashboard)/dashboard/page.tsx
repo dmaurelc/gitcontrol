@@ -215,13 +215,16 @@ async function RecentRepos({ userId }: { userId: string }) {
     owner: { login: string };
   }> = [];
   try {
+    // Fetch a full page (not just 20): hidden repos are removed *after* the
+    // fetch, so a handful of recently-pushed hidden repos could otherwise fill
+    // the top of the list and leave nothing visible to show.
     const res = await githubService.listRepos(userId, {
       sort: "pushed",
-      perPage: 20,
+      perPage: 100,
     });
     repos = res.data;
-  } catch {
-    // ignore
+  } catch (e) {
+    console.error("[dashboard] RecentRepos listRepos failed:", e);
   }
   const prefs = await getUserPreferences(userId);
   const pinnedSet = new Set(prefs.pinnedRepos);
