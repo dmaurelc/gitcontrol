@@ -29,6 +29,13 @@
       "when": 1779073409417,
       "tag": "0003_light_payback",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790561702722,
+      "tag": "0004_account_issuer",
+      "breakpoints": true
     }
   ]
 }
