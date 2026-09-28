@@ -35,7 +35,7 @@ export function HeroSection({
       <div className="py-20 md:py-28 lg:grid lg:grid-cols-2 lg:gap-12 lg:py-48">
         <HeroIntroMotion>
           <div className="flex flex-col items-start">
-            <StatusBadge tone="primary">v0.12.0 · Self-hosted</StatusBadge>
+            <StatusBadge tone="primary">v0.13.0 · Self-hosted</StatusBadge>
 
             <h1 className="mt-6 font-sans text-4xl leading-[1.05] tracking-tighter text-foreground md:text-6xl">
               <HyperText text="The GitHub dashboard" />{" "}
