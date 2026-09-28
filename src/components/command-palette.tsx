@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   GitBranch,
   Star,
+  Workflow,
   KanbanSquare,
   Package,
   Settings,
@@ -29,6 +30,7 @@ type QuickLink = {
 const QUICK_LINKS: QuickLink[] = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/repositories", label: "Repositories", Icon: GitBranch },
+  { href: "/actions", label: "Actions usage", Icon: Workflow },
   { href: "/stars", label: "Stars", Icon: Star },
   { href: "/projects", label: "Projects", Icon: KanbanSquare },
   { href: "/packages", label: "Packages", Icon: Package },

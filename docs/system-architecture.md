@@ -50,7 +50,7 @@ The Next app runs on Vercel (Fluid Compute, Node.js runtime). Postgres is hosted
 ## 3. Request Flow — OAuth Sign-In
 
 1. `/login` → button calls `signIn.social({ provider: "github", callbackURL: "/dashboard" })` (better-auth client).
-2. Better Auth redirects to `https://github.com/login/oauth/authorize?...` with `OAUTH_SCOPES = [read:user, user:email, repo, read:org, read:packages, read:project]`.
+2. Better Auth redirects to `https://github.com/login/oauth/authorize?...` with `OAUTH_SCOPES = [read:user, user:email, repo, read:org, read:packages, read:project]`. The personal Actions billing endpoints additionally require the `user` scope, which is deliberately **not** requested at sign-in — it is granted incrementally, on demand, via the billing CTA (`linkSocial`, see §5b).
 3. GitHub redirects to `/api/auth/callback/github` (handled by Better Auth's catch-all `app/api/auth/[...all]/route.ts`).
 4. Better Auth's Drizzle adapter writes a row to `account` with the plaintext `accessToken` (unavoidable — it's how the adapter works).
 5. **`databaseHooks.account.create.after`** fires synchronously after the insert: encrypts the token via `encryptToJson(...)` and writes `{ encryptedAccessToken, accessToken: null }`. Plaintext column is now empty.
@@ -137,6 +137,52 @@ gh:{userId}:{resource}:{sha256(JSON.stringify(params)).slice(0,16)}
 - After `createRepo`, only the `repos` namespace is invalidated.
 - When `CACHE_ENABLED=false`, `invalidate` is a no-op.
 
+## 5b. Actions Usage & Billing
+
+The `/actions` page and the dashboard widget surface GitHub Actions usage for the
+**active context** (personal account or org). Two independent data sources are
+combined:
+
+| Concern | Source | Notes |
+|---------|--------|-------|
+| Billable minutes, cost, per-OS, per-repo, per-day | `GET /users/{u}/settings/billing/usage` · `GET /organizations/{org}/settings/billing/usage` (enhanced billing platform) | Only **private** repos on GitHub-hosted runners are billed; public repos are free and never appear. |
+| Runs, success rate, duration, failures | `rest.actions.listWorkflowRunsForRepo` (via `githubService.listWorkflowRuns`) | Covers public and private repos. |
+
+- **Scope requirement (opt-in)**: personal billing requires the `user` OAuth
+  scope (`lib/auth/github-scope-check.ts` → `hasGithubScope`). It is **not** part
+  of `GITHUB_OAUTH_SCOPES`, so sign-in never asks for a write-capable scope.
+  It is requested only when the user clicks the billing CTA, which calls
+  `linkSocial({ provider: "github", scopes: ["user"] })`; Better Auth merges the
+  grant into `account.scope` (callback merge, no logout). Org billing requires
+  the caller to be an org owner/billing manager; otherwise GitHub returns 403.
+- **Included minutes**: not exposed by the API. Mapped from `plan.name`
+  (`lib/github/actions-included-minutes.ts`): free/developer 2000, pro/team/business
+  3000, enterprise 50000. Unknown plan → `includedMinutes: null` (usage shown without
+  a denominator).
+- **Aggregation** is pure and unit-tested: `lib/github/actions-billing-parse.ts`
+  (filters Actions minute lines tolerantly — product contains "action", unit
+  contains "minute" — and groups by OS/repo/day) and
+  `lib/github/actions-activity-parse.ts` (success rate, avg duration via
+  `updated_at - run_started_at`, workflow rollups, failed runs).
+- **Daily trend** is derived directly from the `date` field on each usage item —
+  no extra DB table or `day=` requests needed. Activity scanning requests a
+  date range (`created=YYYY-MM-DD..YYYY-MM-DD`) and filters on ISO timestamps in
+  code, so past-month views never leak later-month runs.
+- **Multipliers**: numbers are **raw runner-minutes** as reported by the API
+  (`quantity`). GitHub consumes the included allowance at 1×/2×/10× for
+  Linux/Windows/macOS, so the "X / included" comparison is an indicator, not an
+  exact billable-equivalent. The UI labels this and shows OS buckets separately.
+- **Caching**: billing `actions-billing` and activity `actions-activity` are cached
+  via `cachedFetch` for 15 min / 10 min respectively; the plan lookup
+  (`actions-plan`) for 1 h.
+- **Degradation**: `getActionsUsage` never throws — returns a `status` of
+  `ok | missing_scope | forbidden_org | unavailable`. `missing_scope` renders a
+  "Grant billing access" button (`GrantGithubScopeButton`), which calls Better Auth
+  `linkSocial({ provider: "github", callbackURL })` to incrementally grant the `user`
+  scope. Plain re-sign-in does **not** refresh stored scopes.
+- **Rate-limit budget**: activity scanning is bounded to the top 15 recently pushed
+  repos × up to 2 pages, with concurrency 4 (≤ ~30 requests per cold load).
+
 ## 6. Multi-User Isolation
 
 - **DB**: `account`, `session`, `user_preferences` keyed by `userId`. Foreign keys cascade on user delete.
@@ -205,6 +251,9 @@ During `next build`, missing values fall back to placeholders so build-time page
 | Postgres / Neon down | DB calls throw | Health endpoint flips to 503. Vercel surface the failure; users see error boundary. |
 | Neon cold start | First request after idle ~300ms slower | Acceptable for personal use. Paid Neon tier eliminates idle. |
 | OAuth race on first request | Plaintext token still present, encrypted column null | `getGithubToken` falls back to `accessToken` plaintext until the hook completes (next request will see encrypted form). |
+| Billing endpoint 403 (personal, missing `user` scope) | `getActionsUsage` returns `status: missing_scope` | Widget/page render a "Grant billing access" button that calls `linkSocial` to incrementally grant the scope. |
+| Billing endpoint 403 (org, not owner/billing manager) | `status: forbidden_org` | Page shows an explanatory message; no exception. |
+| Billing endpoint 404 / plan unknown | `status: unavailable` / `includedMinutes: null` | Usage renders without a denominator. |
 
 ## 11. Out-of-Scope Concerns
 

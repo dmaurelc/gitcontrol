@@ -27,6 +27,10 @@ import { EmptyState } from "@/components/empty-state";
 import { ActivityFeed } from "@/components/activity-feed";
 import { ContributionsChart } from "@/components/contributions-chart";
 import { ContributionHeatmap } from "@/components/contribution-heatmap";
+import {
+  ActionsUsageCard,
+  ActionsUsageCardSkeleton,
+} from "@/components/actions-usage-card";
 import type { ContributionDay } from "@/lib/github/service";
 
 type DashboardSearchParams = {
@@ -82,6 +86,13 @@ export default async function DashboardPage({
           </Suspense>
         </div>
       </div>
+
+      <Suspense fallback={<ActionsUsageCardSkeleton />}>
+        <ActionsUsageCard
+          userId={session.user.id}
+          fallbackLogin={session.user.email}
+        />
+      </Suspense>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
