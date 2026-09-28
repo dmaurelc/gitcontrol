@@ -8,6 +8,10 @@ import { getEnv } from "@/lib/env";
 import { getRedis } from "@/lib/redis/client";
 import { encryptToJson } from "./encryption";
 
+// Scopes requested at sign-in. Deliberately excludes `user` (a write-capable
+// profile scope): the personal Actions billing endpoint requires it, but it is
+// granted incrementally on demand via GrantGithubScopeButton -> linkSocial, so
+// nobody is forced to accept a write scope just to sign in.
 export const GITHUB_OAUTH_SCOPES = [
   "read:user",
   "user:email",

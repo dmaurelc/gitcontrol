@@ -228,6 +228,7 @@ export type WorkflowRun = {
   head_commit: { message: string } | null;
   actor: { login: string; avatar_url: string } | null;
   created_at: string;
+  run_started_at?: string | null;
   updated_at: string;
   html_url: string;
   path: string;
@@ -271,6 +272,8 @@ export type ListWorkflowRunsOpts = {
   status?: WorkflowRunStatus | "all";
   branch?: string;
   workflowId?: number;
+  /** ISO date or `>=YYYY-MM-DD` filter on `created_at`. */
+  created?: string;
 };
 
 // ─── Activity Events ─────────────────────────────────────────────────────────
@@ -1686,6 +1689,7 @@ export const githubService = {
     };
     if (opts.status && opts.status !== "all") apiParams.status = opts.status;
     if (opts.branch) apiParams.branch = opts.branch;
+    if (opts.created) apiParams.created = opts.created;
 
     const cacheParams = { owner, repo, ...apiParams };
 

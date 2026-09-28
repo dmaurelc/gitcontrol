@@ -6,13 +6,14 @@ A self-hosted, private alternative to the GitHub dashboard. A clean, faster view
 
 ## Highlights
 
-- **GitHub OAuth** with AES-256-GCM encrypted tokens at rest
+- **GitHub OAuth** with AES-256-GCM encrypted tokens at rest. Sign-in never requests a write scope; the `user` scope needed for Actions billing is opt-in and granted only when you click the billing CTA. GitControl never writes to your repos.
 - **Multi-context** — switch between your personal account and any organization without leaving the app
 - **Dashboard** — quick metrics, 365-day contribution heatmap, 28-day activity, recent repos
 - **Repositories** — list, search, filter by language/visibility, pin favorites, create new
 - **Repo detail tabs** — overview, issues, pulls, files (browser + preview), insights, commits, dependencies
 - **Cross-repo views** — aggregated issues and PRs across every repo you can see
 - **Stars, Projects v2, Packages, Actions, Notifications** — first-class pages, not buried in menus
+- **Actions usage & billing** — monthly minutes vs. included quota, per-OS and per-repo breakdown, success rate and slow/failing workflows, with a daily trend
 - **In-app PR merge**, comments, bug-report form, auto-generated changelog
 - **Privacy first** — your data and OAuth credentials live in your own Vercel + Neon project
 
