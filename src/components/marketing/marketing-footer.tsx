@@ -18,7 +18,7 @@ export function MarketingFooter() {
             <span className="font-sans text-lg font-semibold tracking-tight">
               GitControl
             </span>
-            <StatusBadge tone="primary">v0.13.0</StatusBadge>
+            <StatusBadge tone="primary">v0.13.1</StatusBadge>
           </div>
 
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">

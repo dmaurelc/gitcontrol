@@ -12,7 +12,7 @@ const TABS = [
 ];
 
 const ASIDE = [
-  { label: "Releases", value: "v0.13.0" },
+  { label: "Releases", value: "v0.13.1" },
   { label: "Tags", value: "12" },
   { label: "Contributors", value: "5" },
 ];
