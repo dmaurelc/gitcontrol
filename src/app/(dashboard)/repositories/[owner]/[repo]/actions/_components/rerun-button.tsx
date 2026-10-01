@@ -23,7 +23,7 @@ export function RerunButton({ owner, repo, runId, disabled }: Props) {
     startTransition(async () => {
       const res = await reRunWorkflowAction(fd);
       if (res.ok) {
-        toast.success("Workflow encolado para re-ejecutarse");
+        toast.success("Workflow queued to re-run");
       } else {
         toast.error(res.error);
       }

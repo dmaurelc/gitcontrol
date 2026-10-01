@@ -13,7 +13,7 @@
 - **Post-MVP Wave 6**: ✅ shipped (2026-05-12). Contribution heatmap, commit history, changelog page.
 - **Post-MVP Wave 7**: ✅ shipped (2026-05-15). In-app PR merge, repo code explorer, landing page redesign, SEO/OG.
 - **Post-MVP Wave 8**: ✅ shipped (2026-05-17). Vercel + Neon as primary deploy target (dual DB driver, optional Redis, automated migrations in build).
-- **Version**: v0.11.0. Live at `https://gitcontrol-dev.vercel.app` (Vercel + Neon).
+- **Version**: v0.11.0. Live at `https://gitcontrol.dev` (Vercel + Neon).
 - **Active phase**: backlog grooming. Next: GitHub App migration, rate-limit banner, saved searches.
 
 ## Completed Milestones

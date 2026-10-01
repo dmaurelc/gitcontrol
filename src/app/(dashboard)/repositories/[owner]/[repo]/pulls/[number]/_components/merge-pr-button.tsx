@@ -57,7 +57,7 @@ export function MergePrButton({
     startTransition(async () => {
       const res = await mergePullRequestAction(fd);
       if (res.ok) {
-        toast.success(`PR mergeado (${METHOD_LABEL[chosen]})`);
+        toast.success(`PR merged (${METHOD_LABEL[chosen]})`);
       } else {
         toast.error(res.error);
       }
@@ -100,10 +100,10 @@ export function MergePrButton({
               <span className="font-medium">{METHOD_LABEL[m]}</span>
               <span className="text-xs text-muted-foreground">
                 {m === "merge"
-                  ? "Conserva todos los commits + un commit de merge."
+                  ? "Keeps all commits plus a merge commit."
                   : m === "squash"
-                    ? "Combina los commits en uno antes de mergear."
-                    : "Reaplica los commits sin merge commit."}
+                    ? "Combines the commits into one before merging."
+                    : "Reapplies the commits without a merge commit."}
               </span>
             </DropdownMenuItem>
           ))}

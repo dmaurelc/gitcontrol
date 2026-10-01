@@ -101,7 +101,7 @@ async function loadPulls(
       if (err.status === 404) return { kind: "not_found" };
       return { kind: "error", message: err.message };
     }
-    return { kind: "error", message: "Error al cargar pull requests." };
+    return { kind: "error", message: "Failed to load pull requests." };
   }
 }
 
@@ -114,8 +114,8 @@ function PullsErrorState({
     return (
       <EmptyState
         icon={Lock}
-        title="Sin acceso a pull requests"
-        description="No tienes permisos para ver pull requests en este repositorio. Pide acceso al propietario."
+        title="No access to pull requests"
+        description="You don't have permission to view pull requests in this repository. Ask the owner for access."
       />
     );
   }
@@ -124,15 +124,15 @@ function PullsErrorState({
       <EmptyState
         icon={GitPullRequest}
         title="Pull requests no disponibles"
-        description="Este repositorio no expone pull requests o no tienes acceso."
+        description="This repository doesn't expose pull requests, or you don't have access."
       />
     );
   }
   return (
     <EmptyState
       icon={GitPullRequest}
-      title="No se pudieron cargar los pull requests"
-      description="Hubo un problema al consultar GitHub. Intenta nuevamente en unos segundos."
+      title="Couldn't load pull requests"
+      description="There was a problem querying GitHub. Try again in a few seconds."
     />
   );
 }

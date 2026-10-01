@@ -111,7 +111,7 @@ export function NotificationsList({ initial, showRead }: Props) {
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
     const res = await markAllNotificationsReadAction();
     if (res.ok) {
-      toast.success("Todas marcadas como leídas");
+      toast.success("All marked as read");
     } else {
       toast.error(res.error);
       setNotifications(previous);

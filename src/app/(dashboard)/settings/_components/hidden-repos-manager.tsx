@@ -88,11 +88,11 @@ export function HiddenReposManager({
           : await hideRepoAction(fullName);
         if (res.ok) {
           toast.success(
-            isHidden ? "Repositorio visible" : "Repositorio oculto",
+            isHidden ? "Repository shown" : "Repository hidden",
           );
         } else {
           toast.error(res.error);
-          // revertir UI
+          // revert UI
           setHidden((prev) => {
             const n = new Set(prev);
             if (isHidden) n.add(fullName);
@@ -135,12 +135,12 @@ export function HiddenReposManager({
         if (failed.length === 0) {
           toast.success(
             hide
-              ? `Ocultados ${targets.length} repos`
-              : `Mostrando ${targets.length} repos`,
+              ? `Hidden ${targets.length} repos`
+              : `Showing ${targets.length} repos`,
           );
         } else {
           toast.error(
-            `${failed.length} de ${targets.length} fallaron al actualizar`,
+            `${failed.length} of ${targets.length} failed to update`,
           );
         }
       } finally {
@@ -193,8 +193,8 @@ export function HiddenReposManager({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {hidden.size} hidden of {repos.length} total. Pinned repos override
-        these settings.
+        {repos.length - hidden.size} shown · {hidden.size} hidden of{" "}
+        {repos.length} total. Pinned repos are always shown.
       </p>
 
       {grouped.length === 0 ? (
@@ -233,19 +233,19 @@ export function HiddenReposManager({
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={allHidden || pending}
-                      onClick={() => bulkToggle(group, true)}
+                      disabled={noneHidden || pending}
+                      onClick={() => bulkToggle(group, false)}
                     >
-                      Hide all
+                      Show all
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={noneHidden || pending}
-                      onClick={() => bulkToggle(group, false)}
+                      disabled={allHidden || pending}
+                      onClick={() => bulkToggle(group, true)}
                     >
-                      Show all
+                      Hide all
                     </Button>
                   </div>
                 </div>
@@ -259,14 +259,17 @@ export function HiddenReposManager({
                         className="flex items-center gap-3 py-2"
                       >
                         <Checkbox
-                          checked={isHidden}
+                          checked={!isHidden}
                           disabled={isBusy}
                           onCheckedChange={() => toggle(r.full_name)}
                           id={`h-${r.full_name}`}
                         />
                         <label
                           htmlFor={`h-${r.full_name}`}
-                          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm"
+                          className={
+                            "flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm" +
+                            (isHidden ? " text-muted-foreground" : "")
+                          }
                         >
                           <span className="truncate">
                             {r.full_name.split("/")[1]}
@@ -280,6 +283,11 @@ export function HiddenReposManager({
                             </Badge>
                           ) : null}
                         </label>
+                        {isHidden ? (
+                          <span className="text-xs text-muted-foreground">
+                            Hidden
+                          </span>
+                        ) : null}
                         {isBusy ? (
                           <Loader2 className="size-3 animate-spin text-muted-foreground" />
                         ) : null}

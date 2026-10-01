@@ -20,7 +20,7 @@ function mapGithubMessage(err: GithubError): {
   switch (err.status) {
     case 401:
       return {
-        message: "Tu sesión de GitHub expiró. Vuelve a iniciar sesión.",
+        message: "Your GitHub session expired. Sign in again.",
         code: "unauthorized",
       };
     case 403:
@@ -28,24 +28,24 @@ function mapGithubMessage(err: GithubError): {
       if (err.name === "RateLimitError") {
         return {
           message:
-            "Se alcanzó el límite de peticiones a GitHub. Intenta más tarde.",
+            "GitHub rate limit reached. Try again later.",
           code: "rate_limited",
         };
       }
       return {
         message:
-          "No tienes permisos para esta acción en este repositorio.",
+          "You don't have permission for this action on this repository.",
         code: "forbidden",
       };
     case 404:
       return {
-        message: "Recurso no encontrado o sin acceso.",
+        message: "Resource not found or no access.",
         code: "not_found",
       };
     case 429:
       return {
         message:
-          "Se alcanzó el límite de peticiones a GitHub. Intenta más tarde.",
+          "GitHub rate limit reached. Try again later.",
         code: "rate_limited",
       };
     default:
@@ -84,7 +84,7 @@ export async function runAction<T>(
     ) {
       return {
         ok: false,
-        error: "Datos inválidos. Revisa el formulario.",
+        error: "Invalid data. Check the form.",
         code: "validation",
       };
     }

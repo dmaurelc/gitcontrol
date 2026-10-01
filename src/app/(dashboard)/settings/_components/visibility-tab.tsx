@@ -63,8 +63,8 @@ export async function VisibilityTab({ userId }: { userId: string }) {
           <CardHeader>
             <CardTitle className="text-base">Organizations</CardTitle>
             <CardDescription>
-              Hide entire orgs from your dashboard listings. UI-only — GitHub
-              access is unchanged.
+              Check the orgs you want to see in your dashboard listings. UI-only —
+              GitHub access is unchanged.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -79,9 +79,9 @@ export async function VisibilityTab({ userId }: { userId: string }) {
         <CardHeader>
           <CardTitle className="text-base">Repositories</CardTitle>
           <CardDescription>
-            Pick which repos appear in listings. Group by owner, filter by
-            author, multi-select to hide in bulk. Pinned repos stay visible
-            regardless.
+            Check the repos you want to see in listings; unchecked repos are
+            hidden. Group by owner, filter by name, or use Show all / Hide all
+            per owner. Pinned repos are always shown.
           </CardDescription>
         </CardHeader>
         <CardContent>

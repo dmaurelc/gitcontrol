@@ -81,20 +81,20 @@ export function MergeStatusPanel({
 
   const mergeableLabel =
     mergeable === null || mergeable === undefined
-      ? "Calculando…"
+      ? "Calculating…"
       : mergeable
-        ? "Sin conflictos"
-        : "Conflictos detectados";
+        ? "No conflicts"
+        : "Conflicts detected";
 
   const stateNote =
     mergeableState === "blocked"
-      ? "Bloqueado por reglas de protección de rama."
+      ? "Blocked by branch protection rules."
       : mergeableState === "behind"
-        ? "La rama está por detrás de la base."
+        ? "The branch is behind the base."
         : mergeableState === "dirty"
-          ? "La rama tiene conflictos con la base."
+          ? "The branch has conflicts with the base."
           : mergeableState === "draft"
-            ? "PR en estado draft."
+            ? "PR is a draft."
             : null;
 
   return (
@@ -121,7 +121,7 @@ export function MergeStatusPanel({
           </h4>
           {checks.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No hay checks configurados.
+              No checks configured.
             </p>
           ) : (
             <>
@@ -175,7 +175,7 @@ export function MergeStatusPanel({
                 ))}
                 {checks.length > 5 && (
                   <li className="text-xs text-muted-foreground">
-                    +{checks.length - 5} más…
+                    +{checks.length - 5} more…
                   </li>
                 )}
               </ul>
@@ -190,7 +190,7 @@ export function MergeStatusPanel({
           </h4>
           {latest.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              Sin reviews aún.
+              No reviews yet.
             </p>
           ) : (
             <>
@@ -231,7 +231,7 @@ export function MergeStatusPanel({
                       </Avatar>
                     ) : null}
                     <span className="truncate">
-                      {r.user?.login ?? "anónimo"}
+                      {r.user?.login ?? "anonymous"}
                     </span>
                     <span className="text-muted-foreground">{r.state}</span>
                   </li>
