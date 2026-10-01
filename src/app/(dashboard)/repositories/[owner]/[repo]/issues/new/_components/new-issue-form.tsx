@@ -36,7 +36,7 @@ export function NewIssueForm({ action, owner, repo }: NewIssueFormProps) {
           throw err;
         }
         toast.error(
-          e?.message ?? "No se pudo crear el issue. Intenta nuevamente.",
+          e?.message ?? "Couldn't create the issue. Try again.",
         );
       }
     });

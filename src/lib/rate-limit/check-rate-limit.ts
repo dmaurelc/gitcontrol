@@ -56,7 +56,7 @@ export async function enforceRateLimit(opts: {
   const res = await checkRateLimit(opts);
   if (res.ok) return;
   const err = new Error(
-    `Demasiadas peticiones. Intenta de nuevo en ${res.retryAfterSeconds}s.`,
+    `Too many requests. Try again in ${res.retryAfterSeconds}s.`,
   );
   (err as Error & { code?: string; retryAfterSeconds?: number }).code =
     "rate_limited";

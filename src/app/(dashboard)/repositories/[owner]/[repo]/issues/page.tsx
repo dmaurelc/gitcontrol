@@ -108,7 +108,7 @@ async function loadIssues(
       if (err.status === 404) return { kind: "not_found" };
       return { kind: "error", message: err.message };
     }
-    return { kind: "error", message: "Error al cargar issues." };
+    return { kind: "error", message: "Failed to load issues." };
   }
 }
 
@@ -121,8 +121,8 @@ function IssuesErrorState({
     return (
       <EmptyState
         icon={Lock}
-        title="Sin acceso a issues"
-        description="No tienes permisos para ver issues en este repositorio. Pide acceso al propietario."
+        title="No access to issues"
+        description="You don't have permission to view issues in this repository. Ask the owner for access."
       />
     );
   }
@@ -131,15 +131,15 @@ function IssuesErrorState({
       <EmptyState
         icon={CircleDot}
         title="Issues no disponibles"
-        description="Este repositorio tiene los issues deshabilitados o no tienes acceso."
+        description="Issues are disabled for this repository, or you don't have access."
       />
     );
   }
   return (
     <EmptyState
       icon={CircleDot}
-      title="No se pudieron cargar los issues"
-      description="Hubo un problema al consultar GitHub. Intenta nuevamente en unos segundos."
+      title="Couldn't load issues"
+      description="There was a problem querying GitHub. Try again in a few seconds."
     />
   );
 }

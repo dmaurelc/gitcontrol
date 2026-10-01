@@ -188,7 +188,7 @@ async function TrafficSection({
 function ComputingPlaceholder() {
   return (
     <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-      GitHub está calculando las estadísticas. Recarga en unos segundos.
+      GitHub is computing the statistics. Reload in a few seconds.
     </div>
   );
 }
@@ -197,9 +197,9 @@ function RestrictedPlaceholder() {
   return (
     <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
       <Lock className="size-5 text-muted-foreground" />
-      <p className="text-sm font-medium">Estadísticas de tráfico restringidas</p>
+      <p className="text-sm font-medium">Traffic statistics restricted</p>
       <p className="text-xs text-muted-foreground">
-        Requiere permiso de escritura (push) en este repositorio.
+        Requires push (write) access to this repository.
       </p>
     </div>
   );
@@ -214,9 +214,9 @@ function SectionErrorPlaceholder({
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
         <Lock className="size-5 text-muted-foreground" />
-        <p className="text-sm font-medium">Sin permisos</p>
+        <p className="text-sm font-medium">No permission</p>
         <p className="text-xs text-muted-foreground">
-          No tienes acceso a estas estadísticas en este repositorio.
+          You don't have access to these statistics for this repository.
         </p>
       </div>
     );
@@ -225,9 +225,9 @@ function SectionErrorPlaceholder({
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
         <AlertTriangle className="size-5 text-muted-foreground" />
-        <p className="text-sm font-medium">Datos no disponibles</p>
+        <p className="text-sm font-medium">Data unavailable</p>
         <p className="text-xs text-muted-foreground">
-          GitHub no expone estas estadísticas para este repositorio.
+          GitHub doesn't expose these statistics for this repository.
         </p>
       </div>
     );
@@ -235,9 +235,9 @@ function SectionErrorPlaceholder({
   return (
     <div className="flex h-40 flex-col items-center justify-center gap-1 text-center">
       <AlertTriangle className="size-5 text-muted-foreground" />
-      <p className="text-sm font-medium">No se pudieron cargar los datos</p>
+      <p className="text-sm font-medium">Couldn't load the data</p>
       <p className="text-xs text-muted-foreground">
-        Intenta nuevamente en unos segundos.
+        Try again in a few seconds.
       </p>
     </div>
   );

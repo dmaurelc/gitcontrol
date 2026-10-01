@@ -40,7 +40,7 @@ export function OrgVisibilityList({ orgs, initialHidden }: Props) {
           : await hideOrgAction(login);
         if (res.ok) {
           toast.success(
-            currentlyHidden ? "Organización visible" : "Organización oculta",
+            currentlyHidden ? "Organization shown" : "Organization hidden",
           );
         } else {
           toast.error(res.error);

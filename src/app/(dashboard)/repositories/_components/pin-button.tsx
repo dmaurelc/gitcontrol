@@ -21,7 +21,7 @@ export function PinButton({
         ? await unpinRepoAction(fullName)
         : await pinRepoAction(fullName);
       if (res.ok) {
-        toast.success(pinned ? "Repositorio desfijado" : "Repositorio fijado");
+        toast.success(pinned ? "Repository unpinned" : "Repository pinned");
       } else {
         toast.error(res.error);
       }
