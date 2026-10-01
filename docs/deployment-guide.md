@@ -8,7 +8,7 @@
 - A [Neon](https://neon.tech) account (free tier is fine).
 - A fork of this repo on GitHub (so Vercel can wire up auto-deploys).
 - A GitHub OAuth App registered at <https://github.com/settings/developers>:
-  - **Homepage URL**: `https://<your-domain>` (use the `*.vercel.app` URL Vercel hands you).
+  - **Homepage URL**: `https://<your-domain>` (e.g. `https://gitcontrol.dev`, or the `*.vercel.app` URL Vercel hands you).
   - **Authorization callback URL**: `https://<your-domain>/api/auth/callback/github`
 - Two secrets generated locally:
   ```sh

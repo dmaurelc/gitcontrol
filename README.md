@@ -2,7 +2,7 @@
 
 A self-hosted, private alternative to the GitHub dashboard. A clean, faster view of your repos, issues, PRs, stars and projects — running on your own Vercel + Neon stack.
 
-**Live demo:** [https://gitcontrol-dev.vercel.app](https://gitcontrol-dev.vercel.app)
+**Live demo:** [https://gitcontrol.dev](https://gitcontrol.dev)
 
 ## Highlights
 
