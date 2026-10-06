@@ -119,6 +119,7 @@ test("classifyBillingError maps status codes to UI states", () => {
   assert.equal(classifyBillingError({ status: 401 }, "user"), "missing_scope");
   assert.equal(classifyBillingError({ status: 403 }, "user"), "missing_scope");
   assert.equal(classifyBillingError({ status: 403 }, "org"), "forbidden_org");
+  assert.equal(classifyBillingError({ status: 404 }, "user"), "missing_scope");
   assert.equal(classifyBillingError({ status: 404 }, "org"), "unavailable");
   assert.equal(classifyBillingError({ status: 500 }, "user"), "unavailable");
   assert.equal(classifyBillingError(new Error("boom"), "user"), "unavailable");
