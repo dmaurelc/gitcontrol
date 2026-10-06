@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Activity,
   Boxes,
+  Gauge,
   Check,
   FolderGit2,
   GitPullRequest,
@@ -14,6 +15,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { GlowPanel } from "@/components/marketing/glow-panel";
 import { FadeInOnView } from "@/components/marketing/motion-primitives";
+import { ActionsMockup } from "@/components/marketing/mockups/actions-mockup";
 import { DiscoveryMockup } from "@/components/marketing/mockups/discovery-mockup";
 import { InboxMockup } from "@/components/marketing/mockups/inbox-mockup";
 import { OverviewMockup } from "@/components/marketing/mockups/overview-mockup";
@@ -94,15 +96,30 @@ const TABS: Tab[] = [
     mockup: <InboxMockup />,
   },
   {
+    id: "actions",
+    label: "Actions",
+    icon: Gauge,
+    routes: "/actions",
+    title: "Know what your CI costs before the invoice.",
+    description:
+      "Minutes used, net cost, daily trend, and the split by OS and repository, next to your latest workflow runs. Billing access is opt-in.",
+    bullets: [
+      "Minutes used vs. included · net cost · month projection",
+      "Daily trend plus breakdown by OS and by repo",
+      "Recent workflow runs across every repo",
+    ],
+    mockup: <ActionsMockup />,
+  },
+  {
     id: "discovery",
     label: "Discovery",
     icon: Boxes,
-    routes: "/activity · /actions · /stars · /projects · /packages",
-    title: "Activity, Actions, Stars, Projects, Packages.",
+    routes: "/activity · /stars · /projects · /packages",
+    title: "Activity, Stars, Projects, Packages.",
     description:
       "Everything else GitHub exposes — the stuff you usually have to jump tabs to see, in one shell.",
     bullets: [
-      "Activity stream · Actions runs · Starred repos",
+      "Activity stream · Starred repos",
       "Projects v2 via GraphQL",
       "Packages by type (container · npm · maven · rubygems · nuget)",
     ],
@@ -142,7 +159,7 @@ export function CapabilitiesTabs() {
           One dashboard, every workflow.
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Click through the six surface areas that replace github.com for daily ops.
+          Click through the seven surface areas that replace github.com for daily ops.
         </p>
       </FadeInOnView>
 

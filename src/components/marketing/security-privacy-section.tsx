@@ -1,4 +1,4 @@
-import { Lock, Server, Users } from "lucide-react";
+import { KeyRound, Lock, Server, Users } from "lucide-react";
 import {
   FadeInOnView,
   StaggerContainer,
@@ -115,6 +115,37 @@ export function SecurityPrivacySection() {
 ├── postgres
 └── redis      → api.github.com`}
             </pre>
+          </article>
+        </StaggerItem>
+
+        {/* Full-width strip: least-privilege scopes */}
+        <StaggerItem className="md:col-span-3">
+          <article className="group flex h-full flex-col gap-4 bg-background p-8 transition-colors hover:bg-card md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <KeyRound className="size-5 text-primary" strokeWidth={1.5} />
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  04 · least-privilege
+                </span>
+              </div>
+              <h3 className="font-sans text-xl tracking-tight">
+                Minimal scopes. Billing is opt-in.
+              </h3>
+              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+                Sign-in requests only what the dashboard needs. The extra
+                GitHub scope that unlocks Actions billing is granted on demand,
+                from the Actions page, and only if you want it.
+              </p>
+            </div>
+            <code className="block w-fit shrink-0 border border-border bg-card px-3 py-1.5 font-mono text-xs">
+              <span className="text-muted-foreground">sign-in</span>
+              <span className="text-primary"> → </span>
+              <span className="text-foreground">core scopes</span>
+              <br />
+              <span className="text-muted-foreground">/actions</span>
+              <span className="text-primary"> → </span>
+              <span className="text-foreground">+user (opt-in)</span>
+            </code>
           </article>
         </StaggerItem>
       </StaggerContainer>
