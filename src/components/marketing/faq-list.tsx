@@ -29,6 +29,11 @@ const FAQS = [
     q: "Can I write code or push from GitControl?",
     a: "Mostly no — it's a viewing and triage tool. You can create new repos, file issues, and merge PRs through the GitHub API, but the dashboard is not a Git client and never touches your local filesystem.",
   },
+  {
+    category: "Security",
+    q: "Why does Actions billing ask for an extra GitHub permission?",
+    a: "GitHub only exposes personal billing usage to tokens with the user scope. GitControl doesn't ask for it at sign-in: the dashboard works without it, and you grant it from the Actions page only if you want minutes and cost. Organization usage depends on your role in that org (owner or billing manager).",
+  },
 ] as const;
 
 type RowProps = {
