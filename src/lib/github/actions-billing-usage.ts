@@ -167,6 +167,16 @@ export async function getActionsUsage(
       includedMinutes: includedMinutesForPlan(plan),
     };
   } catch (err) {
-    return { ...base, status: classifyBillingError(err, ctx.kind) };
+    const status = classifyBillingError(err, ctx.kind);
+    if (status === "unavailable") {
+      // Surface the real cause in server logs; the UI only shows a generic message.
+      console.error("[actions-billing] unavailable", {
+        kind: ctx.kind,
+        login: ctx.login,
+        httpStatus: (err as { status?: number })?.status,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return { ...base, status };
   }
 }
