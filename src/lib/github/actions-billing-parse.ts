@@ -155,5 +155,8 @@ export function classifyBillingError(
   const status = (err as { status?: number })?.status;
   if (status === 401) return "missing_scope";
   if (status === 403) return kind === "org" ? "forbidden_org" : "missing_scope";
+  // GitHub answers 404 (not 403) to the personal billing endpoint when the
+  // token lacks the `user` scope, even if the stored scope says otherwise.
+  if (status === 404 && kind === "user") return "missing_scope";
   return "unavailable";
 }
