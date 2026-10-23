@@ -5,3 +5,12 @@ allowBuilds:
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+# minimum-release-age (1440 min) is set in each developer's ~/.npmrc, so a same-day
+# Next.js release cannot install. The two pins below are version-scoped: re-point or
+# delete them once the release is older than the gate. '@next/*' is a pattern because
+# next pins @next/env and the 8 @next/swc platform binaries to its own exact version,
+# and pnpm 10.33 has no minimumReleaseAgeExcludePrune to clean those up per bump.
+minimumReleaseAgeExclude:
+  - next@16.4.3
+  - eslint-config-next@16.4.3
+  - '@next/*'
